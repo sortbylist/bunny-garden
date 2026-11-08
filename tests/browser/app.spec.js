@@ -1,14 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
-
-async function chooseMode(page, id) {
-  await page.locator('[data-action="modes"]').click();
-  await page.locator(`dialog [data-action="mode"][data-id="${id}"]`).click();
-}
-
-async function stored(page) {
-  return page.evaluate(() => JSON.parse(localStorage.getItem('bunny-garden-v1')));
-}
+import { chooseMode, stored } from './helpers.js';
 
 test('顺序学习、点读、收藏、进度恢复与学科切换', async ({ page }) => {
   const errors = [];
@@ -37,7 +29,7 @@ test('顺序学习、点读、收藏、进度恢复与学科切换', async ({ pa
 
 test('所有练习方式可进入，随机范围不重复', async ({ page }) => {
   await page.goto('/');
-  const modes = ['random', 'initials', 'finals', 'whole', 'tones', 'listen', 'audio', 'blend', 'hanzi', 'pinyin', 'confusing', 'rules', 'match', 'challenge', 'mistakes', 'favorites'];
+  const modes = ['random', 'tones', 'listen', 'audio', 'blend', 'hanzi', 'pinyin', 'confusing', 'rules', 'match', 'challenge', 'mistakes', 'favorites'];
   for (const id of modes) {
     await chooseMode(page, id);
     await expect(page.locator('.learning-main>.section-title h2')).not.toBeEmpty();

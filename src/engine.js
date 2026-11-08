@@ -153,7 +153,8 @@ export const defaultState = () => ({
   version: 1, subject: 'chinese', collapsed: false, features: { chinese: 'pinyin' }, mode: 'sequence',
   group: 'all', wordScope: 'all', confusion: 'retroflex', length: 10,
   seen: [], known: [], favorites: [], mistakes: [], history: [], sessions: {},
-  settings: { slow: false, effects: true, continuous: false },
+  settings: { slow: false, effects: true, continuous: false, animations: true },
+  nickname: '小小探索家', modesExpanded: true, rewards: null,
   tonePractice: false, modeGroups: {},
 });
 
@@ -167,6 +168,21 @@ export function loadState(storage) {
       if (!Array.isArray(parsed[key])) throw new Error('invalid collection');
     }
     const state = { ...defaultState(), ...parsed, settings: { ...defaultState().settings, ...parsed.settings } };
+    if (['initials', 'finals', 'whole'].includes(state.mode)) {
+      const legacyGroups = { initials: 'initial', finals: 'all', whole: 'whole' };
+      state.group = state.group === 'all' ? legacyGroups[state.mode] : state.group;
+      const oldPrefix = `${state.mode}:`;
+      for (const [sessionKey, session] of Object.entries(state.sessions)) {
+        if (sessionKey.startsWith(oldPrefix)) {
+          const parts = sessionKey.split(':');
+          if (parts[1] === 'all') parts[1] = legacyGroups[state.mode];
+          parts[0] = 'sequence';
+          const migratedKey = parts.join(':');
+          if (!state.sessions[migratedKey]) state.sessions[migratedKey] = session;
+        }
+      }
+      state.mode = 'sequence';
+    }
     state.mistakes = state.mistakes.filter(entry => entry?.question?.id && Array.isArray(entry.question.options));
     state.sessions = Object.fromEntries(Object.entries(state.sessions).filter(([, session]) => session && typeof session === 'object'));
     if (![5, 10, 20].includes(state.length)) state.length = 10;

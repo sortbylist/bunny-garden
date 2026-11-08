@@ -1,13 +1,5 @@
 import { test, expect } from '@playwright/test';
-
-async function chooseMode(page, id) {
-  await page.locator('[data-action="modes"]').click();
-  await page.locator(`dialog [data-action="mode"][data-id="${id}"]`).click();
-}
-
-async function stored(page) {
-  return page.evaluate(() => JSON.parse(localStorage.getItem('bunny-garden-v1')));
-}
+import { chooseMode, stored } from './helpers.js';
 
 for (const mode of ['sequence', 'random']) {
   test(`${mode} 自评后前进，末项完成后进入下一节且保留玩法`, async ({ page }) => {
@@ -63,22 +55,19 @@ test('最后一项标记还要练也完成；末节明确结束，不循环到�
 
 test('地图保留范围列表，点击范围保持玩法并同步下拉框', async ({ page }) => {
   await page.goto('/');
-  await chooseMode(page, 'initials');
-  await expect(page.locator('.learning-map [data-action="map-group"]')).toHaveCount(1);
-  await expect(page.locator('.learning-map')).not.toContainText('单韵母');
+  await chooseMode(page, 'sequence');
+  await expect(page.locator('.learning-map [data-action="map-group"]')).toHaveCount(6);
   await page.locator('.learning-map [data-id="initial"]').click();
   await expect(page.locator('[data-setting="group"]')).toHaveValue('initial');
   await expect(page.locator('.learning-map [data-id="initial"]')).toHaveAttribute('aria-current', 'true');
-  expect((await stored(page)).mode).toBe('initials');
-  await chooseMode(page, 'finals');
-  await expect(page.locator('.learning-map [data-action="map-group"]')).toHaveCount(4);
+  expect((await stored(page)).mode).toBe('sequence');
   await page.locator('.learning-map [data-id="single"]').click();
-  await expect(page.locator('.learning-map [data-action="map-group"]')).toHaveCount(4);
+  await expect(page.locator('.learning-map [data-action="map-group"]')).toHaveCount(6);
   await page.locator('.pinyin-map [data-index="5"]').click();
   await page.locator('[data-action="finish-study"]').click();
-  await expect(page.locator('[data-action="next-section"]')).toHaveText('下一节：复韵母与 er');
+  await expect(page.locator('[data-action="next-section"]')).toHaveText('下一节：声母');
   await page.locator('[data-action="next-section"]').click();
-  expect((await stored(page)).mode).toBe('finals');
+  expect((await stored(page)).mode).toBe('sequence');
   await chooseMode(page, 'hanzi');
   await expect(page.locator('.learning-map [data-action="map-group"]')).toHaveCount(0);
   await page.locator('.learning-map [data-action="map-word-scope"][data-id="words"]').click();
@@ -99,7 +88,7 @@ test('地图保留范围列表，点击范围保持玩法并同步下拉框', as
 
 test('各玩法地图与下拉选项一致，选择任意范围后列表保持不变', async ({ page }) => {
   await page.goto('/');
-  for (const mode of ['sequence', 'random', 'initials', 'finals', 'whole', 'listen', 'audio', 'hanzi', 'pinyin', 'match', 'challenge', 'tones', 'blend', 'confusing', 'rules', 'mistakes', 'favorites']) {
+  for (const mode of ['sequence', 'random', 'listen', 'audio', 'hanzi', 'pinyin', 'match', 'challenge', 'tones', 'blend', 'confusing', 'rules', 'mistakes', 'favorites']) {
     await chooseMode(page, mode);
     const options = await page.locator('select[data-setting="group"] option, select[data-setting="wordScope"] option').evaluateAll(elements => elements.filter(element => element.textContent !== '全部拼音').map(element => ({ name: element.textContent, id: element.value, field: element.parentElement.dataset.setting })));
     if (!options.length) {

@@ -1,8 +1,11 @@
 import './style.css';
-import { basics, groups, modes, subjects, vocabulary, marked, confusionSets, toneItems } from './data.js';
+import './personal.css';
+import { basics, groups, modes, playModes, modeSections, subjects, vocabulary, marked, confusionSets, toneItems } from './data.js';
 import { shuffle, visibleTabs, studyPool, learningGroups, nextStudyGroup, visitQuestion, nextUnfinishedQuestion, createRound, recordAnswer, roundStats, loadState, defaultState } from './engine.js';
 import { icon, bunny } from './icons.js';
 import { playAudio, stopAudio, onAudioStatus, chime, hasAudio } from './audio.js';
+import { initializeRewards, grantRewards, rewardStats, rewardCatalog, equipReward, normalizeNickname } from './rewards.js';
+import { rewardArt } from './reward-art.js';
 
 const app = document.querySelector('#app');
 const dialog = document.querySelector('#dialog');
@@ -14,7 +17,12 @@ let mobileMenu = false;
 let toastTimer;
 let dialogReturnFocus;
 let continuousToken = 0;
-const studyModes = ['sequence', 'random', 'initials', 'finals', 'whole', 'favorites'];
+const studyModes = ['sequence', 'random', 'favorites'];
+let rewardTimer;
+let rewardNotice;
+let rewardFilter = 'all';
+initializeRewards(state);
+state.nickname = normalizeNickname(state.nickname) || '小小探索家';
 const allItems = [...basics, ...vocabulary];
 const wordScopes = [
   { id: 'all', name: '字词一起练', short: '单字和词语一起练习', color: 'pink' },
@@ -87,6 +95,7 @@ function render() {
   const subject = subjects.find(item => item.id === state.subject);
   document.title = `${subject.name === '语文' ? currentMode().name + ' · 拼音学习' : subject.name} · 小兔学习乐园`;
   app.className = `${state.collapsed ? 'sidebar-collapsed' : ''} ${mobileMenu ? 'mobile-open' : ''}`;
+  app.classList.toggle('no-reward-motion', !state.settings.animations);
   app.innerHTML = `
     <a class="skip-link" href="#main-content">跳到学习内容</a>
     ${mobileMenu ? '<button class="drawer-backdrop" data-action="mobile-menu" aria-label="关闭学科导航"></button>' : ''}
@@ -102,7 +111,7 @@ function render() {
       <header class="topbar">
         ${button('mobile-menu', '', 'menu', 'icon-button mobile-toggle', 'aria-label="切换学科导航"')}
         <div class="breadcrumb">学习乐园 ${icon('chevron')} <span>${subject.name}</span></div>
-        <div class="topbar-right"><span class="star-counter">${icon('star')}<b>${state.known.length}</b><span>个小收获</span></span><span class="avatar" title="小小探索家">🐰</span></div>
+        <div class="topbar-right"><button class="star-counter" data-action="reward-rules" aria-label="查看星星收获与获取规则">${icon('star')}<b>${rewardStats(state.rewards).stars}</b><span>颗成长星</span>${icon('info')}</button><details class="my-menu"><summary class="my-menu-toggle" aria-label="打开我的菜单"><img src="/bunny.svg" alt="" width="38" height="38"><span>${escape(state.nickname)}<small>我的 ${icon('down')}</small></span></summary><div class="my-menu-content"><strong>你好，${escape(state.nickname)}</strong>${button('profile', '我的成长空间', 'sprout')}${button('mode', `错题本 <b>${state.mistakes.length}</b>`, 'refresh', '', 'data-id="mistakes"')}${button('mode', `我的收藏 <b>${state.favorites.length}</b>`, 'heart', '', 'data-id="favorites"')}${button('records', '学习记录', 'book')}${button('reward-collection', '奖励收藏册', 'star')}${button('edit-nickname', '设置昵称', 'pen')}</div></details></div>
       </header>
       <div class="feature-bar"><div role="tablist" aria-label="${subject.name}小功能" class="feature-tabs ${expandedTabs ? 'expanded' : ''}">${visibleTabs(subject.features, state.features[subject.id], expandedTabs).map(feature => `<button role="tab" aria-selected="${state.features[subject.id] === feature.id}" data-action="feature" data-id="${feature.id}" class="feature-tab ${state.features[subject.id] === feature.id ? 'active' : ''}">${icon(feature.icon)}${feature.name}<span class="tiny-dot"></span></button>`).join('')}${subject.features.length === 0 ? '<span class="feature-placeholder">新的学习冒险，正在准备中</span>' : ''}</div>${subject.features.length > 10 ? button('expand-tabs', expandedTabs ? '收起' : `展开全部（${subject.features.length}）`, 'down', 'expand-tabs', `aria-expanded="${expandedTabs}"`) : ''}<span class="feature-decoration">LEARN · PLAY · GROW ${icon('flower')}</span></div>
       <main id="main-content" tabindex="-1">${state.subject === 'chinese' ? learningPage() : comingSoon(subject)}</main>
@@ -125,7 +134,7 @@ function learningPage() {
     if (item && !state.seen.includes(item.id)) state.seen.push(item.id);
   }
   return `<section class="page-heading"><div><div class="eyebrow"><span></span>语文的第一站 · PINYIN GARDEN</div><h1>和拼音交个朋友吧<span class="heading-flower">✿</span></h1><p>听一听，读一读。每认识一个拼音，都是小小的进步！</p></div><div class="heading-sticker">${icon('sprout')}<span>今天也要<br><b>快乐生长</b></span></div></section>
-    <section class="mode-bar" aria-label="练习方式"><div class="quick-modes">${modes.slice(0, 2).map(item => button('mode', item.name, item.icon, `mode-pill ${state.mode === item.id ? 'selected' : ''}`, `data-id="${item.id}" aria-pressed="${state.mode === item.id}"`)).join('')}${button('mode', '听音选拼音', 'headphones', `mode-pill ${state.mode === 'listen' ? 'selected' : ''}`, `data-id="listen" aria-pressed="${state.mode === 'listen'}"`)}${button('mode', '看字选拼音', 'type', `mode-pill ${state.mode === 'hanzi' ? 'selected' : ''}`, `data-id="hanzi" aria-pressed="${state.mode === 'hanzi'}"`)}</div>${button('modes', '全部玩法 <span class="count-bubble">17</span>', 'grid', `all-modes ${!['sequence', 'random', 'listen', 'hanzi'].includes(state.mode) ? 'selected' : ''}`)}</section>
+    ${modePicker()}
     <div class="learning-layout"><div class="learning-main"><div class="section-title"><h2>${icon(mode.icon)}${mode.name}</h2><span>${studyModes.includes(state.mode) ? '不着急，按自己的节奏来' : mode.group}</span></div>
       ${controls()}
       ${studyModes.includes(state.mode) ? studyCard(value) : state.mode === 'tones' && !state.tonePractice ? tonesCard() : state.mode === 'match' ? matchCard(value) : quizCard(value)}
@@ -133,8 +142,23 @@ function learningPage() {
     </div><aside class="learning-aside">${progressCard()}${mapCard()}<div class="help-note">${icon('headphones')}<div><strong>小耳朵，准备好了吗？</strong><p>点击 ${icon('sound')} 就能听读音<br>听完以后，也试着读一读吧。</p></div></div></aside></div>`;
 }
 
+function modePicker() {
+  return `<section class="play-selector" aria-label="拼音玩法"><div class="play-selector-heading"><h2>${icon('grid')}今天，想怎么玩？<span>12 种玩法</span></h2>${button('toggle-modes', state.modesExpanded ? '收起玩法' : '展开全部玩法 · 12', 'down', `play-selector-toggle ${state.modesExpanded ? 'expanded' : ''}`, `aria-expanded="${state.modesExpanded}" aria-controls="play-mode-groups"`)}</div>${state.modesExpanded ? `<div id="play-mode-groups">${modeSections.map((section, index) => `<div class="play-mode-group"><h3><span>0${index + 1}</span>${section}</h3><div class="play-mode-buttons">${playModes.filter(mode => mode.group === section).map(mode => button('mode', mode.name, mode.icon, `play-mode ${state.mode === mode.id ? 'selected' : ''}`, `data-id="${mode.id}" aria-pressed="${state.mode === mode.id}" title="${mode.description}"`)).join('')}</div></div>`).join('')}</div>` : `<div class="current-play">${icon(currentMode().icon)}<span>当前：<b>${currentMode().name}</b></span><span class="current-play-hint">展开后可以选择其他玩法</span></div>`}</section>`;
+}
+
+function personalLinks(className = '') {
+  return `<div class="personal-links ${className}">${button('mode', `错题本 <b>${state.mistakes.length}</b>`, 'refresh', '', 'data-id="mistakes"')}${button('mode', `我的收藏 <b>${state.favorites.length}</b>`, 'heart', '', 'data-id="favorites"')}${button('records', '学习记录', 'book')}${button('reward-collection', '奖励收藏册', 'star')}</div>`;
+}
+
+function equippedRewards() {
+  return Object.entries(state.rewards.equipped).map(([type, id]) => {
+    const reward = rewardCatalog.find(item => item.id === id);
+    return reward ? `<span class="equipped-item ${type}" title="${reward.name}">${rewardArt(reward.art)}<span>${reward.name}</span></span>` : '';
+  }).join('');
+}
+
 function controls() {
-  const supportsGroup = ['sequence', 'random', 'initials', 'finals', 'whole', 'listen', 'audio', 'challenge'].includes(state.mode);
+  const supportsGroup = ['sequence', 'random', 'listen', 'audio', 'challenge'].includes(state.mode);
   const availableGroups = learningGroups(state.mode);
   return `<div class="controls">${supportsGroup ? `<label>${state.mode === 'challenge' ? '听辨范围' : '学习范围'} <select id="group-select" data-setting="group"><option value="all">全部拼音</option>${availableGroups.map(group => `<option value="${group.id}" ${state.group === group.id ? 'selected' : ''}>${group.name}</option>`).join('')}</select></label>` : ''}
     ${availableWordScopes().length ? `<label>字词范围 <select data-setting="wordScope">${availableWordScopes().map(scope => `<option value="${scope.id}" ${state.wordScope === scope.id ? 'selected' : ''}>${scope.name}</option>`).join('')}</select></label>` : ''}
@@ -176,7 +200,7 @@ function studyGrid(value) {
 
 function progressCard() {
   const learned = state.known.filter(id => basics.some(item => item.id === id)).length;
-  return `<section class="growth-card"><div class="growth-top">${icon('sprout')}我的成长花园<span>慢慢来，也很棒</span></div>${bunny()}<h3>每学一点，都在长大</h3><p>今天的你，又多认识了一个世界。</p><div class="growth-stat"><strong>${learned}<small> / 63</small></strong><span>个拼音自评认识</span></div><div class="progress-track" role="progressbar" aria-label="自评认识的拼音" aria-valuenow="${learned}" aria-valuemin="0" aria-valuemax="63"><span style="width:${learned / 63 * 100}%"></span></div><div class="growth-bottom"><span>已浏览 ${state.seen.filter(id => basics.some(item => item.id === id)).length} 个</span>${button('records', '学习记录', 'chevron', 'text-button')}</div></section>`;
+  return `<section class="growth-card"><div class="growth-top">${icon('sprout')}我的成长花园<span>慢慢来，也很棒</span></div>${bunny()}<h3>${escape(state.nickname)}，又长大一点</h3><p>每一次认真尝试，都值得被看见。</p>${equippedRewards() ? `<div class="garden-display">${equippedRewards()}</div>` : ''}<div class="growth-stat"><strong>${learned}<small> / 63</small></strong><span>个拼音自评认识</span></div><div class="progress-track" role="progressbar" aria-label="自评认识的拼音" aria-valuenow="${learned}" aria-valuemin="0" aria-valuemax="63"><span style="width:${learned / 63 * 100}%"></span></div><div class="growth-bottom"><span>已浏览 ${state.seen.filter(id => basics.some(item => item.id === id)).length} 个</span>${button('profile', '我的成长空间', 'chevron', 'text-button')}</div>${personalLinks('garden-links')}</section>`;
 }
 
 function mapCard() {
@@ -239,9 +263,10 @@ function comingSoon(subject) {
 }
 
 function openDialog(title, content, className = '') {
+  clearRewardNotice();
   halt();
   if (state.settings.continuous) { state.settings.continuous = false; render(); }
-  dialogReturnFocus = document.activeElement;
+  if (!dialog.open) dialogReturnFocus = document.activeElement;
   dialog.className = className;
   dialog.innerHTML = `<div class="dialog-heading"><h2 id="dialog-title">${title}</h2>${button('close-dialog', '', 'close', 'icon-button', 'aria-label="关闭弹窗"')}</div>${content}`;
   dialog.setAttribute('aria-labelledby', 'dialog-title');
@@ -249,16 +274,75 @@ function openDialog(title, content, className = '') {
 }
 
 function closeDialog() {
+  clearRewardNotice();
   dialog.close();
-  if (dialogReturnFocus?.isConnected) dialogReturnFocus.focus();
+  restoreDialogFocus();
 }
 
-function showModes() {
-  openDialog('今天，想怎么玩？', `<p class="dialog-intro">从认识拼音，到独立拼读。选一个喜欢的方式出发吧。</p>${['认识拼音', '练习拼读', '巩固复习'].map(group => `<h3 class="mode-group-heading">${group}</h3><div class="mode-grid">${modes.filter(mode => mode.group === group).map(mode => `<button class="mode-choice ${state.mode === mode.id ? 'active' : ''}" data-action="mode" data-id="${mode.id}"><span class="mode-choice-icon">${icon(mode.icon)}</span><span><b>${mode.name}</b><small>${mode.description}</small></span>${state.mode === mode.id ? icon('check') : ''}</button>`).join('')}</div>`).join('')}`, 'modes-dialog');
+function restoreDialogFocus() {
+  if (dialogReturnFocus?.isConnected && dialogReturnFocus.checkVisibility()) dialogReturnFocus.focus();
+  else app.querySelector('.my-menu-toggle')?.focus();
 }
 
 function showSettings() {
-  openDialog('让学习更合心意', `<p class="dialog-intro">选择适合自己的节奏，小兔一直在这里。</p><label class="setting-row"><span><b>慢速读音</b><small>放慢一点听，保持声音的音高</small></span><input type="checkbox" data-setting="slow" ${state.settings.slow ? 'checked' : ''}></label><label class="setting-row"><span><b>答对时的小音效</b><small>关闭以后，拼音点读仍可使用</small></span><input type="checkbox" data-setting="effects" ${state.settings.effects ? 'checked' : ''}></label><div class="setting-info">${icon('info')}学习记录保存在当前浏览器。清理浏览器数据会丢失记录，不会在其他设备同步。</div>${!storageAvailable ? '<p class="storage-warning">当前浏览器无法读取或保存记录，暂以临时模式学习。</p>' : ''}${button('reset-confirm', '清空本机学习记录', 'refresh', 'danger-button')}`);
+  openDialog('让学习更合心意', `<p class="dialog-intro">选择适合自己的节奏，小兔一直在这里。</p><label class="setting-row"><span><b>慢速读音</b><small>放慢一点听，保持声音的音高</small></span><input type="checkbox" data-setting="slow" ${state.settings.slow ? 'checked' : ''}></label><label class="setting-row"><span><b>答对时的小音效</b><small>关闭以后，拼音点读仍可使用</small></span><input type="checkbox" data-setting="effects" ${state.settings.effects ? 'checked' : ''}></label><label class="setting-row"><span><b>奖励庆祝动效</b><small>关闭后仍会显示奖励文字；也支持系统减少动态效果</small></span><input type="checkbox" data-setting="animations" ${state.settings.animations ? 'checked' : ''}></label><div class="setting-info">${icon('info')}学习记录、昵称和奖励保存在当前浏览器。清理浏览器数据会丢失记录，不会在其他设备同步。</div>${!storageAvailable ? '<p class="storage-warning">当前浏览器无法读取或保存记录，暂以临时模式学习。</p>' : ''}${button('edit-nickname', '设置我的昵称', 'pen', 'outline-button')}${button('reset-confirm', '清空本机学习记录', 'refresh', 'danger-button')}`);
+}
+
+function showProfile() {
+  const stats = rewardStats(state.rewards);
+  const badge = rewardCatalog.find(reward => reward.id === state.rewards.equipped.badge);
+  openDialog('我的成长空间', `<div class="profile-heading"><img src="/bunny.svg" alt="" width="76" height="76"><div><h3>${escape(state.nickname)}</h3><p>${badge ? badge.name : '每一天，都可以有新的发现'}</p>${button('edit-nickname', '修改昵称', 'pen', 'text-button')}</div></div><div class="profile-totals"><div><b>${stats.stars}</b><span>成长星星</span></div><div><b>${Object.keys(state.rewards.unlocks).length}</b><span>已解锁奖励</span></div><div><b>${stats.days}</b><span>累计练习天数</span></div></div><div class="profile-display">${equippedRewards() || '<p>解锁奖励后，可以在这里展示喜欢的贴纸、徽章和摆件。</p>'}</div>${personalLinks()}${button('reward-rules', '星星从哪里来？查看规则与明细', 'info', 'reward-rules-link')}<p class="personal-footnote">按自己的节奏长大，不比较、不扣星；休息几天也不会失去收获。</p>`, 'profile-dialog');
+}
+
+function showNickname() {
+  openDialog('让小兔认识你', `<p class="dialog-intro">取一个喜欢的昵称吧，1–12 个字符。它只保存在这台设备，不需要填写真实姓名。</p><form id="nickname-form"><label class="nickname-label" for="nickname">我的昵称</label><input id="nickname" name="nickname" value="${escape(state.nickname)}" autocomplete="off" aria-describedby="nickname-error" required><p id="nickname-error" class="nickname-error" role="alert"></p><div class="dialog-actions">${button('profile', '返回我的', '', 'outline-button')}<button type="submit" class="solid-button">保存昵称</button></div></form>`);
+  const input = dialog.querySelector('#nickname');
+  input.focus();
+  input.select();
+}
+
+function showRewardRules() {
+  const stats = rewardStats(state.rewards);
+  const events = state.rewards.events.filter(event => event.stars > 0).slice().reverse();
+  openDialog('每颗星星，都有来处', `<div class="stars-total">${icon('star')}<strong>${stats.stars}</strong><span>颗成长星</span></div><p class="dialog-intro">星星记录认真学习的足迹，不是考试分数。不会扣除，也不需要花掉。</p><div class="reward-rule-list"><div><b>+1</b><span><strong>认识新朋友</strong>第一次标记认识一个项目；同一项目只发一次。</span></div><div><b>+1</b><span><strong>答对新题目</strong>第一次答对一道题，重试答对也算；每道题只发一次。</span></div><div><b>+2</b><span><strong>独立改正错题</strong>在错题本中，本轮第一次作答就答对；每道错题只奖励一次。</span></div><div><b>+3</b><span><strong>今天认真练习啦</strong>完成一轮且至少实际作答 5 题，或完成 4 对配对；每天奖励一次，跳过不算实际作答。</span></div></div><p class="personal-footnote">同一次答题可同时获得“新题目”和“独立改错”星星。取消“认识”后再标记、刷新和重做已答对题目都不会重复发星。学习天数按本机日期累计，不要求连续。</p>${button('reward-collection', '打开奖励收藏册', 'star', 'outline-button')}<h3 class="personal-section-title">我的星星明细</h3>${events.length ? `<details class="reward-ledger" open><summary>共 ${events.length} 笔收获</summary><ul>${events.map(event => `<li><div><strong>${escape(event.label)}</strong><small>${new Date(event.time).toLocaleString('zh-CN')}${event.migrated ? ' · 旧版学习记录补发' : ''}</small></div><b>+${event.stars}</b></li>`).join('')}</ul></details>` : '<p class="personal-footnote">还没有星星。去认识一个新朋友，第一颗星星就会来到这里。</p>'}`, 'reward-rules-dialog');
+}
+
+function showRewardCollection() {
+  const stats = rewardStats(state.rewards);
+  const names = { all: '全部', sticker: '贴纸', badge: '徽章', decoration: '花园摆件' };
+  const filters = Object.entries(names).map(([id, name]) => button('reward-filter', name, '', `collection-filter ${rewardFilter === id ? 'active' : ''}`, `data-id="${id}" aria-pressed="${rewardFilter === id}"`)).join('');
+  const items = rewardCatalog.filter(reward => rewardFilter === 'all' || reward.type === rewardFilter);
+  openDialog('我的奖励收藏册', `<div class="collection-intro"><div><p>一共收获了 <b>${Object.keys(state.rewards.unlocks).length} / ${rewardCatalog.length}</b> 件奖励</p><span>每一件都有明确的目标，慢慢收集就很好。</span></div>${button('reward-rules', `${stats.stars} 颗成长星`, 'star', 'stars-small')}</div><div class="collection-filters" role="group" aria-label="奖励分类">${filters}</div><div class="collection-grid">${items.map(reward => {
+    const unlocked = Boolean(state.rewards.unlocks[reward.id]);
+    const equipped = state.rewards.equipped[reward.type] === reward.id;
+    const progress = Math.min(reward.target, stats[reward.metric]);
+    return `<article class="reward-card ${unlocked ? 'unlocked' : 'locked'} ${equipped ? 'equipped' : ''}" data-reward="${reward.id}"><span class="reward-kind">${names[reward.type]}${equipped ? ' · 展示中' : ''}</span>${rewardArt(reward.art)}<h3>${reward.name}</h3><p>${reward.rule}</p>${unlocked ? `<span class="unlock-date">${new Date(state.rewards.unlocks[reward.id]).toLocaleDateString('zh-CN')} 获得</span><div class="reward-card-actions">${button('equip-reward', equipped ? '取消展示' : reward.type === 'badge' ? '佩戴徽章' : reward.type === 'decoration' ? '摆进花园' : '展示贴纸', equipped ? 'check' : '', 'reward-equip', `data-id="${reward.id}" aria-pressed="${equipped}"`)}${button('reward-detail', '看看', 'search', 'reward-detail-button', `data-id="${reward.id}" aria-label="查看${reward.name}"`)}</div>` : `<span class="reward-progress-text">${progress} / ${reward.target}</span><progress value="${progress}" max="${reward.target}" aria-label="${reward.name}解锁进度"></progress>`}</article>`;
+  }).join('')}</div><p class="personal-footnote">已获得的奖励一直属于你。星星只累计，不消费；更换展示不花星星。</p>`, 'collection-dialog');
+}
+
+function showRewardDetail(id) {
+  const reward = rewardCatalog.find(item => item.id === id && state.rewards.unlocks[id]);
+  if (!reward) return;
+  openDialog(reward.name, `<div class="reward-detail">${rewardArt(reward.art)}<h3>${reward.description}</h3><p>${reward.rule}</p><small>${new Date(state.rewards.unlocks[id]).toLocaleDateString('zh-CN')} 解锁</small><div class="dialog-actions">${button('replay-reward', '再庆祝一下', 'star', 'outline-button', `data-id="${id}"`)}${button('reward-collection', '返回收藏册', 'book', 'solid-button')}</div></div>`);
+}
+
+function clearRewardNotice() {
+  clearTimeout(rewardTimer);
+  rewardNotice?.remove();
+  rewardNotice = null;
+}
+
+function celebrateReward(result) {
+  if (!result || (!result.stars && !result.unlocked.length)) return;
+  clearRewardNotice();
+  const reward = rewardCatalog.find(item => item.id === result.unlocked[0]);
+  rewardNotice = document.createElement('aside');
+  rewardNotice.className = `reward-notice ${state.settings.animations ? 'animate-reward' : ''}`;
+  rewardNotice.setAttribute('role', 'status');
+  rewardNotice.setAttribute('aria-live', 'polite');
+  rewardNotice.innerHTML = `<div class="reward-confetti" aria-hidden="true">${Array.from({ length: 9 }, (_, index) => `<i style="--i:${index}"></i>`).join('')}</div>${reward ? rewardArt(reward.art) : icon('star')}<div><strong>${reward ? `解锁了${reward.name}${result.unlocked.length > 1 ? `等 ${result.unlocked.length} 件奖励` : ''}` : `收获 ${result.stars} 颗成长星`}</strong><p>${reward && result.stars ? `+${result.stars} 星 · ` : ''}${escape(reward ? reward.rule : result.reasons[0] || '认真尝试，值得庆祝')}</p></div>${button('reward-collection', '查看', '', 'reward-notice-view')}${button('dismiss-reward', '', 'close', 'reward-notice-close', 'aria-label="收起奖励提示"')}`;
+  (dialog.open ? dialog : document.body).append(rewardNotice);
+  rewardTimer = setTimeout(clearRewardNotice, 6500);
 }
 
 function showRecords() {
@@ -276,11 +360,13 @@ function changeMode(id) {
   state.modeGroups ||= {};
   state.modeGroups[state.mode] = state.group;
   state.mode = id;
+  state.subject = 'chinese';
   state.group = state.modeGroups[id] || 'all';
   state.settings.continuous = false;
   if (id === 'mistakes' && state.sessions[key()]?.finished) delete state.sessions[key()];
   closeDialog();
   render();
+  if (window.matchMedia('(max-width: 760px)').matches) app.querySelector('.learning-main')?.scrollIntoView({ block: 'start' });
 }
 
 function requestFor(item) {
@@ -316,12 +402,15 @@ function submitAnswer(answer) {
   const result = recordAnswer(round, answer);
   if (!result) return;
   halt();
+  const reviewed = result.first && result.correct && state.mode === 'mistakes';
   if (result.first) {
     if (!result.correct) addMistake(result.question);
     else if (state.mode === 'mistakes') state.mistakes = state.mistakes.filter(entry => entry.question.id !== result.question.id);
   }
+  const reward = result.correct ? grantRewards(state, { type: 'answer', question: result.question, reviewed }) : null;
   if (result.correct) chime(state.settings.effects);
   render();
+  celebrateReward(reward);
 }
 
 function restart() {
@@ -362,10 +451,19 @@ function handleAction(event) {
   if (!target || target.disabled) return;
   const action = target.dataset.action;
   if (action === 'close-dialog') { closeDialog(); return; }
-  if (action === 'modes') { showModes(); return; }
+  if (action === 'toggle-modes') { state.modesExpanded = !state.modesExpanded; render(); return; }
   if (action === 'settings') { showSettings(); return; }
   if (action === 'about') { showAbout(); return; }
   if (action === 'records') { showRecords(); return; }
+  if (action === 'profile') { showProfile(); return; }
+  if (action === 'edit-nickname') { showNickname(); return; }
+  if (action === 'reward-rules') { showRewardRules(); return; }
+  if (action === 'reward-collection') { showRewardCollection(); return; }
+  if (action === 'reward-filter') { if (['all', 'sticker', 'badge', 'decoration'].includes(target.dataset.id)) rewardFilter = target.dataset.id; showRewardCollection(); return; }
+  if (action === 'reward-detail') { showRewardDetail(target.dataset.id); return; }
+  if (action === 'equip-reward') { if (equipReward(state.rewards, target.dataset.id)) { render(); const scroll = dialog.scrollTop; showRewardCollection(); dialog.scrollTop = scroll; } return; }
+  if (action === 'replay-reward') { const reward = rewardCatalog.find(item => item.id === target.dataset.id && state.rewards.unlocks[item.id]); if (reward) celebrateReward({ stars: 0, unlocked: [reward.id], reasons: [] }); return; }
+  if (action === 'dismiss-reward') { clearRewardNotice(); return; }
   if (action === 'mode') { changeMode(target.dataset.id); return; }
   if (action === 'toggle-tones') { halt(); state.tonePractice = !state.tonePractice; render(); return; }
   if (action === 'shuffle-favorites') { halt(); const value = session(); value.ids = shuffle(value.ids); value.index = 0; render(); toast('顺序打乱啦，来看看还认识谁。'); return; }
@@ -393,8 +491,8 @@ function handleAction(event) {
   if (action === 'slow') { halt(); state.settings.slow = !state.settings.slow; state.settings.continuous = false; render(); return; }
   if (action === 'restart') { openDialog('重新开始这一轮？', `<p>当前这一轮的进度会重置，收藏、错题和以前的学习记录都会保留。</p><div class="dialog-actions">${button('close-dialog', '继续当前练习', '', 'outline-button')}${button('restart-now', '重新开始', 'refresh', 'solid-button')}</div>`); return; }
   if (action === 'restart-now') { restart(); return; }
-  if (action === 'reset-confirm') { openDialog('确定清空本机记录吗？', `<p>这会清空学习进度、错题、收藏和设置，清空后无法恢复。</p><div class="dialog-actions">${button('close-dialog', '保留我的记录', '', 'outline-button')}${button('reset-all', '确认清空', '', 'danger-button')}</div>`); return; }
-  if (action === 'reset-all') { halt(); state = defaultState(); closeDialog(); render(); toast('记录已清空，可以重新出发啦。'); return; }
+  if (action === 'reset-confirm') { openDialog('确定清空本机记录吗？', `<p>这会清空学习进度、错题、收藏、昵称、星星、贴纸、徽章、花园摆件和设置，清空后无法恢复。</p><div class="dialog-actions">${button('close-dialog', '保留我的记录', '', 'outline-button')}${button('reset-all', '确认清空', '', 'danger-button')}</div>`); return; }
+  if (action === 'reset-all') { halt(); clearRewardNotice(); state = defaultState(); initializeRewards(state); closeDialog(); render(); toast('记录已清空，可以重新出发啦。'); return; }
   if (action === 'sound') { continuousToken++; playAudio({ sound: target.dataset.sound }, state.settings.slow); return; }
   if (action === 'word-sound') { continuousToken++; const item = vocabulary.find(entry => entry.text === target.dataset.word); playAudio({ word: target.dataset.word, sounds: item?.sounds }, state.settings.slow); return; }
   if (studyModes.includes(state.mode)) {
@@ -404,7 +502,7 @@ function handleAction(event) {
     if (action === 'play-current') { playCurrent(state.settings.continuous); return; }
     if (action === 'continuous') { state.settings.continuous = !state.settings.continuous; halt(); render(); if (state.settings.continuous) playCurrent(true); return; }
     if (action === 'favorite') { if (state.mode === 'favorites') { halt(); state.settings.continuous = false; } state.favorites = state.favorites.includes(item.id) ? state.favorites.filter(id => id !== item.id) : [...state.favorites, item.id]; render(); return; }
-    if (action === 'known') { if (!state.known.includes(item.id)) { state.known.push(item.id); chime(state.settings.effects); toast('记下啦，又认识了一个新朋友！'); } advanceStudy(); return; }
+    if (action === 'known') { if (!state.known.includes(item.id)) { state.known.push(item.id); chime(state.settings.effects); } const reward = grantRewards(state, { type: 'recognize', item }); advanceStudy(); celebrateReward(reward); return; }
     if (action === 'practice-later') { state.known = state.known.filter(id => id !== item.id); if (!state.favorites.includes(item.id)) state.favorites.push(item.id); toast('已放进收藏夹，下次再一起练。'); advanceStudy(); return; }
     if (action === 'finish-study') { finishStudy(); return; }
     if (['next', 'previous', 'jump'].includes(action)) {
@@ -421,7 +519,12 @@ function handleAction(event) {
     if (action === 'match-right') {
       if (!value.left) { toast('先点左边的汉字，再选拼音哦。'); return; }
       value.attempts++;
-      if (value.left === target.dataset.id) { value.matched.push(value.left); chime(state.settings.effects); }
+      let reward = null;
+      if (value.left === target.dataset.id) {
+        const item = allItems.find(entry => entry.id === value.left);
+        reward = grantRewards(state, { type: 'answer', question: { id: `match:${item.id}`, display: item.text } });
+        value.matched.push(value.left); chime(state.settings.effects);
+      }
       else {
         if (!value.wrong.includes(value.left)) value.wrong.push(value.left);
         const item = allItems.find(entry => entry.id === value.left);
@@ -433,12 +536,15 @@ function handleAction(event) {
       if (value.matched.length === value.pairs.length && !value.finished) {
         value.finished = true;
         state.history.push({ time: Date.now(), name: '拼音配对', total: value.pairs.length, correct: value.pairs.length - value.wrong.length });
+        const roundReward = grantRewards(state, { type: 'round', mode: 'match', name: '拼音配对', total: value.pairs.length, answered: value.matched.length });
+        reward = { stars: (reward?.stars || 0) + roundReward.stars, unlocked: [...(reward?.unlocked || []), ...roundReward.unlocked], reasons: [...(reward?.reasons || []), ...roundReward.reasons] };
       }
-      render(); return;
+      render(); celebrateReward(reward); return;
     }
   }
   if (!studyModes.includes(state.mode) && state.mode !== 'match' && (state.mode !== 'tones' || state.tonePractice)) {
     const round = session();
+    if (round.finished) return;
     const question = round.questions[round.index];
     if (!question) return;
     if (action === 'answer') { submitAnswer(target.dataset.value); return; }
@@ -460,18 +566,22 @@ function handleAction(event) {
     if (action === 'next-question' && round.revealed) {
       halt();
       const nextIndex = nextUnfinishedQuestion(round);
+      let reward = null;
       if (nextIndex < 0) {
         round.finished = true;
         const stats = roundStats(round);
         state.history.push({ time: Date.now(), name: currentMode().name, total: stats.total, correct: stats.correct });
         state.history = state.history.slice(-100);
+        reward = grantRewards(state, { type: 'round', mode: state.mode === 'tones' ? 'tones' : state.mode, name: currentMode().name, total: stats.total, answered: round.responses.filter(response => response && !response.skipped).length });
       } else visitQuestion(round, nextIndex);
-      render(); return;
+      render(); celebrateReward(reward); return;
     }
   }
 }
 
 document.addEventListener('click', event => {
+  if (!event.target.closest('.my-menu')) app.querySelector('.my-menu')?.removeAttribute('open');
+  else if (event.target.closest('[data-action]')) app.querySelector('.my-menu')?.removeAttribute('open');
   const collapseAfterAction = expandedTabs && event.target.closest('#main-content');
   handleAction(event);
   if (collapseAfterAction && expandedTabs) { expandedTabs = false; render(); }
@@ -482,13 +592,31 @@ document.addEventListener('change', event => {
   if (!field) return;
   halt();
   state.settings.continuous = false;
-  if (['slow', 'effects'].includes(field)) state.settings[field] = event.target.checked;
+  if (['slow', 'effects', 'animations'].includes(field)) state.settings[field] = event.target.checked;
   else if (field === 'length') state.length = Number(event.target.value);
   else if (['group', 'wordScope', 'confusion'].includes(field)) state[field] = event.target.value;
   render();
 });
 
+document.addEventListener('submit', event => {
+  if (event.target.id !== 'nickname-form') return;
+  event.preventDefault();
+  const input = dialog.querySelector('#nickname');
+  const nickname = normalizeNickname(input.value);
+  if (!nickname) {
+    input.setAttribute('aria-invalid', 'true');
+    dialog.querySelector('#nickname-error').textContent = '请输入 1–12 个字符的昵称。';
+    input.focus();
+    return;
+  }
+  state.nickname = nickname;
+  render();
+  showProfile();
+  toast('记住你的新昵称啦！');
+});
+
 document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && app.querySelector('.my-menu[open]')) { app.querySelector('.my-menu').removeAttribute('open'); app.querySelector('.my-menu-toggle').focus(); return; }
   if (event.key === 'Escape' && mobileMenu) { mobileMenu = false; render(); }
   const tab = event.target.closest('[role="tab"]');
   if (tab && ['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
@@ -513,7 +641,7 @@ dialog.addEventListener('click', event => {
   const bounds = dialog.getBoundingClientRect();
   if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) closeDialog();
 });
-dialog.addEventListener('cancel', () => { if (dialogReturnFocus?.isConnected) dialogReturnFocus.focus(); });
+dialog.addEventListener('cancel', () => { clearRewardNotice(); restoreDialogFocus(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) { halt(); state.settings.continuous = false; persist(); } else if (!dialog.open) render(); });
 onAudioStatus((status, message) => {
   document.querySelectorAll('.primary-audio').forEach(element => { element.classList.toggle('playing', status === 'playing'); element.setAttribute('aria-busy', String(status === 'loading')); });

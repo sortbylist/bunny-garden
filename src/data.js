@@ -55,22 +55,22 @@ export const vocabulary = [...characters, ...words];
 export const modes = [
   { id: 'sequence', name: '顺序学习', icon: 'book', group: '认识拼音', description: '从 a o e 出发，一步一步学' },
   { id: 'random', name: '随机练习', icon: 'shuffle', group: '认识拼音', description: '打乱顺序，看看还认识谁' },
-  { id: 'initials', name: '声母学习', icon: 'sprout', group: '认识拼音', description: '认识 23 个声母好朋友' },
-  { id: 'finals', name: '韵母学习', icon: 'flower', group: '认识拼音', description: '探索 24 个韵母的读音' },
-  { id: 'whole', name: '整体认读', icon: 'layers', group: '认识拼音', description: '16 个音节，一口气读出来' },
-  { id: 'tones', name: '四声与轻声', icon: 'wave', group: '认识拼音', description: '听听声音怎样高低变化' },
-  { id: 'listen', name: '听音选拼音', icon: 'sound', group: '练习拼读', description: '小耳朵听一听，再选一选' },
-  { id: 'audio', name: '看拼音选读音', icon: 'headphones', group: '练习拼读', description: '哪个声音和拼音是一对' },
-  { id: 'blend', name: '拼读组合', icon: 'puzzle', group: '练习拼读', description: '声母和韵母，一起交朋友' },
-  { id: 'hanzi', name: '看字选拼音', icon: 'type', group: '练习拼读', description: '给常见字词找到正确拼音' },
-  { id: 'pinyin', name: '看拼音选字词', icon: 'search', group: '练习拼读', description: '读一读，找出对应的字词' },
-  { id: 'confusing', name: '易混专项', icon: 'compare', group: '练习拼读', description: '把长得像、读得像的分清楚' },
-  { id: 'rules', name: '标调与拼写', icon: 'pen', group: '练习拼读', description: '声调应该戴在哪个字母上' },
-  { id: 'match', name: '拼音配对', icon: 'link', group: '练习拼读', description: '把汉字和拼音连成一对' },
-  { id: 'challenge', name: '综合闯关', icon: 'flag', group: '巩固复习', description: '用一组小挑战检验收获' },
-  { id: 'mistakes', name: '错题复习', icon: 'refresh', group: '巩固复习', description: '再练一次，每次都有进步' },
-  { id: 'favorites', name: '我的收藏', icon: 'heart', group: '巩固复习', description: '把不熟悉的朋友再认一认' },
+  { id: 'tones', name: '声调学习', icon: 'wave', group: '认识拼音', description: '认识四声、轻声和变调' },
+  { id: 'listen', name: '听音选拼音', icon: 'sound', group: '趣味练习', description: '小耳朵听一听，再选一选' },
+  { id: 'audio', name: '看拼音选读音', icon: 'headphones', group: '趣味练习', description: '哪个声音和拼音是一对' },
+  { id: 'blend', name: '拼读组合', icon: 'puzzle', group: '趣味练习', description: '声母和韵母，一起交朋友' },
+  { id: 'hanzi', name: '看字选拼音', icon: 'type', group: '趣味练习', description: '给常见字词找到正确拼音' },
+  { id: 'pinyin', name: '看拼音选字词', icon: 'search', group: '趣味练习', description: '读一读，找出对应的字词' },
+  { id: 'match', name: '拼音配对', icon: 'link', group: '趣味练习', description: '把汉字和拼音连成一对' },
+  { id: 'confusing', name: '易混专项', icon: 'compare', group: '巩固提高', description: '把长得像、读得像的分清楚' },
+  { id: 'rules', name: '标调与拼写', icon: 'pen', group: '巩固提高', description: '声调应该戴在哪个字母上' },
+  { id: 'challenge', name: '综合闯关', icon: 'flag', group: '巩固提高', description: '用一组小挑战检验收获' },
+  { id: 'mistakes', name: '错题本', icon: 'refresh', group: '我的复习', description: '再练一次，每次都有进步' },
+  { id: 'favorites', name: '我的收藏', icon: 'heart', group: '我的复习', description: '把不熟悉的朋友再认一认' },
 ];
+
+export const playModes = modes.filter(mode => mode.group !== '我的复习');
+export const modeSections = ['认识拼音', '趣味练习', '巩固提高'];
 
 export const spellingRules = [
   { id: 'r1', prompt: '给“水”的拼音 shui 标上第三声', options: ['shuǐ', 'shǔi', 'shuí', 'shùi'], answer: 'shuǐ', explanation: 'ui 的声调标在后面的 i 上。水：shuǐ。', sound: 'shui3' },
