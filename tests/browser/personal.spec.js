@@ -3,9 +3,13 @@ import { chooseMode, stored } from './helpers.js';
 
 async function stars(page) { return page.locator('.topbar .star-counter b').textContent(); }
 
-test('12 玩法默认全部可见，收起偏好保存，常用复习入口及字号可见', async ({ page }) => {
+test('默认只显示认识拼音，展开收起及偏好保存，常用复习入口及字号可见', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('.play-mode-group')).toHaveCount(3);
+  await expect(page.locator('.play-selector')).not.toContainText('今天，想怎么玩？');
+  await expect(page.locator('.play-mode-group-1 [data-action="toggle-modes"]')).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.locator('.play-mode-group-1 .play-mode')).toHaveCount(3);
+  await expect(page.locator('#play-mode-more')).toBeHidden();
+  await page.locator('[data-action="toggle-modes"]').click();
   await expect(page.locator('.play-selector [data-action="mode"]')).toHaveCount(12);
   for (const mode of await page.locator('.play-selector [data-action="mode"]').all()) await expect(mode).toBeVisible();
   await expect(page.locator('.play-selector')).not.toContainText('声母学习');
@@ -17,12 +21,21 @@ test('12 玩法默认全部可见，收起偏好保存，常用复习入口及�
   await expect(page.locator('dialog')).toContainText('最近完成的练习');
   await page.locator('[data-action="close-dialog"]').click();
   await page.locator('[data-action="toggle-modes"]').click();
-  await expect(page.locator('.play-mode')).toHaveCount(0);
-  await expect(page.locator('.current-play')).toContainText('顺序学习');
+  for (const mode of await page.locator('.play-mode-group-1 .play-mode').all()) await expect(mode).toBeVisible();
+  await expect(page.locator('#play-mode-more')).toBeHidden();
   await page.reload();
   await expect(page.locator('[data-action="toggle-modes"]')).toHaveAttribute('aria-expanded', 'false');
   await chooseMode(page, 'hanzi');
   await expect(page.locator('.play-selector .selected')).toContainText('看字选拼音');
+  await page.reload();
+  await expect(page.locator('[data-action="toggle-modes"]')).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.locator('.play-selector .selected')).toContainText('看字选拼音');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('[data-action="toggle-modes"]').click();
+  const heading = await page.locator('.play-mode-group-1 h3').boundingBox();
+  const toggle = await page.locator('[data-action="toggle-modes"]').boundingBox();
+  expect(Math.abs((heading.y + heading.height / 2) - (toggle.y + toggle.height / 2))).toBeLessThan(2);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
 test('头像一致，昵称保存且按文本显示，菜单和成长花园访问同一份数据', async ({ page }) => {
