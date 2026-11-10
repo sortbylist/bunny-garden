@@ -54,11 +54,11 @@ test('词语积累覆盖六类、每类十词，分类与用词练习均有完�
 
 test('近反义词都在完整句子中辨认，并覆盖不可随意互换的语境', () => {
   const topic = chineseTopics.find(item => item.id === 'word-relations');
-  assert.equal(synonymPairs.length, 6);
-  assert.equal(antonymPairs.length, 6);
-  assert.equal(relationContexts.length, 6);
-  assert.equal(topic.lessons.length, 18);
-  assert.equal(topic.questions.length, 36);
+  assert.equal(synonymPairs.length, 18);
+  assert.equal(antonymPairs.length, 18);
+  assert.equal(relationContexts.length, 12);
+  assert.equal(topic.lessons.length, 48);
+  assert.equal(topic.questions.length, 96);
   assert.ok(topic.questions.every(item => item.display));
   assert.ok(topic.lessons.some(item => item.body.includes('自豪')));
   for (const item of relationContexts) {
