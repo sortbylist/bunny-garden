@@ -72,12 +72,12 @@ test('近反义词都在完整句子中辨认，并覆盖不可随意互换的�
 
 test('词语搭配覆盖量词、修饰语和三个结构助词，题目只有一个正确选项', () => {
   const topic = chineseTopics.find(item => item.id === 'collocations');
-  assert.equal(measureWords.length, 12);
-  assert.equal(verbPairs.length, 8);
-  assert.equal(deSamples.length, 4);
-  assert.equal(deQuestions.length, 12);
-  assert.deepEqual(topic.lessons.filter(item => item.category === 'measure').length, 12);
-  assert.equal(topic.questions.length, 32);
+  assert.equal(measureWords.length, 24);
+  assert.equal(verbPairs.length, 20);
+  assert.equal(deSamples.length, 8);
+  assert.equal(deQuestions.length, 30);
+  assert.equal(topic.lessons.filter(item => item.category === 'measure').length, 24);
+  assert.equal(topic.questions.length, 118);
   for (const item of deQuestions) {
     assert.ok(item.display.includes('____'));
     assert.ok(['的', '地', '得'].includes(item.answer));
