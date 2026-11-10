@@ -3,6 +3,7 @@ import { vocabularyTopic } from './vocabulary-data.js';
 import { relationsTopic } from './word-relations-data.js';
 import { collocationTopic } from './collocations-data.js';
 import { patternsTopic } from './word-patterns-data.js';
+import { sentenceBuildingTopic } from './sentence-building-data.js';
 
-export const chineseTopics = [dictionaryTopic, vocabularyTopic, relationsTopic, collocationTopic, patternsTopic];
+export const chineseTopics = [dictionaryTopic, vocabularyTopic, relationsTopic, collocationTopic, patternsTopic, sentenceBuildingTopic];
 export const topicById = id => chineseTopics.find(topic => topic.id === id);

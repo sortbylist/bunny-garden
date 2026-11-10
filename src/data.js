@@ -1,3 +1,5 @@
+import { chineseTopics } from './chinese-topics.js';
+
 export const groups = [
   { id: 'single', name: '单韵母', short: '从 a o e 开始', color: 'pink' },
   { id: 'initial', name: '声母', short: '认识拼音好朋友', color: 'mint' },
@@ -109,7 +111,7 @@ export const toneItems = [1, 2, 3, 4].map(tone => ({ id: `tone-ma${tone}`, sound
 export const tonePracticeSounds = ['ma', 'ba', 'yi', 'wu', 'yu'].flatMap(syllable => [1, 2, 3, 4].map(tone => `${syllable}${tone}`));
 
 export const subjects = [
-  { id: 'chinese', name: '语文', english: 'CHINESE', icon: 'book', color: 'pink', features: [{ id: 'pinyin', name: '拼音学习', icon: 'type' }, { id: 'hanzi-structure', name: '汉字笔画与结构', icon: 'pen' }, { id: 'dictionary', name: '查字典', icon: 'book' }, { id: 'word-categories', name: '词语积累与分类', icon: 'grid' }, { id: 'word-relations', name: '近义词与反义词', icon: 'book' }, { id: 'collocations', name: '词语搭配与辨析', icon: 'pen' }, { id: 'word-patterns', name: '叠词与四字词语', icon: 'flower' }] },
+  { id: 'chinese', name: '语文', english: 'CHINESE', icon: 'book', color: 'pink', features: [{ id: 'pinyin', name: '拼音学习', icon: 'type' }, { id: 'hanzi-structure', name: '汉字笔画与结构', icon: 'pen' }, ...chineseTopics.map(topic => ({ id: topic.id, name: topic.name, icon: ({ dictionary: 'book', 'word-categories': 'grid', 'word-relations': 'book', collocations: 'pen', 'word-patterns': 'flower' })[topic.id] || 'pen' }))] },
   { id: 'math', name: '数学', english: 'MATH', icon: 'math', color: 'blue', features: [] },
   { id: 'english', name: '英语', english: 'ENGLISH', icon: 'globe', color: 'yellow', features: [] },
 ];

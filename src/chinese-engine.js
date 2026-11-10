@@ -2,7 +2,22 @@ import { shuffle, recordAnswer, roundStats } from './engine.js';
 import { dictionaryLookup } from './dictionary-data.js';
 
 export function topicDefaults(topic) {
-  return { category: topic.categories[0].id, lessonId: topic.lessons[0].id, view: 'learn', known: [], mistakes: [], round: null, lookup: { method: 'sound', selections: [] } };
+  return { category: topic.categories[0].id, lessonId: topic.lessons[0].id, view: 'learn', known: [], mistakes: [], round: null, activities: {}, lookup: { method: 'sound', selections: [] } };
+}
+
+export function updateTopicActivity(topic, state, action, value) {
+  const lesson = topic.lessons.find(item => item.id === state.lessonId);
+  if (state.view !== 'learn' || !lesson?.activity) return;
+  const activity = lesson.activity;
+  const saved = state.activities[lesson.id] ||= { text: '', order: [], checked: false, showExample: false };
+  if (action === 'draft' && activity.type === 'write' && typeof value === 'string') saved.text = value.slice(0, 500);
+  if (action === 'example') saved.showExample = !saved.showExample;
+  if (activity.type !== 'order') return;
+  const index = Number(value);
+  if (action === 'pick' && Number.isInteger(index) && index >= 0 && index < activity.tokens.length && !saved.order.includes(index)) { saved.order.push(index); saved.checked = false; }
+  if (action === 'undo') { saved.order.pop(); saved.checked = false; }
+  if (action === 'clear') { saved.order = []; saved.checked = false; saved.showExample = false; }
+  if (action === 'check' && saved.order.length === activity.tokens.length) saved.checked = true;
 }
 
 export function normalizeTopic(topic, saved) {
@@ -13,6 +28,16 @@ export function normalizeTopic(topic, saved) {
   state.lessonId = lessons.find(item => item.id === saved.lessonId)?.id || lessons[0].id;
   for (const [field, items] of [['known', topic.lessons], ['mistakes', topic.questions]]) {
     state[field] = [...new Set(Array.isArray(saved[field]) ? saved[field].filter(id => items.some(item => item.id === id)) : [])];
+  }
+  for (const lesson of topic.lessons.filter(item => item.activity)) {
+    const entry = saved.activities?.[lesson.id];
+    if (!entry || typeof entry !== 'object') continue;
+    const order = lesson.activity.type === 'order' && Array.isArray(entry.order) ? [...new Set(entry.order.filter(index => Number.isInteger(index) && index >= 0 && index < lesson.activity.tokens.length))] : [];
+    state.activities[lesson.id] = {
+      text: typeof entry.text === 'string' ? entry.text.slice(0, 500) : '',
+      order, checked: Boolean(entry.checked && order.length === lesson.activity.tokens?.length),
+      showExample: entry.showExample === true,
+    };
   }
   if (topic.id === 'dictionary') {
     const method = saved.lookup?.method === 'radical' ? 'radical' : 'sound';

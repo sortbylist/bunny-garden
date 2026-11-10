@@ -35,7 +35,7 @@ test('各主题标识全局唯一，题目答案唯一且覆盖所有小节', ()
   assert.equal(new Set(identifiers).size, identifiers.length);
 });
 
-test('第一阶段六个主题的真实入口完整，与内容注册一致', () => {
+test('所有语文主题的真实入口完整，与内容注册一致', () => {
   const features = subjects.find(subject => subject.id === 'chinese').features;
   assert.deepEqual(features.map(item => item.id), ['pinyin', 'hanzi-structure', ...chineseTopics.map(item => item.id)]);
   for (const topic of chineseTopics) assert.equal(features.find(item => item.id === topic.id).name, topic.name);

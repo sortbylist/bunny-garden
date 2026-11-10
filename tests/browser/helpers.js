@@ -12,3 +12,9 @@ export async function chooseMode(page, id) {
 export async function stored(page) {
   return page.evaluate(() => JSON.parse(localStorage.getItem('bunny-garden-v1')));
 }
+
+export async function selectTopic(page, name) {
+  const tab = page.getByRole('tab', { name, exact: true });
+  if (!await tab.count()) await page.locator('[data-action="expand-tabs"]').click();
+  await tab.click();
+}

@@ -9,7 +9,7 @@ import { rewardArt } from './reward-art.js';
 import { normalizeHanziState } from './hanzi-engine.js';
 import { renderHanzi, handleHanziAction } from './hanzi.js';
 import { chineseTopics, topicById } from './chinese-topics.js';
-import { normalizeTopic, topicDefaults, startTopicRound } from './chinese-engine.js';
+import { normalizeTopic, topicDefaults, startTopicRound, updateTopicActivity } from './chinese-engine.js';
 import { renderTopic, handleTopicAction } from './chinese.js';
 
 const app = document.querySelector('#app');
@@ -363,7 +363,7 @@ function showRecords() {
 }
 
 function showTopicRecords() {
-  openDialog('字词主题学习记录', `<p>自评认识与首次答对分别统计；各主题错题互不混用。</p>${chineseTopics.map(topic => `<section class="ct-record"><h3>${topic.name}</h3><p>自评认识 ${state.topics[topic.id].known.length} / ${topic.lessons.length} 项 · 待复习错题 ${state.topics[topic.id].mistakes.length} 道</p>${button('topic-review', '进入本主题复习', 'book', 'outline-button', `data-id="${topic.id}"`)}</section>`).join('')}${button('records', '查看最近完成的练习', 'book', 'text-button')}`);
+  openDialog('语文主题学习记录', `<p>自评认识与首次答对分别统计；各主题错题互不混用。</p>${chineseTopics.map(topic => `<section class="ct-record"><h3>${topic.name}</h3><p>自评认识 ${state.topics[topic.id].known.length} / ${topic.lessons.length} 项 · 待复习错题 ${state.topics[topic.id].mistakes.length} 道</p>${button('topic-review', '进入本主题复习', 'book', 'outline-button', `data-id="${topic.id}"`)}</section>`).join('')}${button('records', '查看最近完成的练习', 'book', 'text-button')}`);
 }
 
 function showAbout() {
@@ -467,6 +467,7 @@ function handleAction(event) {
   const target = event.target.closest('[data-action]');
   if (!target || target.disabled) return;
   const action = target.dataset.action;
+  if (action === 'ct-draft') return;
   if (action.startsWith('ct-')) {
     const topic = state.subject === 'chinese' ? topicById(state.features.chinese) : null;
     if (!topic) return;
@@ -633,6 +634,14 @@ document.addEventListener('click', event => {
   const collapseAfterAction = expandedTabs && event.target.closest('#main-content');
   handleAction(event);
   if (collapseAfterAction && expandedTabs) { expandedTabs = false; render(); }
+});
+
+document.addEventListener('input', event => {
+  if (event.target.dataset.action !== 'ct-draft') return;
+  const topic = state.subject === 'chinese' ? topicById(state.features.chinese) : null;
+  if (!topic) return;
+  updateTopicActivity(topic, state.topics[topic.id], 'draft', event.target.value);
+  persist();
 });
 
 document.addEventListener('change', event => {

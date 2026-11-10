@@ -13,6 +13,12 @@
 .ct-entry small { font-size: 18px; }
 .ct-record { padding: 14px 0; border-bottom: 1px solid var(--border); }
 .ct-record p { line-height: 1.8; }
+.ct-activity { overflow-wrap: anywhere; }
+.ct-activity ul { padding-left: 24px; line-height: 1.9; }
+.ct-draft-label { display: block; margin-bottom: 10px; font-weight: 700; }
+.ct-activity textarea { display: block; width: 100%; max-width: 100%; box-sizing: border-box; resize: vertical; padding: 14px; border: 1px solid var(--border); border-radius: 12px; font: inherit; line-height: 1.8; color: inherit; background: white; }
+.ct-activity textarea:focus-visible { outline: 3px solid #b37b9b; outline-offset: 2px; }
+.ct-built, .ct-sample { padding: 14px; border-radius: 12px; background: #fff; }
 .feature-bar .feature-tabs { min-width: 0; overflow-x: auto; }
 .feature-tab { flex-shrink: 0; }
 .feature-tabs.expanded { flex-wrap: wrap; }

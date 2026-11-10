@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test';
 import { chineseTopics } from '../../src/chinese-topics.js';
-import { stored } from './helpers.js';
+import { stored, selectTopic } from './helpers.js';
 
 async function openTopic(page, topic) {
   await page.goto('/');
-  await page.getByRole('tab', { name: topic.name, exact: true }).click();
+  await selectTopic(page, topic.name);
 }
 
 async function answer(page, topic, correct = true) {
@@ -21,7 +21,7 @@ for (const topic of chineseTopics) {
     page.on('pageerror', error => errors.push(error.message));
     await page.goto('/');
     await page.locator('[data-action="known"]').click();
-    await page.getByRole('tab', { name: topic.name, exact: true }).click();
+    await selectTopic(page, topic.name);
     await expect(page).toHaveTitle(`${topic.name} · 小兔学习乐园`);
     for (const category of topic.categories) {
       await page.locator(`[data-action="ct-category"][data-id="${category.id}"]`).click();
@@ -91,7 +91,7 @@ test('所有主题在手机可切换、无溢出，清空同时清除所有主�
   await page.setViewportSize({ width: 320, height: 850 });
   await page.goto('/');
   for (const topic of chineseTopics) {
-    await page.getByRole('tab', { name: topic.name, exact: true }).click();
+    await selectTopic(page, topic.name);
     await page.locator('[data-action="ct-known"]').click();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.locator('[data-action="ct-start"][data-id="all"]').click();
@@ -107,18 +107,18 @@ test('所有主题在手机可切换、无溢出，清空同时清除所有主�
   for (const topic of chineseTopics) expect((await stored(page)).topics[topic.id].known).toEqual([]);
 });
 
-test('五个主题互不覆盖未完成练习和错题，跨主题刷新后仍可继续', async ({ page }) => {
+test('各主题互不覆盖未完成练习和错题，跨主题刷新后仍可继续', async ({ page }) => {
   await page.goto('/');
   const questions = new Map();
   for (const topic of chineseTopics) {
-    await page.getByRole('tab', { name: topic.name, exact: true }).click();
+    await selectTopic(page, topic.name);
     await page.locator('[data-action="ct-start"][data-id="all"]').click();
     const question = await answer(page, topic, false);
     questions.set(topic.id, question.id);
   }
   await page.reload();
   for (const topic of chineseTopics) {
-    await page.getByRole('tab', { name: topic.name, exact: true }).click();
+    await selectTopic(page, topic.name);
     await expect(page.locator('.hz-feedback')).toContainText('再试一次');
     const state = (await stored(page)).topics[topic.id];
     expect(state.round.questions[0].id).toBe(questions.get(topic.id));
@@ -134,7 +134,7 @@ test('字词主题在浏览器存储不可用时仍能学习、查字和作答',
   });
   await page.goto('/');
   for (const topic of chineseTopics) {
-    await page.getByRole('tab', { name: topic.name, exact: true }).click();
+    await selectTopic(page, topic.name);
     await page.locator('[data-action="ct-known"]').click();
     await expect(page.locator('[data-action="ct-known"]')).toContainText('已经认识');
     await page.locator('[data-action="ct-start"][data-id="all"]').click();

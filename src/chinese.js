@@ -1,11 +1,29 @@
 import './chinese.css';
 import { dictionaryLookup } from './dictionary-data.js';
-import { startTopicRound, answerTopic, advanceTopic } from './chinese-engine.js';
+import { startTopicRound, answerTopic, advanceTopic, updateTopicActivity } from './chinese-engine.js';
 import { roundStats } from './engine.js';
 import { grantRewards } from './rewards.js';
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 const control = (action, label, attributes = '', style = 'outline-button') => `<button type="button" class="${style}" data-action="ct-${action}" ${attributes}>${label}</button>`;
+
+function activityCard(lesson, state) {
+  const activity = lesson.activity;
+  if (!activity) return '<p class="hz-caption">这是开放表达练习，可以说给家人听或写在纸上，不自动评分。</p>';
+  const saved = state.activities[lesson.id] || { text: '', order: [], checked: false, showExample: false };
+  if (activity.type === 'write') return `<label class="ct-draft-label" for="ct-draft">我的句子（最多 500 字）</label><textarea id="ct-draft" data-action="ct-draft" maxlength="500" rows="4" placeholder="把你的想法写在这里，也可以先说给家人听。">${escape(saved.text)}</textarea>
+    <p class="hz-caption">草稿随学习进度保存在当前浏览器。开放表达不自动评分，也不以是否写得和例句一样来判断对错。</p>
+    <ul>${activity.checklist.map(item => `<li>${escape(item)}</li>`).join('')}</ul>
+    ${control('activity-example', saved.showExample ? '收起参考表达' : '看看参考表达', `aria-expanded="${saved.showExample}"`)}
+    ${saved.showExample ? `<p class="ct-sample">参考表达：${escape(activity.sample)}</p>` : ''}`;
+  const sentence = saved.order.map(index => activity.tokens[index]).join('');
+  return `<p>依次点击词块，不用拖动；可以撤回或重排。</p>
+    <div class="hz-item-list" aria-label="待选词块">${activity.tokens.map((token, index) => control('activity-pick', escape(token), `data-value="${index}" ${saved.order.includes(index) ? 'disabled' : ''}`, 'hz-chip')).join('')}</div>
+    <p class="ct-built" aria-label="拼出的句子">${escape(sentence || '还没有选择词块')}${sentence ? activity.ending : ''}</p>
+    <div class="hz-actions">${control('activity-undo', '撤回一个', saved.order.length ? '' : 'disabled')}${control('activity-clear', '重新排列')}${control('activity-check', '检查排列', saved.order.length === activity.tokens.length ? '' : 'disabled', 'solid-button')}${control('activity-example', saved.showExample ? '收起参考排列' : '看看参考排列', `aria-expanded="${saved.showExample}"`)}</div>
+    <p class="ct-order-feedback" role="status">${saved.checked ? activity.answers.includes(sentence) ? '这句话通顺啦！再完整读一遍。' : '再想一想谁做什么、词语怎样搭配，可以撤回再排。' : '每个词块用一次，再检查句子的意思。'}</p>
+    ${saved.showExample ? `<p class="ct-sample">参考排列：${activity.answers.map(answer => escape(answer + activity.ending)).join(' / ')}</p>` : ''}<p class="hz-caption">这是学习尝试，不计入首次答题成绩。时间词有时可以放在不同位置。</p>`;
+}
 
 function learningCard(topic, state) {
   const lessons = topic.lessons.filter(item => item.category === state.category);
@@ -15,7 +33,7 @@ function learningCard(topic, state) {
     <div class="hz-item-list">${lessons.map(item => control('lesson', `${escape(item.title)}${state.known.includes(item.id) ? ' ✓' : ''}`, `data-id="${item.id}" aria-pressed="${state.lessonId === item.id}"`, 'hz-chip')).join('')}</div>
     <h3>${escape(lesson.title)}</h3><p>${escape(lesson.body)}</p>
     <ul class="ct-examples">${lesson.examples.map(example => `<li>${escape(example)}</li>`).join('')}</ul>
-    <div class="hz-note"><strong>说一说，试一试</strong><p>${escape(lesson.task)}</p><p class="hz-caption">这是开放表达练习，可以说给家人听或写在纸上，不自动评分。</p></div>
+    <div class="hz-note ct-activity"><strong>说一说，试一试</strong><p>${escape(lesson.task)}</p>${activityCard(lesson, state)}</div>
     <div class="hz-actions hz-card-footer">${control('previous', '上一个', index === 0 ? 'disabled' : '')}${control('known', state.known.includes(lesson.id) ? '已经认识啦 ✓' : '我认识啦', `aria-pressed="${state.known.includes(lesson.id)}"`, 'soft-button mint')}${control('next', '下一个', index === lessons.length - 1 ? 'disabled' : '')}</div>
     <div class="hz-actions">${control('start', '练练这一节', `data-id="${state.category}"`, 'solid-button')}</div></section>`;
 }
@@ -46,11 +64,11 @@ function lookupCard(state) {
 }
 
 export function renderTopic(topic, state) {
-  return `<section class="chinese-topic" data-topic="${topic.id}"><div class="page-heading"><div><div class="eyebrow"><span></span>第一阶段 · 字词基础</div><h1>${topic.name}<span class="heading-flower">✿</span></h1><p>${topic.description}</p></div></div>
+  return `<section class="chinese-topic" data-topic="${topic.id}"><div class="page-heading"><div><div class="eyebrow"><span></span>${escape(topic.stage)}</div><h1>${topic.name}<span class="heading-flower">✿</span></h1><p>${topic.description}</p></div></div>
     <nav class="hz-categories" aria-label="${topic.name}小节">${topic.categories.map(category => control('category', `<strong>${category.name}</strong>`, `data-id="${category.id}" aria-pressed="${state.view === 'learn' && state.category === category.id}"`, 'hz-category')).join('')}</nav>
     <div class="hz-layout"><div>${state.view === 'quiz' ? quizCard(topic, state) : state.view === 'lookup' ? lookupCard(state) : learningCard(topic, state)}</div><aside class="hz-sidebar">
     <section class="hz-card"><h2>我的学习足迹</h2><p>自评认识 ${state.known.length} / ${topic.lessons.length} 项</p><progress value="${state.known.length}" max="${topic.lessons.length}" aria-label="自评认识进度"></progress><p>自评认识与首次答对分开记录。</p><div class="hz-sidebar-actions">
-      ${topic.id === 'dictionary' ? control('lookup', '查字小实验', '', 'solid-button') : ''}${control('start', '综合练习 · 最多 10 题', 'data-id="all"', 'solid-button')}${control('start', `本主题错题（${state.mistakes.length}）`, `data-id="review" ${state.mistakes.length ? '' : 'disabled'}`)}${state.round && !state.round.finished && state.view !== 'quiz' ? control('resume', '继续上次练习') : ''}<button type="button" class="outline-button" data-action="topic-records">字词学习记录</button></div>
+      ${topic.id === 'dictionary' ? control('lookup', '查字小实验', '', 'solid-button') : ''}${control('start', '综合练习 · 最多 10 题', 'data-id="all"', 'solid-button')}${control('start', `本主题错题（${state.mistakes.length}）`, `data-id="review" ${state.mistakes.length ? '' : 'disabled'}`)}${state.round && !state.round.finished && state.view !== 'quiz' ? control('resume', '继续上次练习') : ''}<button type="button" class="outline-button" data-action="topic-records">语文主题学习记录</button></div>
       ${state.round && !state.round.finished ? '<p class="hz-caption">开始新练习会替换未完成的一轮；想保留当前题目，可继续上次练习。</p>' : ''}</section>
     <section class="hz-card hz-note"><h2>按自己的节奏学</h2><p>每一小节都能直接开始，不必依次通关。</p><p>也可以穿插读古诗、朗读、说一句话或写下今天的小发现。</p><p>进度保存在当前浏览器，清空本机记录会一并清除。</p></section></aside></div></section>`;
 }
@@ -59,6 +77,7 @@ export function handleTopicAction(root, topic, action, data) {
   const state = root.topics[topic.id];
   const outcome = {};
   const lesson = topic.lessons.find(item => item.id === state.lessonId);
+  if (action.startsWith('ct-activity-')) updateTopicActivity(topic, state, action.slice('ct-activity-'.length), data.value);
   if (action === 'ct-category' && topic.categories.some(item => item.id === data.id)) { state.category = data.id; state.lessonId = topic.lessons.find(item => item.category === data.id).id; state.view = 'learn'; }
   if (action === 'ct-lesson' && topic.lessons.some(item => item.id === data.id && item.category === state.category)) state.lessonId = data.id;
   if (['ct-previous', 'ct-next'].includes(action)) {
