@@ -3,7 +3,18 @@ import assert from 'node:assert/strict';
 import { chineseTopics } from '../src/chinese-topics.js';
 import { sentenceBuildingTopic } from '../src/sentence-building-data.js';
 import { punctuationTopic } from '../src/punctuation-data.js';
+import { sentencePatternsTopic } from '../src/sentence-patterns-data.js';
 import { topicDefaults, normalizeTopic, updateTopicActivity } from '../src/chinese-engine.js';
+
+test('句式仿写涵盖同时、先后、因果、假设、转折和进一步补充', () => {
+  assert.equal(sentencePatternsTopic.lessons.length, 8);
+  assert.equal(sentencePatternsTopic.questions.length, 16);
+  for (const phrase of ['一边', '先', '因为', '如果', '虽然', '既', '不但']) {
+    assert.ok(sentencePatternsTopic.lessons.some(lesson => lesson.activity.sample.includes(phrase)));
+  }
+  assert.equal(sentencePatternsTopic.questions.find(question => question.id.endsWith('not-sequence-1')).answer, '我先洗手，再吃饭。');
+  assert.equal(sentencePatternsTopic.questions.find(question => question.id.endsWith('if-1')).answer, '没有，只是在作假设');
+});
 
 test('标点覆盖六种常见符号，练习含疑问词反例和完整对话', () => {
   assert.deepEqual(punctuationTopic.categories.map(category => category.id), ['period', 'comma', 'question', 'exclamation', 'colon', 'quotes']);
