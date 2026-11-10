@@ -2,6 +2,24 @@ import { test, expect } from '@playwright/test';
 import { chineseTopics } from '../../src/chinese-topics.js';
 import { stored, selectTopic } from './helpers.js';
 
+test('真实句子主题超十项时可展开、收起且选中入口不丢失', async ({ page }) => {
+  const topic = chineseTopics.at(-1);
+  await page.goto('/');
+  await expect(page.getByRole('tab')).toHaveCount(10);
+  await page.locator('[data-action="expand-tabs"]').click();
+  await expect(page.getByRole('tab')).toHaveCount(chineseTopics.length + 2);
+  await page.getByRole('tab', { name: topic.name, exact: true }).click();
+  await expect(page.getByRole('tab')).toHaveCount(10);
+  await expect(page.getByRole('tab', { name: topic.name, exact: true })).toHaveAttribute('aria-selected', 'true');
+  await page.locator('[data-action="expand-tabs"]').click();
+  await page.locator('#ct-draft').click();
+  await page.locator('#ct-draft').fill('我写下了自己的句子。');
+  await expect(page.getByRole('tab')).toHaveCount(10);
+  await page.reload();
+  await expect(page.locator('#ct-draft')).toHaveValue('我写下了自己的句子。');
+  await expect(page.getByRole('tab', { name: topic.name, exact: true })).toHaveAttribute('aria-selected', 'true');
+});
+
 test('词块可键盘排序、纠错、撤回，并恢复另一种正确顺序', async ({ page }) => {
   await page.goto('/');
   await selectTopic(page, '连词成句与补全句子');

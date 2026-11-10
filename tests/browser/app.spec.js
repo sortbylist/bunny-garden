@@ -95,7 +95,7 @@ test('十二个测试功能的折叠和点击下方操作不冲突', async ({ pa
   await page.route('**/src/data.js*', async route => {
     const response = await route.fetch();
     const source = await response.text();
-    await route.fulfill({ response, body: `${source}\nconst fixtureStart = subjects[0].features.length; subjects[0].features.push(...Array.from({ length: 12 - fixtureStart }, (_, index) => ({ id: 'fixture-' + index, name: '测试功能 ' + (fixtureStart + index + 1), icon: 'book' })));` });
+    await route.fulfill({ response, body: `${source}\nsubjects[0].features = [subjects[0].features[0], ...Array.from({ length: 11 }, (_, index) => ({ id: 'fixture-' + index, name: '测试功能 ' + (index + 2), icon: 'book' }))];` });
   });
   await page.goto('/');
   await expect(page.getByRole('tab')).toHaveCount(10);

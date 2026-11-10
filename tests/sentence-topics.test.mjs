@@ -4,7 +4,17 @@ import { chineseTopics } from '../src/chinese-topics.js';
 import { sentenceBuildingTopic } from '../src/sentence-building-data.js';
 import { punctuationTopic } from '../src/punctuation-data.js';
 import { sentencePatternsTopic } from '../src/sentence-patterns-data.js';
+import { sentenceRevisionTopic } from '../src/sentence-revision-data.js';
 import { topicDefaults, normalizeTopic, updateTopicActivity } from '../src/chinese-engine.js';
+
+test('扩句保留原意，修改覆盖缺成分、用词不当和重复啰唆', () => {
+  assert.deepEqual(sentenceRevisionTopic.categories.map(category => category.id), ['expand', 'missing', 'wording', 'repeat']);
+  assert.equal(sentenceRevisionTopic.lessons.length, 9);
+  assert.equal(sentenceRevisionTopic.questions.length, 18);
+  assert.equal(sentenceRevisionTopic.questions.find(question => question.id.endsWith('detail-2')).answer, '花谢了。');
+  assert.ok(sentenceRevisionTopic.lessons.find(lesson => lesson.id.endsWith(':missing-who')).body.includes('没有上下文'));
+  assert.equal(sentenceRevisionTopic.questions.find(question => question.id.endsWith('about-1')).answer, '活动大约需要十分钟。');
+});
 
 test('句式仿写涵盖同时、先后、因果、假设、转折和进一步补充', () => {
   assert.equal(sentencePatternsTopic.lessons.length, 8);
