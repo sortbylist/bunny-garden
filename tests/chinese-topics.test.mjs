@@ -6,6 +6,7 @@ import { topicDefaults, normalizeTopic, startTopicRound, answerTopic, advanceTop
 import { defaultState, loadState } from '../src/engine.js';
 import { vocabularyEntries } from '../src/vocabulary-data.js';
 import { synonymPairs, antonymPairs, relationContexts } from '../src/word-relations-data.js';
+import { measureWords, verbPairs, deSamples, deQuestions } from '../src/collocations-data.js';
 
 test('各主题标识全局唯一，题目答案唯一且覆盖所有小节', () => {
   const identifiers = [];
@@ -58,6 +59,25 @@ test('近反义词都在完整句子中辨认，并覆盖不可随意互换的�
       assert.ok(sentence.includes('____'));
       assert.notEqual(answer, other);
     }
+  }
+});
+
+test('词语搭配覆盖量词、修饰语和三个结构助词，题目只有一个正确选项', () => {
+  const topic = chineseTopics.find(item => item.id === 'collocations');
+  assert.equal(measureWords.length, 12);
+  assert.equal(verbPairs.length, 8);
+  assert.equal(deSamples.length, 4);
+  assert.equal(deQuestions.length, 12);
+  assert.deepEqual(topic.lessons.filter(item => item.category === 'measure').length, 12);
+  assert.equal(topic.questions.length, 32);
+  for (const item of deQuestions) {
+    assert.ok(item.display.includes('____'));
+    assert.ok(['的', '地', '得'].includes(item.answer));
+    assert.ok(!item.display.replace('____', item.answer).includes('____'));
+  }
+  for (const question of topic.questions) {
+    assert.equal(question.options[0], question.answer);
+    assert.equal(question.options.filter(option => option === question.answer).length, 1);
   }
 });
 
