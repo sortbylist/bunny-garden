@@ -4,6 +4,7 @@ import { chineseTopics } from '../src/chinese-topics.js';
 import { dictionaryEntries, dictionaryLookup } from '../src/dictionary-data.js';
 import { topicDefaults, normalizeTopic, startTopicRound, answerTopic, advanceTopic } from '../src/chinese-engine.js';
 import { defaultState, loadState } from '../src/engine.js';
+import { vocabularyEntries } from '../src/vocabulary-data.js';
 
 test('各主题标识全局唯一，题目答案唯一且覆盖所有小节', () => {
   const identifiers = [];
@@ -28,6 +29,17 @@ test('各主题标识全局唯一，题目答案唯一且覆盖所有小节', ()
     }
   }
   assert.equal(new Set(identifiers).size, identifiers.length);
+});
+
+test('词语积累覆盖六类、每类四词，分类与用词练习均有完整语境', () => {
+  assert.equal(vocabularyEntries.length, 24);
+  assert.equal(new Set(vocabularyEntries.map(item => item.text)).size, 24);
+  const topic = chineseTopics.find(item => item.id === 'word-categories');
+  assert.deepEqual(topic.categories.map(item => item.id), ['people', 'animals', 'plants', 'actions', 'feelings', 'seasons']);
+  assert.equal(topic.questions.length, 48);
+  for (const category of topic.categories) assert.equal(vocabularyEntries.filter(item => item.category === category.id).length, 4);
+  for (const question of topic.questions) assert.ok(question.display && question.explanation);
+  assert.equal(topic.questions.filter(item => item.display.includes('____')).length, 24);
 });
 
 for (const topic of chineseTopics) {

@@ -11,7 +11,7 @@ async function answer(page, topic, correct = true) {
   const round = (await stored(page)).topics[topic.id].round;
   const question = round.questions[round.index];
   const value = correct ? question.answer : question.options.find(option => option !== question.answer);
-  await page.getByRole('button', { name: value, exact: true }).click();
+  await page.locator('.ct-quiz').getByRole('button', { name: value, exact: true }).click();
   return question;
 }
 
