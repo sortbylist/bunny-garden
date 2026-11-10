@@ -147,3 +147,53 @@ test('字词主题在浏览器存储不可用时仍能学习、查字和作答',
   for (const value of ['H', 'he', '河']) await page.locator(`[data-action="ct-lookup-pick"][data-value="${value}"]`).click();
   await expect(page.locator('.ct-entry')).toContainText('天然的大水道');
 });
+
+test('五主题题量和拼音设置分别保存，30题刷新续练且选项保留原文判分', async ({ page }) => {
+  await page.goto('/');
+  for (const topic of chineseTopics) {
+    await page.getByRole('tab', { name: topic.name, exact: true }).click();
+    await page.locator('[data-action="ct-length"][data-value="30"]').click();
+    await page.locator('[data-action="ct-start"][data-id="all"]').click();
+    await expect(page.locator('.ct-quiz .hz-card-heading')).toContainText('第 1 / 30 题');
+    await expect(page.locator('.ct-quiz .ct-visual')).toHaveCount(0);
+    const original = (await stored(page)).topics[topic.id].round.questions;
+    await page.locator('[data-action="ct-length"][data-value="20"]').click();
+    await page.locator('[data-action="ct-reading"]').click();
+    await expect(page.locator('.chinese-topic ruby')).toHaveCount(0);
+    await page.reload();
+    expect((await stored(page)).topics[topic.id].round.questions).toEqual(original);
+    await expect(page.locator('[data-action="ct-length"][data-value="20"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('[data-action="ct-reading"]')).toHaveAttribute('aria-pressed', 'false');
+    await page.locator('[data-action="ct-reading"]').click();
+    await answer(page, topic);
+    expect((await stored(page)).topics[topic.id].round.responses[0].correct).toBe(true);
+    await page.locator('[data-action="ct-start"][data-id="all"]').click();
+    expect((await stored(page)).topics[topic.id].round.questions).toHaveLength(20);
+  }
+});
+
+test('教学图解和难词拼音在320像素宽度可读，同音节查字能区分声调', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 900 });
+  await openTopic(page, chineseTopics.find(topic => topic.id === 'dictionary'));
+  await expect(page.getByRole('img', { name: '翻开的字典' })).toBeVisible();
+  await page.locator('[data-action="ct-lookup"]').click();
+  for (const value of ['Q', 'qing']) await page.locator(`[data-action="ct-lookup-pick"][data-value="${value}"]`).click();
+  await expect(page.locator('[data-action="ct-lookup-pick"]')).toHaveCount(4);
+  await page.locator('[data-action="ct-lookup-pick"][data-value="请"]').click();
+  await expect(page.locator('.ct-entry h3')).toHaveText('请 qǐng');
+  const examples = [
+    ['word-relations', 'antonyms', 'word-relations:lesson:ant-整齐'],
+    ['word-categories', 'animals', 'word-categories:lesson:蝴蝶'],
+    ['collocations', 'measure', 'collocations:lesson:measure-花'],
+    ['word-patterns', 'four', 'word-patterns:lesson:白雪皑皑'],
+  ];
+  for (const [topicId, category, lessonId] of examples) {
+    const topic = chineseTopics.find(item => item.id === topicId);
+    await page.getByRole('tab', { name: topic.name, exact: true }).click();
+    await page.locator(`[data-action="ct-category"][data-id="${category}"]`).click();
+    await page.locator(`[data-action="ct-lesson"][data-id="${lessonId}"]`).click();
+    await expect(page.locator('.ct-visual')).toBeVisible();
+    expect(await page.locator('.ct-lesson ruby').count()).toBeGreaterThan(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+});
