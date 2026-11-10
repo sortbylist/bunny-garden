@@ -7,8 +7,8 @@ import { initializeRewards, grantRewards, rewardStats } from '../src/rewards.js'
 
 test('六小节覆盖规划范围，学习项目和题目唯一且每题只有一个答案', () => {
   assert.deepEqual(hanziCategories.map(item => item.id), ['strokes', 'order', 'radicals', 'single', 'left-right', 'top-bottom']);
-  assert.equal(hanziLessons.length, 41);
-  assert.equal(hanziQuestions.length, 56);
+  assert.equal(hanziLessons.length, 93);
+  assert.equal(hanziQuestions.length, 204);
   assert.equal(new Set(hanziLessons.map(item => item.id)).size, hanziLessons.length);
   assert.equal(new Set(hanziQuestions.map(item => item.id)).size, hanziQuestions.length);
   for (const category of hanziCategories) {
@@ -27,6 +27,10 @@ test('逐笔示例包含横折单笔、封口顺序及木字旁变点', () => {
     三: ['横', '横', '横'], 十: ['横', '竖'], 人: ['撇', '捺'], 大: ['横', '撇', '捺'],
     小: ['竖钩', '撇', '点'], 木: ['横', '竖', '撇', '捺'], 口: ['竖', '横折', '横'],
     日: ['竖', '横折', '横', '横'], 林: ['横', '竖', '撇', '点', '横', '竖', '撇', '捺'],
+    土: ['横', '竖', '横'], 王: ['横', '横', '竖', '横'], 上: ['竖', '横', '横'],
+    下: ['横', '竖', '点'], 天: ['横', '横', '撇', '捺'], 禾: ['撇', '横', '竖', '撇', '捺'],
+    山: ['竖', '竖折', '竖'], 田: ['竖', '横折', '横', '竖', '横'], 目: ['竖', '横折', '横', '横', '横'],
+    又: ['横撇', '捺'],
   };
   for (const item of strokeCharacters) {
     assert.deepEqual(item.strokes.map(stroke => stroke.name), expected[item.text]);
