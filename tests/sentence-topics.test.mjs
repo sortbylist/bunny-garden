@@ -5,7 +5,26 @@ import { sentenceBuildingTopic } from '../src/sentence-building-data.js';
 import { punctuationTopic } from '../src/punctuation-data.js';
 import { sentencePatternsTopic } from '../src/sentence-patterns-data.js';
 import { sentenceRevisionTopic } from '../src/sentence-revision-data.js';
+import { vividExpressionTopic } from '../src/vivid-expression-data.js';
 import { topicDefaults, normalizeTopic, updateTopicActivity } from '../src/chinese-engine.js';
+
+test('第二阶段五主题按规划排序，自由访问且学习活动覆盖完整', () => {
+  const topics = chineseTopics.filter(topic => topic.stage.startsWith('第二阶段'));
+  assert.deepEqual(topics.map(topic => topic.name), ['连词成句与补全句子', '标点符号', '句式积累与仿写', '扩句与句子修改', '比喻、拟人与生动表达']);
+  assert.equal(topics.reduce((total, topic) => total + topic.lessons.length, 0), 47);
+  assert.equal(topics.reduce((total, topic) => total + topic.questions.length, 0), 94);
+  assert.equal(topics.flatMap(topic => topic.lessons).filter(lesson => lesson.activity.type === 'write').length, 43);
+});
+
+test('生动表达包含比喻、拟人、直接描写和“像”字反例', () => {
+  assert.equal(vividExpressionTopic.lessons.length, 8);
+  assert.equal(vividExpressionTopic.questions.length, 16);
+  assert.equal(vividExpressionTopic.questions.find(question => question.id.endsWith('not-every-like-1')).answer, '雪花像轻盈的羽毛。');
+  assert.equal(vividExpressionTopic.questions.find(question => question.id.endsWith('not-every-like-2')).answer, '猜测');
+  assert.equal(vividExpressionTopic.questions.find(question => question.id.endsWith('compare-1')).answer, '比喻');
+  assert.equal(vividExpressionTopic.questions.find(question => question.id.endsWith('compare-2')).answer, '拟人');
+  assert.ok(vividExpressionTopic.lessons.find(lesson => lesson.id.endsWith(':senses')).body.includes('不必每句话'));
+});
 
 test('扩句保留原意，修改覆盖缺成分、用词不当和重复啰唆', () => {
   assert.deepEqual(sentenceRevisionTopic.categories.map(category => category.id), ['expand', 'missing', 'wording', 'repeat']);

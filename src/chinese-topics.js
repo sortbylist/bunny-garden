@@ -7,6 +7,7 @@ import { sentenceBuildingTopic } from './sentence-building-data.js';
 import { punctuationTopic } from './punctuation-data.js';
 import { sentencePatternsTopic } from './sentence-patterns-data.js';
 import { sentenceRevisionTopic } from './sentence-revision-data.js';
+import { vividExpressionTopic } from './vivid-expression-data.js';
 
-export const chineseTopics = [dictionaryTopic, vocabularyTopic, relationsTopic, collocationTopic, patternsTopic, sentenceBuildingTopic, punctuationTopic, sentencePatternsTopic, sentenceRevisionTopic];
+export const chineseTopics = [dictionaryTopic, vocabularyTopic, relationsTopic, collocationTopic, patternsTopic, sentenceBuildingTopic, punctuationTopic, sentencePatternsTopic, sentenceRevisionTopic, vividExpressionTopic];
 export const topicById = id => chineseTopics.find(topic => topic.id === id);
