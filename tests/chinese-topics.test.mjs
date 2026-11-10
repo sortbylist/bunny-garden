@@ -91,11 +91,11 @@ test('词语搭配覆盖量词、修饰语和三个结构助词，题目只有�
 
 test('叠词字形符合 ABB/AABB/ABAB，成语包含释义与用法边界', () => {
   const topic = chineseTopics.find(item => item.id === 'word-patterns');
-  assert.equal(repeatedWords.length, 12);
-  assert.equal(idioms.length, 8);
-  assert.equal(fourCharacterPhrases.length, 4);
-  assert.equal(topic.lessons.length, 24);
-  assert.equal(topic.questions.length, 49);
+  assert.equal(repeatedWords.length, 30);
+  assert.equal(idioms.length, 20);
+  assert.equal(fourCharacterPhrases.length, 12);
+  assert.equal(topic.lessons.length, 62);
+  assert.equal(topic.questions.length, 155);
   for (const item of repeatedWords) {
     const characters = [...item.text];
     assert.equal(characters.length, item.pattern.length);
