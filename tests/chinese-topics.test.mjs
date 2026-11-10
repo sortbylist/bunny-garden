@@ -41,15 +41,15 @@ test('第一阶段六个主题的真实入口完整，与内容注册一致', ()
   for (const topic of chineseTopics) assert.equal(features.find(item => item.id === topic.id).name, topic.name);
 });
 
-test('词语积累覆盖六类、每类四词，分类与用词练习均有完整语境', () => {
-  assert.equal(vocabularyEntries.length, 24);
-  assert.equal(new Set(vocabularyEntries.map(item => item.text)).size, 24);
+test('词语积累覆盖六类、每类十词，分类与用词练习均有完整语境', () => {
+  assert.equal(vocabularyEntries.length, 60);
+  assert.equal(new Set(vocabularyEntries.map(item => item.text)).size, 60);
   const topic = chineseTopics.find(item => item.id === 'word-categories');
   assert.deepEqual(topic.categories.map(item => item.id), ['people', 'animals', 'plants', 'actions', 'feelings', 'seasons']);
-  assert.equal(topic.questions.length, 48);
-  for (const category of topic.categories) assert.equal(vocabularyEntries.filter(item => item.category === category.id).length, 4);
+  assert.equal(topic.questions.length, 180);
+  for (const category of topic.categories) assert.equal(vocabularyEntries.filter(item => item.category === category.id).length, 10);
   for (const question of topic.questions) assert.ok(question.display && question.explanation);
-  assert.equal(topic.questions.filter(item => item.display.includes('____')).length, 24);
+  assert.equal(topic.questions.filter(item => item.display.includes('____')).length, 60);
 });
 
 test('近反义词都在完整句子中辨认，并覆盖不可随意互换的语境', () => {
