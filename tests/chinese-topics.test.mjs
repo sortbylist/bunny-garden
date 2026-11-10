@@ -5,6 +5,7 @@ import { dictionaryEntries, dictionaryLookup } from '../src/dictionary-data.js';
 import { topicDefaults, normalizeTopic, startTopicRound, answerTopic, advanceTopic } from '../src/chinese-engine.js';
 import { defaultState, loadState } from '../src/engine.js';
 import { vocabularyEntries } from '../src/vocabulary-data.js';
+import { synonymPairs, antonymPairs, relationContexts } from '../src/word-relations-data.js';
 
 test('各主题标识全局唯一，题目答案唯一且覆盖所有小节', () => {
   const identifiers = [];
@@ -40,6 +41,24 @@ test('词语积累覆盖六类、每类四词，分类与用词练习均有完�
   for (const category of topic.categories) assert.equal(vocabularyEntries.filter(item => item.category === category.id).length, 4);
   for (const question of topic.questions) assert.ok(question.display && question.explanation);
   assert.equal(topic.questions.filter(item => item.display.includes('____')).length, 24);
+});
+
+test('近反义词都在完整句子中辨认，并覆盖不可随意互换的语境', () => {
+  const topic = chineseTopics.find(item => item.id === 'word-relations');
+  assert.equal(synonymPairs.length, 6);
+  assert.equal(antonymPairs.length, 6);
+  assert.equal(relationContexts.length, 6);
+  assert.equal(topic.lessons.length, 18);
+  assert.equal(topic.questions.length, 36);
+  assert.ok(topic.questions.every(item => item.display));
+  assert.ok(topic.lessons.some(item => item.body.includes('自豪')));
+  for (const item of relationContexts) {
+    assert.equal(item.cases.length, 2);
+    for (const [answer, sentence, other] of item.cases) {
+      assert.ok(sentence.includes('____'));
+      assert.notEqual(answer, other);
+    }
+  }
 });
 
 for (const topic of chineseTopics) {
