@@ -8,12 +8,16 @@ import { initializeRewards, grantRewards, rewardStats, rewardCatalog, equipRewar
 import { rewardArt } from './reward-art.js';
 import { normalizeHanziState } from './hanzi-engine.js';
 import { renderHanzi, handleHanziAction } from './hanzi.js';
+import { chineseTopics, topicById } from './chinese-topics.js';
+import { normalizeTopic, topicDefaults, startTopicRound } from './chinese-engine.js';
+import { renderTopic, handleTopicAction } from './chinese.js';
 
 const app = document.querySelector('#app');
 const dialog = document.querySelector('#dialog');
 const loaded = loadState({ getItem: key => localStorage.getItem(key) });
 let state = loaded.state;
 state.hanzi = normalizeHanziState(state.hanzi);
+state.topics = Object.fromEntries(chineseTopics.map(topic => [topic.id, normalizeTopic(topic, state.topics?.[topic.id])]));
 let storageAvailable = loaded.available;
 let expandedTabs = false;
 let mobileMenu = false;
@@ -93,12 +97,14 @@ function currentItem() {
 
 function render() {
   state.hanzi ||= normalizeHanziState(null);
+  for (const topic of chineseTopics) state.topics[topic.id] ||= topicDefaults(topic);
   const focused = document.activeElement;
   const focusedAction = focused?.closest('#app') ? focused.dataset.action : null;
   const focusData = focusedAction ? { action: focusedAction, id: focused.dataset.id, value: focused.dataset.value, index: focused.dataset.index } : null;
   const subject = subjects.find(item => item.id === state.subject);
   const isHanzi = state.subject === 'chinese' && state.features.chinese === 'hanzi-structure';
-  document.title = `${isHanzi ? '汉字笔画与结构' : subject.name === '语文' ? currentMode().name + ' · 拼音学习' : subject.name} · 小兔学习乐园`;
+  const topic = state.subject === 'chinese' ? topicById(state.features.chinese) : null;
+  document.title = `${topic ? topic.name : isHanzi ? '汉字笔画与结构' : subject.name === '语文' ? currentMode().name + ' · 拼音学习' : subject.name} · 小兔学习乐园`;
   app.className = `${state.collapsed ? 'sidebar-collapsed' : ''} ${mobileMenu ? 'mobile-open' : ''}`;
   app.classList.toggle('no-reward-motion', !state.settings.animations);
   app.innerHTML = `
@@ -119,14 +125,14 @@ function render() {
         <div class="topbar-right"><button class="star-counter" data-action="reward-rules" aria-label="查看星星收获与获取规则">${icon('star')}<b>${rewardStats(state.rewards).stars}</b><span>颗成长星</span>${icon('info')}</button><details class="my-menu"><summary class="my-menu-toggle" aria-label="打开我的菜单"><img src="/bunny.svg" alt="" width="38" height="38"><span>${escape(state.nickname)}<small>我的 ${icon('down')}</small></span></summary><div class="my-menu-content"><strong>你好，${escape(state.nickname)}</strong>${button('profile', '我的成长空间', 'sprout')}${button('mode', `拼音错题本 <b>${state.mistakes.length}</b>`, 'refresh', '', 'data-id="mistakes"')}${button('hanzi-review', `汉字错题本 <b>${state.hanzi.mistakes.length}</b>`, 'pen')}${button('mode', `我的收藏 <b>${state.favorites.length}</b>`, 'heart', '', 'data-id="favorites"')}${button('records', '学习记录', 'book')}${button('reward-collection', '奖励收藏册', 'star')}${button('edit-nickname', '设置昵称', 'pen')}</div></details></div>
       </header>
       <div class="feature-bar"><div role="tablist" aria-label="${subject.name}小功能" class="feature-tabs ${expandedTabs ? 'expanded' : ''}">${visibleTabs(subject.features, state.features[subject.id], expandedTabs).map(feature => `<button role="tab" aria-selected="${state.features[subject.id] === feature.id}" data-action="feature" data-id="${feature.id}" class="feature-tab ${state.features[subject.id] === feature.id ? 'active' : ''}">${icon(feature.icon)}${feature.name}<span class="tiny-dot"></span></button>`).join('')}${subject.features.length === 0 ? '<span class="feature-placeholder">新的学习冒险，正在准备中</span>' : ''}</div>${subject.features.length > 10 ? button('expand-tabs', expandedTabs ? '收起' : `展开全部（${subject.features.length}）`, 'down', 'expand-tabs', `aria-expanded="${expandedTabs}"`) : ''}<span class="feature-decoration">LEARN · PLAY · GROW ${icon('flower')}</span></div>
-      <main id="main-content" tabindex="-1">${isHanzi ? renderHanzi(state.hanzi) : state.subject === 'chinese' ? learningPage() : comingSoon(subject)}</main>
+      <main id="main-content" tabindex="-1">${topic ? renderTopic(topic, state.topics[topic.id]) : isHanzi ? renderHanzi(state.hanzi) : state.subject === 'chinese' ? learningPage() : comingSoon(subject)}</main>
       <footer>用一点好奇心，收获一点新知识。${icon('heart')}<span>小兔陪你慢慢学</span></footer>
     </div>`;
   if (focusData && !dialog.open) {
     const candidates = [...app.querySelectorAll('[data-action]')];
     const replacement = candidates.find(element => element.dataset.action === focusData.action && element.dataset.id === focusData.id && element.dataset.value === focusData.value && element.dataset.index === focusData.index && !element.disabled);
     if (replacement) replacement.focus({ preventScroll: true });
-    else app.querySelector('[data-action="hz-advance"], [data-action="hz-stroke-previous"]:not(:disabled), [data-action="next-question"]:not(:disabled)')?.focus({ preventScroll: true });
+    else (app.querySelector('[data-action="ct-advance"]') || app.querySelector('[data-action="ct-answer"]:not(:disabled)') || app.querySelector('[data-action="ct-learn"], [data-action="hz-advance"], [data-action="hz-stroke-previous"]:not(:disabled), [data-action="next-question"]:not(:disabled)'))?.focus({ preventScroll: true });
   }
   persist();
 }
@@ -356,6 +362,10 @@ function showRecords() {
   openDialog('每一步，都算数', `<h3>拼音学习</h3><div class="records-grid"><div><b>${state.seen.length}</b><span>浏览过的项目</span></div><div><b>${state.known.length}</b><span>自评认识</span></div><div><b>${state.mistakes.length}</b><span>待复习错题</span></div><div><b>${state.favorites.length}</b><span>收藏的朋友</span></div></div><h3>汉字笔画与结构</h3><p>自评认识 ${state.hanzi.known.length} 个学习项目，待复习错题 ${state.hanzi.mistakes.length} 道。</p><p class="small-note">浏览过、自评认识和测验答对，是三种不同的学习记录。</p><h3>最近完成的练习</h3>${history.length ? `<ul class="history-list">${history.map(item => `<li><span>${escape(item.name)}<small>${new Date(item.time).toLocaleDateString('zh-CN')}</small></span><b>${item.correct} / ${item.total}<small>首次答对</small></b></li>`).join('')}</ul>` : '<p class="muted">完成一轮答题后，这里就会留下你的足迹。</p>'}<div class="dialog-actions">${button('mode', '拼音错题复习', 'refresh', 'solid-button', 'data-id="mistakes"')}${button('hanzi-review', '汉字错题复习', 'pen', 'outline-button')}</div>`);
 }
 
+function showTopicRecords() {
+  openDialog('字词主题学习记录', `<p>自评认识与首次答对分别统计；各主题错题互不混用。</p>${chineseTopics.map(topic => `<section class="ct-record"><h3>${topic.name}</h3><p>自评认识 ${state.topics[topic.id].known.length} / ${topic.lessons.length} 项 · 待复习错题 ${state.topics[topic.id].mistakes.length} 道</p>${button('topic-review', '进入本主题复习', 'book', 'outline-button', `data-id="${topic.id}"`)}</section>`).join('')}${button('records', '查看最近完成的练习', 'book', 'text-button')}`);
+}
+
 function showAbout() {
   openDialog('关于小兔学习乐园', `<p class="dialog-intro">专为小学生准备的一方学习小天地。没有广告，不需要注册，按照自己的节奏慢慢学。</p><h3>关于拼音和读音</h3><p>内容包含 23 个声母、24 个韵母和 16 个整体认读音节，采用小学常见分类。</p><p>真人录音来自 audio-cmn：音节由 Chen Wang 录制，词语由 Yue Tan 录制，Hugo Lopez 与 Nicolas Vion 参与整理和技术支持，采用上游声明的 CC BY-SA 许可。</p><p>部分韵母借助完整音节示范，ong 使用 dōng 的例音，学习卡片上会明确提示。录音尚待普通话教师逐项试听审核。</p><p><a href="/audio/ATTRIBUTION.md" target="_blank" rel="noopener">查看音频来源与署名说明</a></p><h3>使用小提醒</h3><p>首次听音需要点击喇叭。跟着录音自己读一读即可，本应用不会录音，也不会自动评价你的发音。</p><p>页面风格参考 Bunny Math，插画与练习界面为本项目绘制。</p>`);
 }
@@ -457,6 +467,21 @@ function handleAction(event) {
   const target = event.target.closest('[data-action]');
   if (!target || target.disabled) return;
   const action = target.dataset.action;
+  if (action.startsWith('ct-')) {
+    const topic = state.subject === 'chinese' ? topicById(state.features.chinese) : null;
+    if (!topic) return;
+    halt();
+    const result = handleTopicAction(state, topic, action, target.dataset);
+    render(); if (result.correct) chime(state.settings.effects); celebrateReward(result.reward); return;
+  }
+  if (action === 'topic-records') { showTopicRecords(); return; }
+  if (action === 'topic-review') {
+    const topic = topicById(target.dataset.id);
+    if (!topic) return;
+    halt(); state.settings.continuous = false; state.subject = 'chinese'; state.features.chinese = topic.id;
+    if (!startTopicRound(topic, state.topics[topic.id], 'review')) { state.topics[topic.id].view = 'learn'; toast('这个主题还没有错题，可以先自由学习。'); }
+    closeDialog(); render(); return;
+  }
   if (action.startsWith('hz-')) {
     if (state.subject !== 'chinese' || state.features.chinese !== 'hanzi-structure') return;
     halt();
@@ -652,7 +677,7 @@ document.addEventListener('keydown', event => {
     return;
   }
   if (dialog.open || event.target.closest('input, select, textarea, button, a')) return;
-  if (state.subject === 'chinese' && state.features.chinese !== 'hanzi-structure' && studyModes.includes(state.mode) && ['ArrowLeft', 'ArrowRight'].includes(event.key)) {
+  if (state.subject === 'chinese' && state.features.chinese !== 'hanzi-structure' && !topicById(state.features.chinese) && studyModes.includes(state.mode) && ['ArrowLeft', 'ArrowRight'].includes(event.key)) {
     const value = session();
     const next = value.index + (event.key === 'ArrowRight' ? 1 : -1);
     if (next >= 0 && next < value.ids.length) { event.preventDefault(); halt(); value.index = next; render(); }

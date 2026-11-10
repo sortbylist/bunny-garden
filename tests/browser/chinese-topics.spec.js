@@ -1,0 +1,108 @@
+import { test, expect } from '@playwright/test';
+import { chineseTopics } from '../../src/chinese-topics.js';
+import { stored } from './helpers.js';
+
+async function openTopic(page, topic) {
+  await page.goto('/');
+  await page.getByRole('tab', { name: topic.name, exact: true }).click();
+}
+
+async function answer(page, topic, correct = true) {
+  const round = (await stored(page)).topics[topic.id].round;
+  const question = round.questions[round.index];
+  const value = correct ? question.answer : question.options.find(option => option !== question.answer);
+  await page.getByRole('button', { name: value, exact: true }).click();
+  return question;
+}
+
+for (const topic of chineseTopics) {
+  test(`${topic.name}：小节自由访问、自评去重、刷新恢复和拼音隔离`, async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.goto('/');
+    await page.locator('[data-action="known"]').click();
+    await page.getByRole('tab', { name: topic.name, exact: true }).click();
+    await expect(page).toHaveTitle(`${topic.name} · 小兔学习乐园`);
+    for (const category of topic.categories) {
+      await page.locator(`[data-action="ct-category"][data-id="${category.id}"]`).click();
+      await expect(page.locator('.ct-lesson')).toContainText(category.name);
+    }
+    await page.locator('[data-action="ct-known"]').click();
+    await page.reload();
+    await page.locator('[data-action="ct-known"]').click();
+    expect((await stored(page)).topics[topic.id].known).toHaveLength(1);
+    await expect(page.locator('.star-counter b')).toHaveText('2');
+    await page.getByRole('tab', { name: '拼音学习', exact: true }).click();
+    await expect(page.locator('.pinyin-display')).toHaveText('o');
+    expect((await stored(page)).known).toEqual(['single-a']);
+    expect(errors).toEqual([]);
+  });
+
+  test(`${topic.name}：答错重试、跳过、续练、历史、错题与奖励`, async ({ page }) => {
+    await openTopic(page, topic);
+    await page.locator('[data-action="ct-start"][data-id="all"]').click();
+    const question = await answer(page, topic, false);
+    await page.reload();
+    await expect(page.locator('.hz-feedback')).toContainText('再试一次');
+    await answer(page, topic);
+    await page.locator('[data-action="ct-advance"]').click();
+    await page.locator('[data-action="ct-skip"]').click();
+    await page.locator('[data-action="ct-learn"]').click();
+    await page.locator('[data-action="ct-resume"]').click();
+    await expect(page.locator('.hz-feedback')).toContainText('先认识答案');
+    await page.locator('[data-action="ct-advance"]').click();
+    for (let index = 2; index < 10; index++) { await answer(page, topic); await page.locator('[data-action="ct-advance"]').click(); }
+    await expect(page.locator('.ct-result')).toContainText('首次答对 8 题');
+    await expect(page.locator('.ct-result')).toContainText('首次跳过 1 题');
+    let root = await stored(page);
+    expect(root.history.at(-1)).toMatchObject({ name: topic.name, correct: 8, total: 10 });
+    expect(root.topics[topic.id].mistakes).toHaveLength(2);
+    expect(root.mistakes).toEqual([]);
+    expect(root.hanzi.mistakes).toEqual([]);
+    await page.reload();
+    expect((await stored(page)).history).toHaveLength(1);
+    await page.locator('[data-action="topic-records"]').click();
+    await page.locator(`[data-action="topic-review"][data-id="${topic.id}"]`).click();
+    for (let index = 0; index < 2; index++) { await answer(page, topic); await page.locator('[data-action="ct-advance"]').click(); }
+    root = await stored(page);
+    expect(root.topics[topic.id].mistakes).toEqual([]);
+    expect(root.rewards.events.filter(event => event.id === `review:${question.id}`)).toHaveLength(1);
+    await expect(page.locator('.hz-sidebar [data-action="ct-start"][data-id="review"]')).toBeDisabled();
+  });
+}
+
+test('查字典：两种索引实际查到条目，支持退回、切换和刷新', async ({ page }) => {
+  await openTopic(page, chineseTopics.find(topic => topic.id === 'dictionary'));
+  await page.locator('[data-action="ct-lookup"]').click();
+  for (const value of ['H', 'hua']) await page.locator(`[data-action="ct-lookup-pick"][data-value="${value}"]`).click();
+  await page.reload();
+  await expect(page.locator('.ct-lookup-path')).toHaveText('已选：H → hua');
+  await page.locator('[data-action="ct-lookup-pick"][data-value="花"]').click();
+  await expect(page.locator('.ct-entry')).toContainText('耗费时间或钱');
+  await page.locator('[data-action="ct-lookup-method"][data-id="radical"]').click();
+  for (const value of ['3', '氵', '8', '深']) await page.locator(`[data-action="ct-lookup-pick"][data-value="${value}"]`).click();
+  await expect(page.locator('.ct-entry')).toContainText('总笔画：11');
+  await page.locator('[data-action="ct-lookup-back"]').click();
+  await expect(page.locator('.ct-entry')).toHaveCount(0);
+  await expect(page.locator('[data-action="ct-lookup-pick"]')).toHaveText(['深']);
+});
+
+test('所有主题在手机可切换、无溢出，清空同时清除所有主题进度', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 850 });
+  await page.goto('/');
+  for (const topic of chineseTopics) {
+    await page.getByRole('tab', { name: topic.name, exact: true }).click();
+    await page.locator('[data-action="ct-known"]').click();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.locator('[data-action="ct-start"][data-id="all"]').click();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.locator('[data-action="ct-skip"]').focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('[data-action="ct-advance"]')).toBeFocused();
+  }
+  await page.setViewportSize({ width: 1440, height: 1100 });
+  await page.locator('[data-action="settings"]').click();
+  await page.locator('[data-action="reset-confirm"]').click();
+  await page.locator('[data-action="reset-all"]').click();
+  for (const topic of chineseTopics) expect((await stored(page)).topics[topic.id].known).toEqual([]);
+});

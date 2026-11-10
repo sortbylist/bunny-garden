@@ -1,0 +1,24 @@
+.chinese-topic { max-width: 1360px; margin: 0 auto; }
+.chinese-topic .hz-category { min-height: 62px; }
+.chinese-topic .hz-category strong { margin: 0; }
+.chinese-topic .hz-chip { font-size: 14px; text-align: left; line-height: 1.6; }
+.chinese-topic .hz-card h3 { font-size: 23px; line-height: 1.6; }
+.ct-examples { padding: 18px 18px 18px 38px; background: #fff2e7; border-radius: 16px; line-height: 2; font-size: 17px; }
+.ct-examples li + li { margin-top: 12px; }
+.ct-context { padding: 20px; border-left: 4px solid #b37b9b; background: #fff0f4; border-radius: 12px; }
+.chinese-topic .ct-context { font-size: 21px; line-height: 1.9; }
+.chinese-topic .hz-option { font-size: 17px; line-height: 1.7; text-align: left; }
+.ct-lookup-path { overflow-wrap: anywhere; color: #73506a; }
+.ct-entry ol { padding-left: 24px; line-height: 1.8; }
+.ct-entry small { font-size: 18px; }
+.ct-record { padding: 14px 0; border-bottom: 1px solid var(--border); }
+.ct-record p { line-height: 1.8; }
+.feature-bar .feature-tabs { min-width: 0; overflow-x: auto; }
+.feature-tab { flex-shrink: 0; }
+.feature-tabs.expanded { flex-wrap: wrap; }
+@media (max-width: 600px) {
+  .chinese-topic .hz-card h3 { font-size: 20px; }
+  .chinese-topic .ct-context { font-size: 18px; }
+  .chinese-topic .hz-options { grid-template-columns: minmax(0, 1fr); }
+  .ct-examples { font-size: 16px; }
+}
