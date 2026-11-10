@@ -2,7 +2,20 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { chineseTopics } from '../src/chinese-topics.js';
 import { sentenceBuildingTopic } from '../src/sentence-building-data.js';
+import { punctuationTopic } from '../src/punctuation-data.js';
 import { topicDefaults, normalizeTopic, updateTopicActivity } from '../src/chinese-engine.js';
+
+test('标点覆盖六种常见符号，练习含疑问词反例和完整对话', () => {
+  assert.deepEqual(punctuationTopic.categories.map(category => category.id), ['period', 'comma', 'question', 'exclamation', 'colon', 'quotes']);
+  assert.equal(punctuationTopic.lessons.length, 12);
+  assert.equal(punctuationTopic.questions.length, 24);
+  assert.equal(punctuationTopic.questions.find(question => question.id.endsWith('not-every-who-1')).answer, '。');
+  for (const lesson of punctuationTopic.lessons) {
+    const sample = lesson.activity.sample;
+    assert.equal([...sample].filter(character => character === '“').length, [...sample].filter(character => character === '”').length);
+  }
+  assert.equal(punctuationTopic.questions.find(question => question.id.endsWith('inside-1')).answer, '妈妈问：“你饿了吗？”');
+});
 
 test('连词成句包含四个可操作例子，并接受时间词的两种位置', () => {
   const topic = sentenceBuildingTopic;
