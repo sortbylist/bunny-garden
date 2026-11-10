@@ -7,6 +7,8 @@ import { defaultState, loadState } from '../src/engine.js';
 import { vocabularyEntries } from '../src/vocabulary-data.js';
 import { synonymPairs, antonymPairs, relationContexts } from '../src/word-relations-data.js';
 import { measureWords, verbPairs, deSamples, deQuestions } from '../src/collocations-data.js';
+import { repeatedWords, idioms, fourCharacterPhrases } from '../src/word-patterns-data.js';
+import { subjects } from '../src/data.js';
 
 test('各主题标识全局唯一，题目答案唯一且覆盖所有小节', () => {
   const identifiers = [];
@@ -31,6 +33,12 @@ test('各主题标识全局唯一，题目答案唯一且覆盖所有小节', ()
     }
   }
   assert.equal(new Set(identifiers).size, identifiers.length);
+});
+
+test('第一阶段六个主题的真实入口完整，与内容注册一致', () => {
+  const features = subjects.find(subject => subject.id === 'chinese').features;
+  assert.deepEqual(features.map(item => item.id), ['pinyin', 'hanzi-structure', ...chineseTopics.map(item => item.id)]);
+  for (const topic of chineseTopics) assert.equal(features.find(item => item.id === topic.id).name, topic.name);
 });
 
 test('词语积累覆盖六类、每类四词，分类与用词练习均有完整语境', () => {
@@ -79,6 +87,27 @@ test('词语搭配覆盖量词、修饰语和三个结构助词，题目只有�
     assert.equal(question.options[0], question.answer);
     assert.equal(question.options.filter(option => option === question.answer).length, 1);
   }
+});
+
+test('叠词字形符合 ABB/AABB/ABAB，成语包含释义与用法边界', () => {
+  const topic = chineseTopics.find(item => item.id === 'word-patterns');
+  assert.equal(repeatedWords.length, 12);
+  assert.equal(idioms.length, 8);
+  assert.equal(fourCharacterPhrases.length, 4);
+  assert.equal(topic.lessons.length, 24);
+  assert.equal(topic.questions.length, 49);
+  for (const item of repeatedWords) {
+    const characters = [...item.text];
+    assert.equal(characters.length, item.pattern.length);
+    for (let first = 0; first < characters.length; first++) {
+      for (let second = 0; second < characters.length; second++) assert.equal(characters[first] === characters[second], item.pattern[first] === item.pattern[second], item.text);
+    }
+  }
+  for (const item of idioms) {
+    assert.ok(item.meaning && item.warning && item.situation);
+    assert.equal(item.distractors.length, 2);
+  }
+  assert.equal(topic.questions.find(item => item.id.endsWith('phrase-not-idiom')).answer, '我的书包');
 });
 
 for (const topic of chineseTopics) {

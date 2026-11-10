@@ -106,3 +106,43 @@ test('所有主题在手机可切换、无溢出，清空同时清除所有主�
   await page.locator('[data-action="reset-all"]').click();
   for (const topic of chineseTopics) expect((await stored(page)).topics[topic.id].known).toEqual([]);
 });
+
+test('五个主题互不覆盖未完成练习和错题，跨主题刷新后仍可继续', async ({ page }) => {
+  await page.goto('/');
+  const questions = new Map();
+  for (const topic of chineseTopics) {
+    await page.getByRole('tab', { name: topic.name, exact: true }).click();
+    await page.locator('[data-action="ct-start"][data-id="all"]').click();
+    const question = await answer(page, topic, false);
+    questions.set(topic.id, question.id);
+  }
+  await page.reload();
+  for (const topic of chineseTopics) {
+    await page.getByRole('tab', { name: topic.name, exact: true }).click();
+    await expect(page.locator('.hz-feedback')).toContainText('再试一次');
+    const state = (await stored(page)).topics[topic.id];
+    expect(state.round.questions[0].id).toBe(questions.get(topic.id));
+    expect(state.mistakes).toEqual([questions.get(topic.id)]);
+    expect(state.round.responses[0].correct).toBe(false);
+  }
+});
+
+test('字词主题在浏览器存储不可用时仍能学习、查字和作答', async ({ page }) => {
+  await page.addInitScript(() => {
+    Storage.prototype.getItem = () => { throw new Error('blocked'); };
+    Storage.prototype.setItem = () => { throw new Error('blocked'); };
+  });
+  await page.goto('/');
+  for (const topic of chineseTopics) {
+    await page.getByRole('tab', { name: topic.name, exact: true }).click();
+    await page.locator('[data-action="ct-known"]').click();
+    await expect(page.locator('[data-action="ct-known"]')).toContainText('已经认识');
+    await page.locator('[data-action="ct-start"][data-id="all"]').click();
+    await page.locator('[data-action="ct-skip"]').click();
+    await expect(page.locator('.hz-feedback')).toContainText('先认识答案');
+  }
+  await page.getByRole('tab', { name: '查字典', exact: true }).click();
+  await page.locator('[data-action="ct-lookup"]').click();
+  for (const value of ['H', 'he', '河']) await page.locator(`[data-action="ct-lookup-pick"][data-value="${value}"]`).click();
+  await expect(page.locator('.ct-entry')).toContainText('天然的大水道');
+});
