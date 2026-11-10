@@ -6,11 +6,14 @@ import { icon, bunny } from './icons.js';
 import { playAudio, stopAudio, onAudioStatus, chime, hasAudio } from './audio.js';
 import { initializeRewards, grantRewards, rewardStats, rewardCatalog, equipReward, normalizeNickname } from './rewards.js';
 import { rewardArt } from './reward-art.js';
+import { normalizeHanziState } from './hanzi-engine.js';
+import { renderHanzi, handleHanziAction } from './hanzi.js';
 
 const app = document.querySelector('#app');
 const dialog = document.querySelector('#dialog');
 const loaded = loadState({ getItem: key => localStorage.getItem(key) });
 let state = loaded.state;
+state.hanzi = normalizeHanziState(state.hanzi);
 let storageAvailable = loaded.available;
 let expandedTabs = false;
 let mobileMenu = false;
@@ -89,11 +92,13 @@ function currentItem() {
 }
 
 function render() {
+  state.hanzi ||= normalizeHanziState(null);
   const focused = document.activeElement;
   const focusedAction = focused?.closest('#app') ? focused.dataset.action : null;
   const focusData = focusedAction ? { action: focusedAction, id: focused.dataset.id, value: focused.dataset.value, index: focused.dataset.index } : null;
   const subject = subjects.find(item => item.id === state.subject);
-  document.title = `${subject.name === '语文' ? currentMode().name + ' · 拼音学习' : subject.name} · 小兔学习乐园`;
+  const isHanzi = state.subject === 'chinese' && state.features.chinese === 'hanzi-structure';
+  document.title = `${isHanzi ? '汉字笔画与结构' : subject.name === '语文' ? currentMode().name + ' · 拼音学习' : subject.name} · 小兔学习乐园`;
   app.className = `${state.collapsed ? 'sidebar-collapsed' : ''} ${mobileMenu ? 'mobile-open' : ''}`;
   app.classList.toggle('no-reward-motion', !state.settings.animations);
   app.innerHTML = `
@@ -111,17 +116,17 @@ function render() {
       <header class="topbar">
         ${button('mobile-menu', '', 'menu', 'icon-button mobile-toggle', 'aria-label="切换学科导航"')}
         <div class="breadcrumb">学习乐园 ${icon('chevron')} <span>${subject.name}</span></div>
-        <div class="topbar-right"><button class="star-counter" data-action="reward-rules" aria-label="查看星星收获与获取规则">${icon('star')}<b>${rewardStats(state.rewards).stars}</b><span>颗成长星</span>${icon('info')}</button><details class="my-menu"><summary class="my-menu-toggle" aria-label="打开我的菜单"><img src="/bunny.svg" alt="" width="38" height="38"><span>${escape(state.nickname)}<small>我的 ${icon('down')}</small></span></summary><div class="my-menu-content"><strong>你好，${escape(state.nickname)}</strong>${button('profile', '我的成长空间', 'sprout')}${button('mode', `错题本 <b>${state.mistakes.length}</b>`, 'refresh', '', 'data-id="mistakes"')}${button('mode', `我的收藏 <b>${state.favorites.length}</b>`, 'heart', '', 'data-id="favorites"')}${button('records', '学习记录', 'book')}${button('reward-collection', '奖励收藏册', 'star')}${button('edit-nickname', '设置昵称', 'pen')}</div></details></div>
+        <div class="topbar-right"><button class="star-counter" data-action="reward-rules" aria-label="查看星星收获与获取规则">${icon('star')}<b>${rewardStats(state.rewards).stars}</b><span>颗成长星</span>${icon('info')}</button><details class="my-menu"><summary class="my-menu-toggle" aria-label="打开我的菜单"><img src="/bunny.svg" alt="" width="38" height="38"><span>${escape(state.nickname)}<small>我的 ${icon('down')}</small></span></summary><div class="my-menu-content"><strong>你好，${escape(state.nickname)}</strong>${button('profile', '我的成长空间', 'sprout')}${button('mode', `拼音错题本 <b>${state.mistakes.length}</b>`, 'refresh', '', 'data-id="mistakes"')}${button('hanzi-review', `汉字错题本 <b>${state.hanzi.mistakes.length}</b>`, 'pen')}${button('mode', `我的收藏 <b>${state.favorites.length}</b>`, 'heart', '', 'data-id="favorites"')}${button('records', '学习记录', 'book')}${button('reward-collection', '奖励收藏册', 'star')}${button('edit-nickname', '设置昵称', 'pen')}</div></details></div>
       </header>
       <div class="feature-bar"><div role="tablist" aria-label="${subject.name}小功能" class="feature-tabs ${expandedTabs ? 'expanded' : ''}">${visibleTabs(subject.features, state.features[subject.id], expandedTabs).map(feature => `<button role="tab" aria-selected="${state.features[subject.id] === feature.id}" data-action="feature" data-id="${feature.id}" class="feature-tab ${state.features[subject.id] === feature.id ? 'active' : ''}">${icon(feature.icon)}${feature.name}<span class="tiny-dot"></span></button>`).join('')}${subject.features.length === 0 ? '<span class="feature-placeholder">新的学习冒险，正在准备中</span>' : ''}</div>${subject.features.length > 10 ? button('expand-tabs', expandedTabs ? '收起' : `展开全部（${subject.features.length}）`, 'down', 'expand-tabs', `aria-expanded="${expandedTabs}"`) : ''}<span class="feature-decoration">LEARN · PLAY · GROW ${icon('flower')}</span></div>
-      <main id="main-content" tabindex="-1">${state.subject === 'chinese' ? learningPage() : comingSoon(subject)}</main>
+      <main id="main-content" tabindex="-1">${isHanzi ? renderHanzi(state.hanzi) : state.subject === 'chinese' ? learningPage() : comingSoon(subject)}</main>
       <footer>用一点好奇心，收获一点新知识。${icon('heart')}<span>小兔陪你慢慢学</span></footer>
     </div>`;
   if (focusData && !dialog.open) {
     const candidates = [...app.querySelectorAll('[data-action]')];
     const replacement = candidates.find(element => element.dataset.action === focusData.action && element.dataset.id === focusData.id && element.dataset.value === focusData.value && element.dataset.index === focusData.index && !element.disabled);
     if (replacement) replacement.focus({ preventScroll: true });
-    else app.querySelector('[data-action="next-question"]:not(:disabled)')?.focus({ preventScroll: true });
+    else app.querySelector('[data-action="hz-advance"], [data-action="hz-stroke-previous"]:not(:disabled), [data-action="next-question"]:not(:disabled)')?.focus({ preventScroll: true });
   }
   persist();
 }
@@ -148,7 +153,7 @@ function modePicker() {
 }
 
 function personalLinks(className = '') {
-  return `<div class="personal-links ${className}">${button('mode', `错题本 <b>${state.mistakes.length}</b>`, 'refresh', '', 'data-id="mistakes"')}${button('mode', `我的收藏 <b>${state.favorites.length}</b>`, 'heart', '', 'data-id="favorites"')}${button('records', '学习记录', 'book')}${button('reward-collection', '奖励收藏册', 'star')}</div>`;
+  return `<div class="personal-links ${className}">${button('mode', `拼音错题本 <b>${state.mistakes.length}</b>`, 'refresh', '', 'data-id="mistakes"')}${button('hanzi-review', `汉字错题本 <b>${state.hanzi.mistakes.length}</b>`, 'pen')}${button('mode', `我的收藏 <b>${state.favorites.length}</b>`, 'heart', '', 'data-id="favorites"')}${button('records', '学习记录', 'book')}${button('reward-collection', '奖励收藏册', 'star')}</div>`;
 }
 
 function equippedRewards() {
@@ -348,7 +353,7 @@ function celebrateReward(result) {
 
 function showRecords() {
   const history = state.history.slice(-6).reverse();
-  openDialog('每一步，都算数', `<div class="records-grid"><div><b>${state.seen.length}</b><span>浏览过的项目</span></div><div><b>${state.known.length}</b><span>自评认识</span></div><div><b>${state.mistakes.length}</b><span>待复习错题</span></div><div><b>${state.favorites.length}</b><span>收藏的朋友</span></div></div><p class="small-note">浏览过、自评认识和测验答对，是三种不同的学习记录。</p><h3>最近完成的练习</h3>${history.length ? `<ul class="history-list">${history.map(item => `<li><span>${escape(item.name)}<small>${new Date(item.time).toLocaleDateString('zh-CN')}</small></span><b>${item.correct} / ${item.total}<small>首次答对</small></b></li>`).join('')}</ul>` : '<p class="muted">完成一轮答题后，这里就会留下你的足迹。</p>'}${button('mode', '打开错题复习', 'refresh', 'solid-button', 'data-id="mistakes"')}`);
+  openDialog('每一步，都算数', `<h3>拼音学习</h3><div class="records-grid"><div><b>${state.seen.length}</b><span>浏览过的项目</span></div><div><b>${state.known.length}</b><span>自评认识</span></div><div><b>${state.mistakes.length}</b><span>待复习错题</span></div><div><b>${state.favorites.length}</b><span>收藏的朋友</span></div></div><h3>汉字笔画与结构</h3><p>自评认识 ${state.hanzi.known.length} 个学习项目，待复习错题 ${state.hanzi.mistakes.length} 道。</p><p class="small-note">浏览过、自评认识和测验答对，是三种不同的学习记录。</p><h3>最近完成的练习</h3>${history.length ? `<ul class="history-list">${history.map(item => `<li><span>${escape(item.name)}<small>${new Date(item.time).toLocaleDateString('zh-CN')}</small></span><b>${item.correct} / ${item.total}<small>首次答对</small></b></li>`).join('')}</ul>` : '<p class="muted">完成一轮答题后，这里就会留下你的足迹。</p>'}<div class="dialog-actions">${button('mode', '拼音错题复习', 'refresh', 'solid-button', 'data-id="mistakes"')}${button('hanzi-review', '汉字错题复习', 'pen', 'outline-button')}</div>`);
 }
 
 function showAbout() {
@@ -362,6 +367,7 @@ function changeMode(id) {
   state.modeGroups[state.mode] = state.group;
   state.mode = id;
   state.subject = 'chinese';
+  state.features.chinese = 'pinyin';
   state.group = state.modeGroups[id] || 'all';
   state.settings.continuous = false;
   if (id === 'mistakes' && state.sessions[key()]?.finished) delete state.sessions[key()];
@@ -451,6 +457,15 @@ function handleAction(event) {
   const target = event.target.closest('[data-action]');
   if (!target || target.disabled) return;
   const action = target.dataset.action;
+  if (action.startsWith('hz-')) {
+    if (state.subject !== 'chinese' || state.features.chinese !== 'hanzi-structure') return;
+    halt();
+    const result = handleHanziAction(state, action, target.dataset);
+    render();
+    if (result.correct) chime(state.settings.effects);
+    celebrateReward(result.reward);
+    return;
+  }
   if (action === 'close-dialog') { closeDialog(); return; }
   if (action === 'toggle-modes') { state.modesExpanded = !state.modesExpanded; render(); return; }
   if (action === 'settings') { showSettings(); return; }
@@ -466,6 +481,13 @@ function handleAction(event) {
   if (action === 'replay-reward') { const reward = rewardCatalog.find(item => item.id === target.dataset.id && state.rewards.unlocks[item.id]); if (reward) celebrateReward({ stars: 0, unlocked: [reward.id], reasons: [] }); return; }
   if (action === 'dismiss-reward') { clearRewardNotice(); return; }
   if (action === 'mode') { changeMode(target.dataset.id); return; }
+  if (action === 'hanzi-review') {
+    halt(); state.settings.continuous = false;
+    state.subject = 'chinese'; state.features.chinese = 'hanzi-structure';
+    if (state.hanzi.mistakes.length) handleHanziAction(state, 'hz-start', { id: 'review' });
+    else { state.hanzi.view = 'learn'; toast('还没有汉字错题，可以先认识几个汉字朋友。'); }
+    closeDialog(); render(); return;
+  }
   if (action === 'toggle-tones') { halt(); state.tonePractice = !state.tonePractice; render(); return; }
   if (action === 'shuffle-favorites') { halt(); const value = session(); value.ids = shuffle(value.ids); value.index = 0; render(); toast('顺序打乱啦，来看看还认识谁。'); return; }
   if (action === 'subject') {
@@ -479,7 +501,7 @@ function handleAction(event) {
   }
   if (action === 'mobile-menu') { mobileMenu = !mobileMenu; render(); return; }
   if (action === 'expand-tabs') { expandedTabs = !expandedTabs; render(); return; }
-  if (action === 'feature') { state.features[state.subject] = target.dataset.id; expandedTabs = false; halt(); render(); return; }
+  if (action === 'feature') { state.features[state.subject] = target.dataset.id; expandedTabs = false; halt(); state.settings.continuous = false; render(); return; }
   if (action === 'map-group') { if (learningGroups(state.mode).some(group => group.id === target.dataset.id)) changeScope('group', target.dataset.id); return; }
   if (action === 'map-word-scope') { if (availableWordScopes().some(scope => scope.id === target.dataset.id)) changeScope('wordScope', target.dataset.id); return; }
   if (action === 'next-section') {
@@ -630,7 +652,7 @@ document.addEventListener('keydown', event => {
     return;
   }
   if (dialog.open || event.target.closest('input, select, textarea, button, a')) return;
-  if (state.subject === 'chinese' && studyModes.includes(state.mode) && ['ArrowLeft', 'ArrowRight'].includes(event.key)) {
+  if (state.subject === 'chinese' && state.features.chinese !== 'hanzi-structure' && studyModes.includes(state.mode) && ['ArrowLeft', 'ArrowRight'].includes(event.key)) {
     const value = session();
     const next = value.index + (event.key === 'ArrowRight' ? 1 : -1);
     if (next >= 0 && next < value.ids.length) { event.preventDefault(); halt(); value.index = next; render(); }

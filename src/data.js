@@ -109,7 +109,7 @@ export const toneItems = [1, 2, 3, 4].map(tone => ({ id: `tone-ma${tone}`, sound
 export const tonePracticeSounds = ['ma', 'ba', 'yi', 'wu', 'yu'].flatMap(syllable => [1, 2, 3, 4].map(tone => `${syllable}${tone}`));
 
 export const subjects = [
-  { id: 'chinese', name: '语文', english: 'CHINESE', icon: 'book', color: 'pink', features: [{ id: 'pinyin', name: '拼音学习', icon: 'type' }] },
+  { id: 'chinese', name: '语文', english: 'CHINESE', icon: 'book', color: 'pink', features: [{ id: 'pinyin', name: '拼音学习', icon: 'type' }, { id: 'hanzi-structure', name: '汉字笔画与结构', icon: 'pen' }] },
   { id: 'math', name: '数学', english: 'MATH', icon: 'math', color: 'blue', features: [] },
   { id: 'english', name: '英语', english: 'ENGLISH', icon: 'globe', color: 'yellow', features: [] },
 ];

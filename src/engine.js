@@ -155,7 +155,7 @@ export const defaultState = () => ({
   seen: [], known: [], favorites: [], mistakes: [], history: [], sessions: {},
   settings: { slow: false, effects: true, continuous: false, animations: true },
   nickname: '小小探索家', modesExpanded: false, modePickerVersion: 2, rewards: null,
-  tonePractice: false, modeGroups: {},
+  tonePractice: false, modeGroups: {}, hanzi: null,
 });
 
 export function loadState(storage) {
