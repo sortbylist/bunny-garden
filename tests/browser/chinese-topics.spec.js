@@ -84,7 +84,8 @@ test('查字典：两种索引实际查到条目，支持退回、切换和刷�
   await expect(page.locator('.ct-entry')).toContainText('总笔画：11');
   await page.locator('[data-action="ct-lookup-back"]').click();
   await expect(page.locator('.ct-entry')).toHaveCount(0);
-  await expect(page.locator('[data-action="ct-lookup-pick"]')).toHaveText(['深']);
+  expect(await page.locator('[data-action="ct-lookup-pick"]').allTextContents()).toEqual(expect.arrayContaining(['深', '清']));
+  await expect(page.locator('[data-action="ct-lookup-pick"]')).toHaveCount(2);
 });
 
 test('所有主题在手机可切换、无溢出，清空同时清除所有主题进度', async ({ page }) => {

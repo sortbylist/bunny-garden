@@ -168,6 +168,10 @@ for (const topic of chineseTopics) {
 }
 
 test('查字实验的音序、部首索引均可到达每个例字，剩余笔画准确', () => {
+  assert.equal(dictionaryEntries.length, 24);
+  const topic = chineseTopics.find(item => item.id === 'dictionary');
+  assert.equal(topic.lessons.length, 36);
+  assert.equal(topic.questions.length, 181);
   for (const entry of dictionaryEntries) {
     assert.equal(entry.initial, entry.syllable[0].toUpperCase());
     assert.ok(entry.strokes > entry.radicalStrokes);
@@ -181,5 +185,6 @@ test('查字实验的音序、部首索引均可到达每个例字，剩余笔�
   }
   assert.deepEqual(dictionaryLookup('sound', ['H', 'bad']).selections, ['H']);
   assert.deepEqual(dictionaryLookup('radical', null).selections, []);
-  assert.deepEqual(dictionaryLookup('radical', ['3', '氵', '8']).options.sort(), ['深']);
+  assert.deepEqual(dictionaryLookup('radical', ['3', '氵', '8']).options.sort(), ['深', '清']);
+  assert.deepEqual(dictionaryLookup('sound', ['Q', 'qing']).options.sort(), ['情', '晴', '清', '请']);
 });
