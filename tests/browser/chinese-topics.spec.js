@@ -67,7 +67,7 @@ for (const topic of chineseTopics) {
     root = await stored(page);
     expect(root.topics[topic.id].mistakes).toEqual([]);
     expect(root.rewards.events.filter(event => event.id === `review:${question.id}`)).toHaveLength(1);
-    await expect(page.locator('.growth-card [data-action="topic-review"]')).toBeDisabled();
+    await expect(page.locator('.growth-card [data-action="ct-start"][data-id="review"]')).toBeDisabled();
   });
 }
 
