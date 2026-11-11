@@ -22,13 +22,13 @@ function optionsFor(answer, pool) {
 export const phonicsQuestions = [
   ...phonicsLessons.map(lesson => lesson.rule),
   ...phonicsStories.map(story => ({ ...story.question, storyId: story.id })),
-  ...alphabet.map((letter, index) => ({ id: `alphabet-${letter.letter}`, kind: 'alphabet', lessonId: 'lesson-1', prompt: `找到 ${letter.upper} 对应的小写字母`, answer: letter.letter, options: optionsFor(letter.letter, [...alphabet.slice(index + 1), ...alphabet].map(entry => entry.letter)), explanation: `${letter.upper} 与 ${letter.letter} 是同一个字母的大小写。英式字母名 /${letter.name}/ 不是字母音。` })),
+  ...alphabet.map((letter, index) => ({ id: `alphabet-${letter.letter}`, kind: 'alphabet', lessonId: 'lesson-1', prompt: `找到 ${letter.upper} 对应的小写字母`, answer: letter.letter, options: optionsFor(letter.letter, [...alphabet.slice(index + 1), ...alphabet].map(entry => entry.letter)), explanation: `${letter.upper} 与 ${letter.letter} 是同一个字母的大小写。字母名 /${letter.name}/ 不是字母音。` })),
   ...phonicsWords.flatMap((word, index) => {
     const pool = [...phonicsWords.slice(index + 1, index + 12), ...phonicsWords.slice(0, 12)];
     return [
       { id: `meaning-${word.id}`, kind: 'meaning', lessonId: word.lessonId, wordId: word.id, prompt: '读一读，选择这个词的意思', display: word.text, answer: word.meaning, options: optionsFor(word.meaning, pool.map(item => item.meaning)), explanation: `${word.text}：${word.meaning}。词义选择不等于独立朗读测验。` },
       { id: `spelling-${word.id}`, kind: 'spelling', lessonId: word.lessonId, wordId: word.id, prompt: `根据词义拼写：${word.meaning}`, answer: word.text.toLowerCase(), options: [], explanation: `本题目标词为 ${word.text}（${word.meaning}）。字母块数量不是音素数量。`, letters: word.text.toLowerCase().split('') },
-      { id: `listen-${word.id}`, kind: 'listen', lessonId: word.lessonId, wordId: word.id, prompt: '听英式录音，选择你听到的词', answer: word.text, options: optionsFor(word.text, pool.map(item => item.text)), explanation: `${word.text}：${word.meaning}。` },
+      { id: `listen-${word.id}`, kind: 'listen', lessonId: word.lessonId, wordId: word.id, prompt: '听一听，选择你听到的词', answer: word.text, options: optionsFor(word.text, pool.map(item => item.text)), explanation: `${word.text}：${word.meaning}。` },
     ];
   }),
 ];
@@ -52,10 +52,13 @@ export function hasHomophoneRisk(wordId) {
   return homophoneWords.has(phonicsWordById.get(wordId)?.text.toLowerCase());
 }
 
-export function approvedPhonicsAudio(entry) {
-  return Boolean(entry && entry.locale === 'en-GB' && entry.status === 'approved' && entry.reviewedBy && entry.reviewedAt
-    && entry.license && entry.source && typeof entry.path === 'string'
-    && /^\/audio\/phonics\/[a-zA-Z0-9_-]+\.(ogg|mp3|wav)$/.test(entry.path));
+export function availablePhonicsAudio(entry) {
+  const identifier = typeof entry?.path === 'string' ? entry.path.split('/').at(-1)?.replace(/\.mp3$/, '') : null;
+  const expected = phonicsWordById.get(identifier)?.text || phonicsStories.find(story => story.id === identifier)?.text;
+  return Boolean(expected && entry.locale === 'en-GB' && entry.status === 'ready' && entry.provider === 'gtts'
+    && entry.lang === 'en' && entry.tld === 'co.uk' && typeof entry.text === 'string' && entry.text.trim()
+    && entry.text === expected
+    && typeof entry.path === 'string' && /^\/audio\/phonics\/(?:word-[a-z]+|story-\d+)\.mp3$/.test(entry.path));
 }
 
 export function createPhonicsRound(pool, length = 10, random = Math.random) {

@@ -328,17 +328,17 @@
   },
   "missing": [
     "word:写字",
-    "word:画画",
-    "word:白云",
-    "word:蓝天",
-    "word:小草",
     "word:大海",
-    "word:河水",
+    "word:画画",
     "word:小鸟",
     "word:小鱼",
-    "word:大树",
+    "word:蓝天",
     "word:白兔",
     "word:山羊",
-    "word:黄牛"
+    "word:黄牛",
+    "word:小草",
+    "word:大树",
+    "word:河水",
+    "word:白云"
   ]
 }

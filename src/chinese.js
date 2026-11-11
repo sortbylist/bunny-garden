@@ -27,7 +27,7 @@ function quizCard(topic, state) {
     return `<section class="hz-card ct-result"><h2>这一轮完成啦！</h2><p>共 ${stats.total} 题，首次答对 ${stats.correct} 题，首次跳过 ${stats.skipped} 题。</p><p>重试不覆盖首次成绩；错题需要在新一轮复习中独立答对才移出。</p><div class="hz-actions">${control('learn', '回到学习')}${control('start', '再练一轮', `data-id="${round.scope}" ${round.scope === 'review' && !state.mistakes.length ? 'disabled' : ''}`, 'solid-button')}</div></section>`;
   }
   const question = round.questions[round.index];
-  return `<section class="hz-card ct-quiz" aria-label="${topic.name}练习"><div class="hz-card-heading"><h2>${round.scope === 'review' ? '错题复习' : '动脑小练习'}</h2><span>第 ${round.index + 1} / ${round.questions.length} 题</span></div>
+  return `<section class="hz-card ct-quiz" aria-label="${topic.name}练习"><div class="hz-card-heading"><h2>${round.scope === 'review' ? `${topic.name}错题本` : '动脑小练习'}</h2><span>第 ${round.index + 1} / ${round.questions.length} 题</span></div>
     ${question.display ? `<p class="ct-context">${escape(question.display)}</p>` : ''}<h3 class="ct-prompt">${escape(question.prompt)}</h3>
     <div class="hz-options">${question.options.map(option => control('answer', escape(option), `data-value="${escape(option)}" ${round.revealed ? 'disabled' : ''}`, `hz-option ${round.revealed && option === question.answer ? 'is-correct' : round.selected === option ? 'is-wrong' : ''}`)).join('')}</div>
     <div class="hz-feedback" role="status">${round.revealed ? `<strong>${round.selected === question.answer ? '答对啦！' : '先认识答案，再来练一练。'}</strong><p>${escape(question.explanation)}</p>` : round.responses[round.index] ? '<strong>再试一次。读一读题目，也可以先看答案。</strong>' : '仔细观察，选一个答案。'}</div>
@@ -45,12 +45,12 @@ function lookupCard(state) {
     <div class="hz-actions">${control('lookup-back', '退回一步', !selections.length ? 'disabled' : '')}${control('lookup-reset', '重新查找')}${control('learn', '回到学习')}</div></section>`;
 }
 
-export function renderTopic(topic, state) {
+export function renderTopic(topic, state, garden) {
   return `<section class="chinese-topic" data-topic="${topic.id}"><div class="page-heading"><div><div class="eyebrow"><span></span>第一阶段 · 字词基础</div><h1>${topic.name}<span class="heading-flower">✿</span></h1><p>${topic.description}</p></div></div>
     <nav class="hz-categories" aria-label="${topic.name}小节">${topic.categories.map(category => control('category', `<strong>${category.name}</strong>`, `data-id="${category.id}" aria-pressed="${state.view === 'learn' && state.category === category.id}"`, 'hz-category')).join('')}</nav>
     <div class="hz-layout"><div>${state.view === 'quiz' ? quizCard(topic, state) : state.view === 'lookup' ? lookupCard(state) : learningCard(topic, state)}</div><aside class="hz-sidebar">
-    <section class="hz-card"><h2>我的学习足迹</h2><p>自评认识 ${state.known.length} / ${topic.lessons.length} 项</p><progress value="${state.known.length}" max="${topic.lessons.length}" aria-label="自评认识进度"></progress><p>自评认识与首次答对分开记录。</p><div class="hz-sidebar-actions">
-      ${topic.id === 'dictionary' ? control('lookup', '查字小实验', '', 'solid-button') : ''}${control('start', '综合练习 · 最多 10 题', 'data-id="all"', 'solid-button')}${control('start', `本主题错题（${state.mistakes.length}）`, `data-id="review" ${state.mistakes.length ? '' : 'disabled'}`)}${state.round && !state.round.finished && state.view !== 'quiz' ? control('resume', '继续上次练习') : ''}<button type="button" class="outline-button" data-action="topic-records">字词学习记录</button></div>
+    ${garden}<section class="hz-card"><h2>动脑小练习</h2><div class="hz-sidebar-actions">
+      ${topic.id === 'dictionary' ? control('lookup', '查字小实验', '', 'solid-button') : ''}${control('start', '综合练习 · 最多 10 题', 'data-id="all"', 'solid-button')}${state.round && !state.round.finished && state.view !== 'quiz' ? control('resume', '继续上次练习') : ''}</div>
       ${state.round && !state.round.finished ? '<p class="hz-caption">开始新练习会替换未完成的一轮；想保留当前题目，可继续上次练习。</p>' : ''}</section>
     <section class="hz-card hz-note"><h2>按自己的节奏学</h2><p>每一小节都能直接开始，不必依次通关。</p><p>也可以穿插读古诗、朗读、说一句话或写下今天的小发现。</p><p>进度保存在当前浏览器，清空本机记录会一并清除。</p></section></aside></div></section>`;
 }

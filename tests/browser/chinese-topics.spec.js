@@ -62,7 +62,7 @@ for (const topic of chineseTopics) {
     await page.reload();
     expect((await stored(page)).history).toHaveLength(1);
     await page.locator('[data-action="topic-records"]').click();
-    await page.locator(`[data-action="topic-review"][data-id="${topic.id}"]`).click();
+    await page.locator(`dialog [data-action="topic-review"][data-id="${topic.id}"]`).click();
     for (let index = 0; index < 2; index++) { await answer(page, topic); await page.locator('[data-action="ct-advance"]').click(); }
     root = await stored(page);
     expect(root.topics[topic.id].mistakes).toEqual([]);

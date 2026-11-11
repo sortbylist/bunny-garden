@@ -29,7 +29,8 @@ test('顺序学习、点读、收藏、进度恢复与学科切换', async ({ pa
 
 test('所有练习方式可进入，随机范围不重复', async ({ page }) => {
   await page.goto('/');
-  const modes = ['random', 'tones', 'listen', 'audio', 'blend', 'hanzi', 'pinyin', 'confusing', 'rules', 'match', 'challenge', 'mistakes', 'favorites'];
+  await expect(page.locator('.garden-links [data-id="mistakes"]')).toBeDisabled();
+  const modes = ['random', 'tones', 'listen', 'audio', 'blend', 'hanzi', 'pinyin', 'confusing', 'rules', 'match', 'challenge', 'favorites'];
   for (const id of modes) {
     await chooseMode(page, id);
     await expect(page.locator('.learning-main>.section-title h2')).not.toBeEmpty();
@@ -136,7 +137,7 @@ test('桌面、平板和手机没有横向溢出，生成预览截图', async ({
     if (viewport.name === 'mobile') {
       await page.locator('[data-action="mobile-menu"].mobile-toggle').click();
       await page.locator('[data-action="subject"][data-id="english"]').click();
-      await expect(page.getByRole('heading', { name: '英语小天地，正在准备中' })).toBeVisible();
+      await expect(page.locator('.phonics-page')).toBeVisible();
     }
   }
 });

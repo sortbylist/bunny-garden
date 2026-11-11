@@ -57,12 +57,12 @@ function quizCard(state) {
   const round = state.round;
   if (round.finished) {
     const stats = roundStats(round);
-    return `<section class="hz-card hz-result" aria-label="汉字练习结果"><h2>这一轮完成啦！</h2><p class="hz-result-score">${stats.correct} / ${stats.total}</p><p>首次答对 ${stats.correct} 题，首次跳过 ${stats.skipped} 题。</p><p>答错后再试也是进步。错题会留在汉字错题本中，独立答对后移出。</p><div class="hz-actions">${control('learn', '回到学习')}${control('start', '再练一轮', `data-id="${round.scope}" ${round.scope === 'review' && !state.mistakes.length ? 'disabled' : ''}`, 'solid-button')}${control('start', `复习错题（${state.mistakes.length}）`, `data-id="review" ${state.mistakes.length ? '' : 'disabled'}`)}</div></section>`;
+    return `<section class="hz-card hz-result" aria-label="汉字练习结果"><h2>这一轮完成啦！</h2><p class="hz-result-score">${stats.correct} / ${stats.total}</p><p>首次答对 ${stats.correct} 题，首次跳过 ${stats.skipped} 题。</p><p>答错后再试也是进步。错题会留在汉字错题本中，独立答对后移出。</p><div class="hz-actions">${control('learn', '回到学习')}${control('start', '再练一轮', `data-id="${round.scope}" ${round.scope === 'review' && !state.mistakes.length ? 'disabled' : ''}`, 'solid-button')}${control('start', `汉字错题本（${state.mistakes.length}）`, `data-id="review" ${state.mistakes.length ? '' : 'disabled'}`)}</div></section>`;
   }
   const question = round.questions[round.index];
   const response = round.responses[round.index];
   const sample = strokes.find(item => item.id === question.strokeId);
-  return `<section class="hz-card hz-quiz" aria-label="汉字练习"><div class="hz-card-heading"><h2>${round.scope === 'review' ? '汉字错题复习' : '汉字小练习'}</h2><span>第 ${round.index + 1} / ${round.questions.length} 题</span></div>
+  return `<section class="hz-card hz-quiz" aria-label="汉字练习"><div class="hz-card-heading"><h2>${round.scope === 'review' ? '汉字错题本' : '汉字小练习'}</h2><span>第 ${round.index + 1} / ${round.questions.length} 题</span></div>
     <h3 class="question-prompt">${question.prompt}</h3>
     ${sample ? writingGrid([sample], 1, '待辨认的笔画，请观察形状') : `<div class="hz-question-character">${question.display}</div>`}
     <div class="hz-options">${question.options.map(option => control('answer', escape(option), `data-value="${escape(option)}" ${round.revealed ? 'disabled' : ''}`, `hz-option ${round.revealed && option === question.answer ? 'is-correct' : round.selected === option ? 'is-wrong' : ''}`)).join('')}</div>
@@ -71,11 +71,11 @@ function quizCard(state) {
   </section>`;
 }
 
-export function renderHanzi(state) {
+export function renderHanzi(state, garden) {
   return `<section class="hanzi-page"><div class="page-heading"><div><div class="eyebrow"><span></span>字词基础 · 汉字小天地</div><h1>汉字笔画与结构<span class="heading-flower">✿</span></h1><p>认一笔，拆一拆，发现汉字的样子。每个小节都可以直接开始。</p></div></div>
     <nav class="hz-categories" aria-label="汉字学习小节">${hanziCategories.map(category => control('category', `<strong>${category.name}</strong><span>${category.description}</span>`, `data-id="${category.id}" aria-pressed="${state.category === category.id && state.view === 'learn'}"`, 'hz-category')).join('')}</nav>
     <div class="hz-layout"><div>${state.view === 'quiz' && state.round ? quizCard(state) : learningCard(state)}</div><aside class="hz-sidebar">
-      <section class="hz-card"><h2>我的汉字足迹</h2><p>自评认识 <strong>${state.known.length} / ${hanziLessons.length}</strong> 个学习项目</p><progress value="${state.known.length}" max="${hanziLessons.length}" aria-label="汉字自评认识进度"></progress><p>自评认识和练习首次答对分开记录。</p><div class="hz-sidebar-actions">${control('start', '综合练习 · 10 题', 'data-id="all"', 'solid-button')}${control('start', `汉字错题本（${state.mistakes.length}）`, `data-id="review" ${state.mistakes.length ? '' : 'disabled'}`)}${state.round && !state.round.finished && state.view === 'learn' ? control('resume', '继续上次练习') : ''}</div></section>
+      ${garden}<section class="hz-card"><h2>动脑小练习</h2><div class="hz-sidebar-actions">${control('start', '综合练习 · 10 题', 'data-id="all"', 'solid-button')}${state.round && !state.round.finished && state.view === 'learn' ? control('resume', '继续上次练习') : ''}</div></section>
       <section class="hz-card hz-note"><h2>按自己的节奏学</h2><p>不用先学完拼音，也不用依次通关。可以随时换一节，回头再看看。</p><p>认识字的同时，也可以读一首古诗、说一句话，或写下今天的小发现。</p><p>学习记录保存在当前浏览器。</p></section>
     </aside></div></section>`;
 }

@@ -71,5 +71,5 @@ export function advanceTopic(topic, state) {
   if (round.index < round.questions.length - 1) { round.index++; round.selected = null; round.revealed = false; return null; }
   round.finished = true;
   const stats = roundStats(round);
-  return { time: Date.now(), name: `${topic.name}${round.scope === 'review' ? ' · 错题复习' : ''}`, total: stats.total, correct: stats.correct };
+  return { time: Date.now(), name: `${topic.name}${round.scope === 'review' ? ' · 错题本' : ''}`, total: stats.total, correct: stats.correct };
 }

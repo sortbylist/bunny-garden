@@ -2,13 +2,14 @@ import { chromium } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 
 const browser = await chromium.launch({ channel: 'chrome', headless: true });
+const phonics = process.argv.includes('--phonics');
 try {
   const page = await browser.newPage();
   await page.goto(process.env.APP_URL || 'http://127.0.0.1:5173');
-  const report = await page.evaluate(async () => {
-    const manifest = await fetch('/audio/manifest.json').then(response => response.json());
+  const report = await page.evaluate(async phonics => {
+    const manifest = await fetch(phonics ? '/audio/phonics/manifest.json' : '/audio/manifest.json').then(response => response.json());
     const context = new AudioContext();
-    const queue = Object.entries(manifest.files);
+    const queue = Object.entries(manifest.files).map(([key, value]) => [key, phonics ? value.path : value]);
     let cursor = 0;
     const failures = [];
     const results = [];
@@ -30,9 +31,9 @@ try {
     await Promise.all(Array.from({ length: 6 }, worker));
     await context.close();
     return { total: queue.length, decoded: results.length, failures, results };
-  });
+  }, phonics);
   await mkdir('artifacts', { recursive: true });
-  await writeFile('artifacts/audio-verification.json', JSON.stringify(report, null, 2));
+  await writeFile(phonics ? 'artifacts/phonics-audio-verification.json' : 'artifacts/audio-verification.json', JSON.stringify(report, null, 2));
   console.log(`Audio decode checks: ${report.decoded}/${report.total} passed.`);
-  if (report.failures.length) { console.error(report.failures); process.exitCode = 1; }
+  if (!report.total || report.failures.length) { console.error(report.failures); process.exitCode = 1; }
 } finally { await browser.close(); }

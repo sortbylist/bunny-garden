@@ -1,4 +1,4 @@
-import { approvedPhonicsAudio } from './phonics-engine.js';
+import { availablePhonicsAudio } from './phonics-engine.js';
 
 export function createPhonicsAudio(onStatus) {
   let manifest = { files: {} };
@@ -16,7 +16,7 @@ export function createPhonicsAudio(onStatus) {
     onStatus('idle');
   }
 
-  function available(id) { return approvedPhonicsAudio(manifest.files[id]); }
+  function available(id) { return availablePhonicsAudio(manifest.files[id]) && manifest.files[id].path === `/audio/phonics/${id}.mp3`; }
 
   async function play(id, slow = false) {
     stop();
@@ -24,7 +24,7 @@ export function createPhonicsAudio(onStatus) {
     onStatus('loading');
     await ready;
     if (generation !== token) return false;
-    if (!available(id)) { onStatus('error', '这段英式录音尚未审核就绪，不会用其他口音替代。'); return false; }
+    if (!available(id)) { onStatus('error', '暂时无法播放，请先选择其他内容。'); return false; }
     const audio = new Audio(manifest.files[id].path);
     active = audio;
     audio.playbackRate = slow ? 0.8 : 1;
@@ -39,7 +39,7 @@ export function createPhonicsAudio(onStatus) {
         if (generation === token) {
           if (!success) audio.pause();
           active = null;
-          onStatus(success ? 'idle' : 'error', success ? '' : '录音播放失败。请重试，或换成文字练习；不会记录为知识错误。');
+          onStatus(success ? 'idle' : 'error', success ? '' : '语音播放失败。请重试，或换成文字练习；不会记录为知识错误。');
         }
         resolve(success);
       };
@@ -52,5 +52,5 @@ export function createPhonicsAudio(onStatus) {
     });
   }
 
-  return { ready, stop, play, available, count: () => Object.values(manifest.files).filter(approvedPhonicsAudio).length };
+  return { ready, stop, play, available, count: () => Object.keys(manifest.files).filter(available).length };
 }

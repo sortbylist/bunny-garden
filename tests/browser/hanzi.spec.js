@@ -116,14 +116,14 @@ test('查看答案保留错题，离开与继续保留题目和首次结果', as
   expect(state.mistakes).toContain(question.id);
 });
 
-test('汉字页面的拼音个人工具正确切回拼音，清空记录同时清除汉字数据', async ({ page }) => {
+test('汉字页面只显示汉字错题本，清空记录同时清除汉字数据', async ({ page }) => {
   await openHanzi(page);
   await page.locator('[data-action="hz-known"]').click();
   await page.locator('.my-menu-toggle').click();
-  await page.locator('.my-menu [data-action="mode"][data-id="mistakes"]').click();
-  await expect(page.getByRole('tab', { name: '拼音学习' })).toHaveAttribute('aria-selected', 'true');
-  await expect(page.locator('.hanzi-page')).toHaveCount(0);
-  await page.getByRole('tab', { name: '汉字笔画与结构' }).click();
+  await expect(page.locator('.my-menu [data-action="mode"][data-id="mistakes"]')).toHaveCount(0);
+  await expect(page.locator('.my-menu [data-action="hanzi-review"]')).toBeDisabled();
+  await expect(page.locator('.growth-card')).toContainText('我的成长花园');
+  await page.locator('.my-menu-toggle').click();
   await page.locator('[data-action="settings"]').click();
   await page.locator('[data-action="reset-confirm"]').click();
   await page.locator('[data-action="reset-all"]').click();
