@@ -1,8 +1,9 @@
 import { shuffle, recordAnswer, roundStats } from './engine.js';
 import { dictionaryLookup } from './dictionary-data.js';
+import { practiceLengths, selectPractice } from './chinese-practice.js';
 
 export function topicDefaults(topic) {
-  return { category: topic.categories[0].id, lessonId: topic.lessons[0].id, view: 'learn', known: [], mistakes: [], round: null, activities: {}, lookup: { method: 'sound', selections: [] } };
+  return { category: topic.categories[0].id, lessonId: topic.lessons[0].id, view: 'learn', known: [], mistakes: [], round: null, activities: {}, lookup: { method: 'sound', selections: [] }, showPinyin: true, practiceLength: 10, practiceSeen: [] };
 }
 
 export function updateTopicActivity(topic, state, action, value) {
@@ -23,6 +24,9 @@ export function updateTopicActivity(topic, state, action, value) {
 export function normalizeTopic(topic, saved) {
   const state = topicDefaults(topic);
   if (!saved || typeof saved !== 'object') return state;
+  state.showPinyin = saved.showPinyin !== false;
+  if (practiceLengths.includes(saved.practiceLength)) state.practiceLength = saved.practiceLength;
+  state.practiceSeen = [...new Set(Array.isArray(saved.practiceSeen) ? saved.practiceSeen.filter(id => topic.questions.some(item => item.id === id)) : [])];
   if (topic.categories.some(item => item.id === saved.category)) state.category = saved.category;
   const lessons = topic.lessons.filter(item => item.category === state.category);
   state.lessonId = lessons.find(item => item.id === saved.lessonId)?.id || lessons[0].id;
@@ -46,7 +50,7 @@ export function normalizeTopic(topic, saved) {
   }
   const round = saved.round;
   if (!round || !['all', 'review', ...topic.categories.map(item => item.id)].includes(round.scope) ||
-      !Array.isArray(round.questions) || !round.questions.length || round.questions.length > 10 ||
+      !Array.isArray(round.questions) || !round.questions.length || round.questions.length > 30 ||
       !Number.isInteger(round.index) || round.index < 0 || round.index >= round.questions.length ||
       !Array.isArray(round.responses) || new Set(round.questions.map(item => item?.id)).size !== round.questions.length) return state;
   const questions = [];
@@ -70,10 +74,11 @@ export function normalizeTopic(topic, saved) {
 
 export function startTopicRound(topic, state, scope) {
   if (!['all', 'review', ...topic.categories.map(item => item.id)].includes(scope)) return false;
-  const pool = shuffle(topic.questions.filter(item => scope === 'all' || (scope === 'review' ? state.mistakes.includes(item.id) : item.category === scope)));
+  const pool = topic.questions.filter(item => scope === 'all' || (scope === 'review' ? state.mistakes.includes(item.id) : item.category === scope));
   if (!pool.length) return false;
-  const representatives = scope === 'all' ? topic.categories.map(category => pool.find(item => item.category === category.id)).filter(Boolean) : [];
-  const questions = shuffle([...representatives, ...pool.filter(item => !representatives.includes(item)).slice(0, 10 - representatives.length)]);
+  const selection = selectPractice(pool, scope === 'all' ? topic.categories.map(item => item.id) : [], state.practiceLength || 10, state.practiceSeen || [], shuffle);
+  const questions = selection.questions;
+  if (scope !== 'review') state.practiceSeen = selection.seenIds;
   state.round = { scope, questions: questions.map(item => ({ ...item, options: shuffle(item.options) })), index: 0, responses: [], selected: null, revealed: false, finished: false };
   state.view = 'quiz';
   return true;
@@ -96,5 +101,5 @@ export function advanceTopic(topic, state) {
   if (round.index < round.questions.length - 1) { round.index++; round.selected = null; round.revealed = false; return null; }
   round.finished = true;
   const stats = roundStats(round);
-  return { time: Date.now(), name: `${topic.name}${round.scope === 'review' ? ' · 错题复习' : ''}`, total: stats.total, correct: stats.correct };
+  return { time: Date.now(), name: `${topic.name}${round.scope === 'review' ? ' · 错题本' : ''}`, total: stats.total, correct: stats.correct };
 }

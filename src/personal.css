@@ -28,22 +28,22 @@
 .my-menu-toggle small .icon{width:12px;height:12px}
 .my-menu-content{position:absolute;right:0;top:calc(100% + 12px);background:#fffdf9;box-shadow:0 8px 30px #68506329;border:1px solid #dbc4d3;border-radius:16px;padding:12px;width:235px}
 .my-menu-content>strong{display:block;font-size:14px;line-height:1.8;padding:10px 8px 14px;border-bottom:1px dashed #e6d7df;overflow-wrap:anywhere}
-.my-menu-content button{width:100%;justify-content:flex-start;min-height:45px;font-size:14px;padding:10px;border-radius:9px;color:#826578}
+.my-menu-content button{width:100%;justify-content:flex-start;min-height:45px;font-size:14px;padding:10px;border:0;border-radius:9px;background:transparent;box-shadow:none;color:#826578}
 .my-menu-content button:hover{background:#f7edf3}
 .my-menu-content button .icon{width:18px;height:18px}
-.my-menu-content button b{margin-left:auto;background:#f1e4ed;min-width:25px;text-align:center;border-radius:20px;padding:2px 6px;font-size:12px}
 .personal-links{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
 .personal-links>button{min-height:53px;border:1px solid #dfd0da;background:#fffdf9;border-radius:12px;justify-content:flex-start;padding:11px 12px;font-size:15px;gap:8px;color:#816577}
 .personal-links>button:hover{background:#f3e4ed;border-color:#cda5be}
 .personal-links>button>.icon{width:18px;height:18px}
-.personal-links b{margin-left:auto;font-size:12px;min-width:23px;padding:3px;background:#f1e1e9;border-radius:8px;text-align:center}
 .garden-links{grid-template-columns:1fr;gap:8px;border-top:1px dashed #d9dec5;padding-top:15px;margin-top:12px}
-.garden-links>button{font-size:15px;min-height:47px;border-color:#d7ddc7;background:#fffef5;color:#788368}
-.garden-links b{background:#e8eddc;color:#819068}
+.garden-links>button{font-size:15px;min-height:47px;white-space:normal;line-height:1.6;justify-content:center;border:1.5px solid #d9c6d2;border-radius:11px;background:#fffdfb;color:#856077}
+.garden-links>button[aria-pressed="true"]{background:#f9e7ee;border-color:#a76888;color:#7c3f5b}
+.hz-sidebar>.growth-card{margin-bottom:20px}
 .growth-card .growth-bottom>span{font-size:11px}
 .growth-card .growth-bottom .text-button{font-size:13px;gap:4px;min-height:44px}
 .growth-card .growth-bottom .icon{width:14px;height:14px}
 .growth-card h3{overflow-wrap:anywhere;line-height:1.8}
+.growth-stat{flex-wrap:wrap;gap:8px}
 .reward-art{width:110px;height:110px;display:block;flex-shrink:0;filter:drop-shadow(0 4px 1px #b9a5af22)}
 .garden-display{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-top:10px}
 .equipped-item{display:flex;flex-direction:column;align-items:center;gap:3px;max-width:130px}

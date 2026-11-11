@@ -88,7 +88,7 @@ test('地图保留范围列表，点击范围保持玩法并同步下拉框', as
 
 test('各玩法地图与下拉选项一致，选择任意范围后列表保持不变', async ({ page }) => {
   await page.goto('/');
-  for (const mode of ['sequence', 'random', 'listen', 'audio', 'hanzi', 'pinyin', 'match', 'challenge', 'tones', 'blend', 'confusing', 'rules', 'mistakes', 'favorites']) {
+  for (const mode of ['sequence', 'random', 'listen', 'audio', 'hanzi', 'pinyin', 'match', 'challenge', 'tones', 'blend', 'confusing', 'rules', 'favorites']) {
     await chooseMode(page, mode);
     const options = await page.locator('select[data-setting="group"] option, select[data-setting="wordScope"] option').evaluateAll(elements => elements.filter(element => element.textContent !== '全部拼音').map(element => ({ name: element.textContent, id: element.value, field: element.parentElement.dataset.setting })));
     if (!options.length) {

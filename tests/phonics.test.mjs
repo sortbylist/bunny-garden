@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { alphabet, phonicsModules, phonicsLessons, phonicsWords, phonicsStories, phonicsSentences } from '../src/phonics-data.js';
-import { phonicsDefaults, phonicsQuestions, questionPool, createPhonicsRound, answerPhonics, advancePhonicsRound, phonicsStats, readPhonicsState, approvedPhonicsAudio, shufflePhonics } from '../src/phonics-engine.js';
+import { phonicsDefaults, phonicsQuestions, questionPool, createPhonicsRound, answerPhonics, advancePhonicsRound, phonicsStats, readPhonicsState, availablePhonicsAudio, shufflePhonics } from '../src/phonics-engine.js';
 
-test('英式课程覆盖 12 模块、48 课、600 以上去重词形、36 篇共读与 120 以上短句', () => {
+test('拼读课程覆盖 12 模块、48 课、600 以上去重词形、36 篇共读与 120 以上短句', () => {
   assert.equal(phonicsModules.length, 12);
   assert.equal(phonicsLessons.length, 48);
   assert.equal(phonicsModules.reduce((total, module) => total + module.count, 0), 48);
@@ -88,15 +88,15 @@ test('独立新轮改正后移出错题并安排复习，1/3/7 天不宣传为�
   assert.deepEqual(state.mistakes, []);
 });
 
-test('只开放已审核 en-GB 本地音频，缺授权/审核/合法路径和其他口音均拒绝', async () => {
-  const good = { path: '/audio/phonics/test.ogg', locale: 'en-GB', status: 'approved', reviewedBy: 'test reviewer', reviewedAt: '2026-11-09', source: 'test fixture', license: 'CC0' };
-  assert.equal(approvedPhonicsAudio(good), true);
-  for (const changes of [{ locale: 'en-US' }, { status: 'pending-human-review' }, { reviewedBy: '' }, { reviewedAt: '' }, { license: '' }, { source: '' }, { path: 'https://example.com/a.ogg' }, { path: '/audio/phonics/../bad.ogg' }]) {
-    assert.equal(approvedPhonicsAudio({ ...good, ...changes }), false);
+test('只使用已就绪的英式 gTTS 本地 MP3，不依赖人工审核字段且目标文本匹配', async () => {
+  const good = { path: '/audio/phonics/word-map.mp3', text: 'map', locale: 'en-GB', status: 'ready', provider: 'gtts', lang: 'en', tld: 'co.uk' };
+  assert.equal(availablePhonicsAudio(good), true);
+  for (const changes of [{ locale: 'en-US' }, { status: 'pending' }, { provider: 'unknown' }, { tld: 'com' }, { lang: 'fr' }, { text: 'a map' }, { text: '' }, { path: 42 }, { path: 'https://example.com/map.mp3' }, { path: '/audio/phonics/../word-map.mp3' }]) {
+    assert.equal(availablePhonicsAudio({ ...good, ...changes }), false);
   }
   const manifest = JSON.parse(await readFile(new URL('../public/audio/phonics/manifest.json', import.meta.url), 'utf8'));
   assert.equal(manifest.locale, 'en-GB');
-  assert.ok(Object.values(manifest.files).every(approvedPhonicsAudio));
+  assert.ok(Object.values(manifest.files).every(availablePhonicsAudio));
   const state = { ...phonicsDefaults(), mode: 'listen', scope: 'all' };
   assert.equal(questionPool(state).length, 0);
   assert.ok(questionPool(state, () => true).every(question => question.wordId !== 'word-sea' && question.wordId !== 'word-see'));

@@ -5,3 +5,6 @@ playwright-report/
 artifacts/
 .DS_Store
 *.log
+.idea/
+scripts/audio/
+scripts/__pycache__/

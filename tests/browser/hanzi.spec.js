@@ -116,14 +116,14 @@ test('查看答案保留错题，离开与继续保留题目和首次结果', as
   expect(state.mistakes).toContain(question.id);
 });
 
-test('汉字页面的拼音个人工具正确切回拼音，清空记录同时清除汉字数据', async ({ page }) => {
+test('汉字页面只显示汉字错题本，清空记录同时清除汉字数据', async ({ page }) => {
   await openHanzi(page);
   await page.locator('[data-action="hz-known"]').click();
   await page.locator('.my-menu-toggle').click();
-  await page.locator('.my-menu [data-action="mode"][data-id="mistakes"]').click();
-  await expect(page.getByRole('tab', { name: '拼音学习' })).toHaveAttribute('aria-selected', 'true');
-  await expect(page.locator('.hanzi-page')).toHaveCount(0);
-  await page.getByRole('tab', { name: '汉字笔画与结构' }).click();
+  await expect(page.locator('.my-menu [data-action="mode"][data-id="mistakes"]')).toHaveCount(0);
+  await expect(page.locator('.my-menu [data-action="hanzi-review"]')).toBeDisabled();
+  await expect(page.locator('.growth-card')).toContainText('我的成长花园');
+  await page.locator('.my-menu-toggle').click();
   await page.locator('[data-action="settings"]').click();
   await page.locator('[data-action="reset-confirm"]').click();
   await page.locator('[data-action="reset-all"]').click();
@@ -159,4 +159,29 @@ test('手机平板桌面无横向溢出，键盘和减少动态效果可用', as
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.locator('[data-action="hz-learn"]').click();
   }
+});
+
+test('新增笔顺、拼音辅助和30题轮次可保存，切换题量不重置当前题目', async ({ page }) => {
+  await openHanzi(page);
+  await page.locator('[data-action="hz-lesson"][data-id="stroke-horizontal-left"]').click();
+  await expect(page.locator('.hz-demo ruby rt').first()).toHaveText('héng piě');
+  await page.locator('[data-action="hz-reading"]').click();
+  await expect(page.locator('.hanzi-page ruby')).toHaveCount(0);
+  await page.locator('[data-action="hz-category"][data-id="order"]').click();
+  await page.locator('[data-action="hz-lesson"][data-id="order-山"]').click();
+  await page.locator('[data-action="hz-stroke-jump"][data-index="2"]').click();
+  await expect(page.locator('.hz-step-status')).toHaveText('第 2 / 3 笔：竖折');
+  await page.locator('[data-action="hz-length"][data-value="30"]').click();
+  await page.locator('[data-action="hz-start"][data-id="all"]').click();
+  const questions = (await stored(page)).hanzi.round.questions;
+  expect(questions).toHaveLength(30);
+  await page.locator('[data-action="hz-length"][data-value="20"]').click();
+  await page.reload();
+  expect((await stored(page)).hanzi.round.questions).toEqual(questions);
+  await expect(page.locator('[data-action="hz-reading"]')).toHaveAttribute('aria-pressed', 'false');
+  await page.locator('[data-action="hz-reading"]').click();
+  await answerCurrent(page);
+  expect((await stored(page)).hanzi.round.responses[0].correct).toBe(true);
+  await page.locator('[data-action="hz-start"][data-id="all"]').click();
+  expect((await stored(page)).hanzi.round.questions).toHaveLength(20);
 });

@@ -113,5 +113,5 @@ export const tonePracticeSounds = ['ma', 'ba', 'yi', 'wu', 'yu'].flatMap(syllabl
 export const subjects = [
   { id: 'chinese', name: '语文', english: 'CHINESE', icon: 'book', color: 'pink', features: [{ id: 'pinyin', name: '拼音学习', icon: 'type' }, { id: 'hanzi-structure', name: '汉字笔画与结构', icon: 'pen' }, ...chineseTopics.map(topic => ({ id: topic.id, name: topic.name, icon: ({ dictionary: 'book', 'word-categories': 'grid', 'word-relations': 'book', collocations: 'pen', 'word-patterns': 'flower' })[topic.id] || 'pen' }))] },
   { id: 'math', name: '数学', english: 'MATH', icon: 'math', color: 'blue', features: [] },
-  { id: 'english', name: '英语', english: 'ENGLISH', icon: 'globe', color: 'yellow', features: [] },
+  { id: 'english', name: '英语', english: 'ENGLISH', icon: 'globe', color: 'yellow', features: [{ id: 'phonics', name: '自然拼读', icon: 'type' }] },
 ];

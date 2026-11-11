@@ -41,24 +41,24 @@ test('所有语文主题的真实入口完整，与内容注册一致', () => {
   for (const topic of chineseTopics) assert.equal(features.find(item => item.id === topic.id).name, topic.name);
 });
 
-test('词语积累覆盖六类、每类四词，分类与用词练习均有完整语境', () => {
-  assert.equal(vocabularyEntries.length, 24);
-  assert.equal(new Set(vocabularyEntries.map(item => item.text)).size, 24);
+test('词语积累覆盖六类、每类十词，分类与用词练习均有完整语境', () => {
+  assert.equal(vocabularyEntries.length, 60);
+  assert.equal(new Set(vocabularyEntries.map(item => item.text)).size, 60);
   const topic = chineseTopics.find(item => item.id === 'word-categories');
   assert.deepEqual(topic.categories.map(item => item.id), ['people', 'animals', 'plants', 'actions', 'feelings', 'seasons']);
-  assert.equal(topic.questions.length, 48);
-  for (const category of topic.categories) assert.equal(vocabularyEntries.filter(item => item.category === category.id).length, 4);
+  assert.equal(topic.questions.length, 180);
+  for (const category of topic.categories) assert.equal(vocabularyEntries.filter(item => item.category === category.id).length, 10);
   for (const question of topic.questions) assert.ok(question.display && question.explanation);
-  assert.equal(topic.questions.filter(item => item.display.includes('____')).length, 24);
+  assert.equal(topic.questions.filter(item => item.display.includes('____')).length, 60);
 });
 
 test('近反义词都在完整句子中辨认，并覆盖不可随意互换的语境', () => {
   const topic = chineseTopics.find(item => item.id === 'word-relations');
-  assert.equal(synonymPairs.length, 6);
-  assert.equal(antonymPairs.length, 6);
-  assert.equal(relationContexts.length, 6);
-  assert.equal(topic.lessons.length, 18);
-  assert.equal(topic.questions.length, 36);
+  assert.equal(synonymPairs.length, 18);
+  assert.equal(antonymPairs.length, 18);
+  assert.equal(relationContexts.length, 12);
+  assert.equal(topic.lessons.length, 48);
+  assert.equal(topic.questions.length, 96);
   assert.ok(topic.questions.every(item => item.display));
   assert.ok(topic.lessons.some(item => item.body.includes('自豪')));
   for (const item of relationContexts) {
@@ -72,12 +72,12 @@ test('近反义词都在完整句子中辨认，并覆盖不可随意互换的�
 
 test('词语搭配覆盖量词、修饰语和三个结构助词，题目只有一个正确选项', () => {
   const topic = chineseTopics.find(item => item.id === 'collocations');
-  assert.equal(measureWords.length, 12);
-  assert.equal(verbPairs.length, 8);
-  assert.equal(deSamples.length, 4);
-  assert.equal(deQuestions.length, 12);
-  assert.deepEqual(topic.lessons.filter(item => item.category === 'measure').length, 12);
-  assert.equal(topic.questions.length, 32);
+  assert.equal(measureWords.length, 24);
+  assert.equal(verbPairs.length, 20);
+  assert.equal(deSamples.length, 8);
+  assert.equal(deQuestions.length, 30);
+  assert.equal(topic.lessons.filter(item => item.category === 'measure').length, 24);
+  assert.equal(topic.questions.length, 118);
   for (const item of deQuestions) {
     assert.ok(item.display.includes('____'));
     assert.ok(['的', '地', '得'].includes(item.answer));
@@ -91,11 +91,11 @@ test('词语搭配覆盖量词、修饰语和三个结构助词，题目只有�
 
 test('叠词字形符合 ABB/AABB/ABAB，成语包含释义与用法边界', () => {
   const topic = chineseTopics.find(item => item.id === 'word-patterns');
-  assert.equal(repeatedWords.length, 12);
-  assert.equal(idioms.length, 8);
-  assert.equal(fourCharacterPhrases.length, 4);
-  assert.equal(topic.lessons.length, 24);
-  assert.equal(topic.questions.length, 49);
+  assert.equal(repeatedWords.length, 30);
+  assert.equal(idioms.length, 20);
+  assert.equal(fourCharacterPhrases.length, 12);
+  assert.equal(topic.lessons.length, 62);
+  assert.equal(topic.questions.length, 155);
   for (const item of repeatedWords) {
     const characters = [...item.text];
     assert.equal(characters.length, item.pattern.length);
@@ -168,6 +168,10 @@ for (const topic of chineseTopics) {
 }
 
 test('查字实验的音序、部首索引均可到达每个例字，剩余笔画准确', () => {
+  assert.equal(dictionaryEntries.length, 24);
+  const topic = chineseTopics.find(item => item.id === 'dictionary');
+  assert.equal(topic.lessons.length, 36);
+  assert.equal(topic.questions.length, 181);
   for (const entry of dictionaryEntries) {
     assert.equal(entry.initial, entry.syllable[0].toUpperCase());
     assert.ok(entry.strokes > entry.radicalStrokes);
@@ -181,5 +185,6 @@ test('查字实验的音序、部首索引均可到达每个例字，剩余笔�
   }
   assert.deepEqual(dictionaryLookup('sound', ['H', 'bad']).selections, ['H']);
   assert.deepEqual(dictionaryLookup('radical', null).selections, []);
-  assert.deepEqual(dictionaryLookup('radical', ['3', '氵', '8']).options.sort(), ['深']);
+  assert.deepEqual(dictionaryLookup('radical', ['3', '氵', '8']).options.sort(), ['深', '清']);
+  assert.deepEqual(dictionaryLookup('sound', ['Q', 'qing']).options.sort(), ['情', '晴', '清', '请']);
 });

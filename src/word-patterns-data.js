@@ -13,6 +13,24 @@ export const repeatedWords = [
   { text: '休息休息', pattern: 'ABAB', meaning: '表示稍微休息一下。', sentence: '走累了，我们坐下来休息休息。' },
   { text: '打扫打扫', pattern: 'ABAB', meaning: '表示做一下打扫这件事。', sentence: '客人来之前，我们把房间打扫打扫。' },
   { text: '研究研究', pattern: 'ABAB', meaning: '表示仔细思考、探讨一下。', sentence: '这道题怎么做，大家一起研究研究。' },
+  { text: '白茫茫', pattern: 'ABB', meaning: '形容一片白色，看不清边际。', sentence: '大雪过后，田野里白茫茫一片。' },
+  { text: '金灿灿', pattern: 'ABB', meaning: '形容金光耀眼。', sentence: '成熟的稻田金灿灿的。' },
+  { text: '黑乎乎', pattern: 'ABB', meaning: '形容光线暗或颜色黑。', sentence: '停电后，屋里黑乎乎的。' },
+  { text: '热乎乎', pattern: 'ABB', meaning: '形容温热、让人感到暖和。', sentence: '刚出锅的馒头热乎乎的。' },
+  { text: '甜丝丝', pattern: 'ABB', meaning: '形容略带甜味，也可形容心里愉快。', sentence: '咬一口梨，汁水甜丝丝的。' },
+  { text: '笑眯眯', pattern: 'ABB', meaning: '形容微笑时眼睛眯起来的样子。', sentence: '奶奶笑眯眯地迎接我们。' },
+  { text: '清清楚楚', pattern: 'AABB', meaning: '形容非常清楚，没有含混。', sentence: '他把路线说得清清楚楚。' },
+  { text: '认认真真', pattern: 'AABB', meaning: '形容做事十分用心。', sentence: '她认认真真地完成了作业。' },
+  { text: '平平安安', pattern: 'AABB', meaning: '形容没有危险或事故。', sentence: '我们祝愿出门的家人平平安安。' },
+  { text: '来来往往', pattern: 'AABB', meaning: '形容不断地来和去。', sentence: '街上来来往往的行人很多。' },
+  { text: '多多少少', pattern: 'AABB', meaning: '表示数量不一，也表示或多或少。', sentence: '每个人多多少少都出了一份力。' },
+  { text: '大大小小', pattern: 'AABB', meaning: '表示有大的也有小的。', sentence: '海滩上散落着大大小小的贝壳。' },
+  { text: '讨论讨论', pattern: 'ABAB', meaning: '表示一起交换一下意见。', sentence: '这个方案还需要大家讨论讨论。' },
+  { text: '练习练习', pattern: 'ABAB', meaning: '表示反复做一做，以便熟练。', sentence: '这个动作不熟练，还要练习练习。' },
+  { text: '整理整理', pattern: 'ABAB', meaning: '表示把物品收拾一下。', sentence: '书桌有点乱，我们把书本整理整理。' },
+  { text: '活动活动', pattern: 'ABAB', meaning: '表示稍微动一动身体。', sentence: '坐了很久，起来活动活动筋骨吧。' },
+  { text: '打听打听', pattern: 'ABAB', meaning: '表示向别人询问一下消息。', sentence: '不知道图书馆在哪儿，我们去打听打听。' },
+  { text: '体验体验', pattern: 'ABAB', meaning: '表示亲身感受一下。', sentence: '这次到农场，我们想体验体验种菜的过程。' },
 ];
 
 export const idioms = [
@@ -24,6 +42,18 @@ export const idioms = [
   { text: '守株待兔', meaning: '比喻不主动努力，只希望靠偶然的好运得到收获。', sentence: '学习要主动练习，不能守株待兔，等着好成绩自己到来。', situation: '偶然捡到一次钱后，他每天坐在原地等着再捡钱，也不去做该做的事。', distractors: ['齐心协力', '一心一意'], warning: '本义来自等兔子撞树桩的故事，使用时要理解比喻义。' },
   { text: '画蛇添足', meaning: '比喻做了多余的事，反而不恰当。', sentence: '这个标志已经很清楚，再加无关图案反而画蛇添足。', situation: '海报已经清楚好看，他硬加许多无关文字，反而让人看不懂重点。', distractors: ['齐心协力', '一心一意'], warning: '不是所有补充都是画蛇添足，关键是多余且造成不好的效果。' },
   { text: '亡羊补牢', meaning: '比喻出了问题以后及时补救，防止再受损失。', sentence: '这次忘带作业后，他开始每天检查书包，算是亡羊补牢。', situation: '发现围栏破了、羊跑丢一只后，牧人马上修好围栏，防止再丢羊。', distractors: ['守株待兔', '画蛇添足'], warning: '强调已经出现问题后及时补救，不是出事前的预防。' },
+  { text: '井底之蛙', meaning: '比喻见识狭窄、眼界很小的人。', sentence: '多读书、多观察，才不会成为井底之蛙。', situation: '小明从没离开过小山村，却认定天下所有地方都和村里一样。', distractors: ['齐心协力', '亡羊补牢'], warning: '不是泛指井里的青蛙，要理解见识有限的比喻义。' },
+  { text: '掩耳盗铃', meaning: '比喻自己欺骗自己，以为别人也不知道。', sentence: '把错误藏起来却以为没有人发现，这样做无异于掩耳盗铃。', situation: '有人偷铃铛，怕别人听见响声，就捂住自己的耳朵，以为别人也听不见。', distractors: ['一心一意', '齐心协力'], warning: '强调自欺欺人，不是保护耳朵的正确方法。' },
+  { text: '刻舟求剑', meaning: '比喻不懂情况已经变化，仍照老办法办事。', sentence: '事情已经变了，还照旧办法处理，就像刻舟求剑。', situation: '剑从船上掉进水里，他在船边刻个记号，等船开远后才从记号处下水找剑。', distractors: ['亡羊补牢', '争先恐后'], warning: '关键在于情况变了，却不知道改变方法。' },
+  { text: '拔苗助长', meaning: '比喻急于求成，反而把事情弄坏。', sentence: '学习要循序渐进，不能拔苗助长。', situation: '种田人嫌禾苗长得慢，把苗往上拔，结果禾苗都枯死了。', distractors: ['齐心协力', '一心一意'], warning: '帮助成长要符合规律，不能只求眼前快。' },
+  { text: '狐假虎威', meaning: '比喻借助别人的威势来吓唬人。', sentence: '借着别人的名头欺负同学，是狐假虎威的行为。', situation: '狐狸自己不厉害，却借身后的老虎吓走了小动物。', distractors: ['自言自语', '亡羊补牢'], warning: '“假”在这里是借用的意思，不是说老虎是假的。' },
+  { text: '坐井观天', meaning: '比喻眼界狭小，看事情不全面。', sentence: '只凭一点经验就下结论，容易坐井观天。', situation: '青蛙待在井里，只见井口那么大的天空，就认定天空只有那么大。', distractors: ['画蛇添足', '齐心协力'], warning: '不要只凭自己看到的一小部分判断整体。' },
+  { text: '半途而废', meaning: '事情没有做完，就在中途停止。', sentence: '练字要坚持，不能半途而废。', situation: '模型做了一半，小华嫌麻烦，丢在一边再也不做了。', distractors: ['一心一意', '亡羊补牢'], warning: '是没有完成就放弃，不是完成后的正常休息。' },
+  { text: '坚持不懈', meaning: '一直坚持，不松懈。', sentence: '经过坚持不懈的练习，她终于学会了游泳。', situation: '一开始总失败，他仍每天练习，几个月后终于成功。', distractors: ['三心二意', '半途而废'], warning: '强调持续努力，不是偶尔做一次。' },
+  { text: '迫不及待', meaning: '心情急切，等不下去了。', sentence: '新书一到，他就迫不及待地翻开了。', situation: '收到盼了很久的包裹，妹妹急着立刻打开。', distractors: ['自言自语', '守株待兔'], warning: '形容急切心情，也要注意安全和礼貌。' },
+  { text: '恍然大悟', meaning: '一下子完全明白过来。', sentence: '听了老师的解释，我恍然大悟。', situation: '困惑了许久，看到演示后，他突然明白了其中的道理。', distractors: ['半途而废', '争先恐后'], warning: '强调由不明白到忽然明白的变化。' },
+  { text: '目不转睛', meaning: '眼珠不转地注视，形容看得专心。', sentence: '同学们目不转睛地看着实验。', situation: '魔术开始后，孩子紧紧盯着魔术师的手，一点也不舍得移开目光。', distractors: ['自言自语', '三心二意'], warning: '形容专注看，不是身体一动也不能动。' },
+  { text: '大吃一惊', meaning: '对意外的事情感到十分惊讶。', sentence: '看到花盆里竟然长出了小蘑菇，他大吃一惊。', situation: '原以为盒子空着，打开却发现里面有一只小猫，她惊讶极了。', distractors: ['一心一意', '齐心协力'], warning: '这里的“吃”不是吃东西，而是受到惊吓或惊讶。' },
 ];
 
 export const fourCharacterPhrases = [
@@ -31,6 +61,14 @@ export const fourCharacterPhrases = [
   { text: '鸟语花香', meaning: '鸟儿鸣叫，花儿飘香，形容春天的美好景象。', sentence: '公园里鸟语花香，令人心情舒畅。' },
   { text: '五颜六色', meaning: '形容颜色繁多。', sentence: '花坛里开满了五颜六色的花。' },
   { text: '四面八方', meaning: '泛指各个方向或各个地方。', sentence: '游客从四面八方来到这里。' },
+  { text: '风和日丽', meaning: '微风和畅，阳光明丽。', sentence: '今天风和日丽，很适合在户外散步。' },
+  { text: '天高云淡', meaning: '天空高远，云朵稀少而淡薄。', sentence: '秋日天高云淡，远山看得十分清楚。' },
+  { text: '层林尽染', meaning: '一层层树林好像都染上了颜色。', sentence: '深秋，山上层林尽染，红叶格外好看。' },
+  { text: '果实累累', meaning: '结出的果实很多。', sentence: '秋天的果园果实累累，枝头挂满了苹果。' },
+  { text: '白雪皑皑', meaning: '形容霜雪洁白。', sentence: '远处的山顶白雪皑皑，闪着银光。' },
+  { text: '生机勃勃', meaning: '形容生命力旺盛，充满活力。', sentence: '春雨过后，小花园显得生机勃勃。' },
+  { text: '五光十色', meaning: '形容色彩鲜艳、光泽耀眼。', sentence: '灯光照在水晶上，映出五光十色的光彩。' },
+  { text: '人山人海', meaning: '形容聚集的人非常多。', sentence: '节日的广场人山人海，十分热闹。' },
 ];
 
 const patterns = ['ABB', 'AABB', 'ABAB'];
@@ -47,6 +85,14 @@ const phraseContexts = {
   鸟语花香: '走进花园，听见鸟儿鸣叫，闻到阵阵花香，这就是____的景象。',
   五颜六色: '花坛里有红、黄、紫、白等各种颜色的花，真是____。',
   四面八方: '游客从东南西北各个地方赶来，也就是从____来到这里。',
+  风和日丽: '微风轻轻吹拂，阳光明亮，今天的天气真是____。',
+  天高云淡: '向上望去，天空高远，只有几片淡淡的云，真是____。',
+  层林尽染: '秋天的山坡上，一层层树林都像染上红黄的颜色，这是____的景象。',
+  果实累累: '果园里每棵树都挂满了果子，真是____。',
+  白雪皑皑: '高山上覆盖着一片洁白的积雪，远远看去____。',
+  生机勃勃: '花草长出新芽，小动物活跃起来，花园充满生命力，显得____。',
+  五光十色: '水晶折射出鲜艳又耀眼的各色光泽，真是____。',
+  人山人海: '广场上聚集的人多得像山和海一样，真是____。',
 };
 
 export const patternsTopic = defineTopic({
@@ -68,11 +114,12 @@ export const patternsTopic = defineTopic({
   questions: [
     ...repeatedWords.flatMap(item => [
       choice(`pattern-${item.text}`, item.pattern, `“${item.text}”是哪种叠词形式？`, item.pattern, patterns.filter(pattern => pattern !== item.pattern), `${[...item.text].join(' · ')}：${item.pattern} 中相同字母代表相同的字。`, item.text),
-      choice(`use-${item.text}`, item.pattern, '根据语境选择合适的叠词。', item.text, usageDistractors[item.text], `${item.meaning}完整句子：${item.sentence}`, item.sentence.replace(item.text, '____')),
+      choice(`use-${item.text}`, item.pattern, '根据语境选择合适的叠词。', item.text, usageDistractors[item.text] || (item.pattern === 'ABAB' ? ['绿油油', '红彤彤'] : ['研究研究', '打听打听']), `${item.meaning}完整句子：${item.sentence}`, item.sentence.replace(item.text, '____')),
+      choice(`definition-${item.text}`, item.pattern, '根据解释，选择合适的叠词。', item.text, item.pattern === 'ABAB' ? ['绿油油', '高高兴兴'] : ['休息休息', '商量商量'], `${item.text}：${item.meaning}`, item.meaning),
     ]),
     ...fourCharacterPhrases.flatMap(item => [
-      choice(`meaning-${item.text}`, 'four', `“${item.text}”是什么意思？`, item.meaning, fourCharacterPhrases.filter(other => other.text !== item.text).map(other => other.meaning), item.meaning, item.sentence),
-      choice(`use-${item.text}`, 'four', '选择与描述最贴切的四字词语。', item.text, fourCharacterPhrases.filter(other => other.text !== item.text).map(other => other.text), `${item.sentence}${item.meaning}`, phraseContexts[item.text]),
+      choice(`meaning-${item.text}`, 'four', `“${item.text}”是什么意思？`, item.meaning, fourCharacterPhrases.filter(other => other.text !== item.text).slice(0, 3).map(other => other.meaning), item.meaning, item.sentence),
+      choice(`use-${item.text}`, 'four', '选择与描述最贴切的四字词语。', item.text, fourCharacterPhrases.filter(other => other.text !== item.text).slice(0, 3).map(other => other.text), `${item.sentence}${item.meaning}`, phraseContexts[item.text]),
     ]),
     ...idioms.flatMap(item => [
       choice(`meaning-${item.text}`, 'idioms', `句子中“${item.text}”是什么意思？`, item.meaning, idioms.filter(other => item.distractors.includes(other.text)).map(other => other.meaning), `${item.meaning}${item.warning}`, item.sentence),

@@ -1,6 +1,4 @@
 .chinese-topic { max-width: 1360px; margin: 0 auto; }
-.chinese-topic .hz-category { min-height: 62px; }
-.chinese-topic .hz-category strong { margin: 0; }
 .chinese-topic .hz-chip { font-size: 14px; text-align: left; line-height: 1.6; }
 .chinese-topic .hz-card h3 { font-size: 23px; line-height: 1.6; }
 .ct-examples { padding: 18px 18px 18px 38px; background: #fff2e7; border-radius: 16px; line-height: 2; font-size: 17px; }
@@ -22,9 +20,35 @@
 .feature-bar .feature-tabs { min-width: 0; overflow-x: auto; }
 .feature-tab { flex-shrink: 0; }
 .feature-tabs.expanded { flex-wrap: wrap; }
+.ct-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 22px; }
+.ct-tools > span, .ct-tools > small { font-size: 13px; color: #715e6b; line-height: 1.8; }
+.ct-tools button { min-height: 44px; }
+.ct-lesson-list { max-height: 230px; overflow-y: auto; padding: 5px 2px; scrollbar-width: thin; }
+.chinese-topic ruby, .hanzi-page ruby { ruby-position: over; ruby-align: center; }
+.chinese-topic rt, .hanzi-page rt { font-size: 11px; font-weight: 400; color: #74586c; line-height: 1.4; letter-spacing: .015em; }
+.chinese-topic .ct-examples, .chinese-topic .ct-context, .chinese-topic .ct-prompt, .chinese-topic .hz-card p { line-height: 2.4; }
+.ct-visual { margin: 20px 0; padding: 16px; border: 1px solid #e5decf; border-radius: 18px; background: #f4f6ed; }
+.ct-visual figcaption { margin-bottom: 12px; font-size: 16px; }
+.ct-visual-panels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.ct-visual-panels > div:only-child { grid-column: 1 / -1; }
+.ct-visual svg { width: 100%; max-width: 180px; height: auto; display: block; margin: auto; }
+.ct-visual-panels p { text-align: center; font-weight: 600; }
+.ct-visual .ct-visual-caption { font-size: 12px; color: #796573; }
+.ct-dictionary-demo { display: flex; align-items: center; gap: 14px; }
+.ct-dictionary-demo > svg { width: 85px; flex-shrink: 0; margin: 0; }
+.ct-dictionary-demo ol { flex: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 0; list-style: none; counter-reset: lookup-step; }
+.ct-dictionary-demo li { counter-increment: lookup-step; background: #fffaf0; border-radius: 12px; padding: 12px; min-width: 0; }
+.ct-dictionary-demo li::before { content: counter(lookup-step) ". "; color: #92718a; font-weight: 700; }
+.ct-dictionary-demo li span { font-size: 13px; }
+.ct-dictionary-demo li b { display: block; text-align: center; font-size: 25px; margin-top: 8px; overflow-wrap: anywhere; }
 @media (max-width: 600px) {
   .chinese-topic .hz-card h3 { font-size: 20px; }
   .chinese-topic .ct-context { font-size: 18px; }
   .chinese-topic .hz-options { grid-template-columns: minmax(0, 1fr); }
   .ct-examples { font-size: 16px; }
+  .ct-dictionary-demo { flex-direction: column; }
+  .ct-dictionary-demo > svg { width: 65px; }
+  .ct-dictionary-demo ol { width: 100%; }
+  .ct-tools { gap: 8px; }
+  .ct-visual { padding: 12px; }
 }

@@ -10,7 +10,9 @@
     "test": "node --test tests/*.test.mjs",
     "test:browser": "playwright test",
     "test:audio": "node scripts/verify-audio.mjs",
-    "audio:download": "node scripts/download-audio.mjs"
+    "test:phonics:audio": "node scripts/verify-audio.mjs --phonics",
+    "audio:download": "node scripts/download-audio.mjs",
+    "phonics:audio:generate": "node scripts/generate-phonics-audio.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",
