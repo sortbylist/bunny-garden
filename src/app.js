@@ -177,7 +177,7 @@ function personalButtons(context = 'garden') {
     const count = state.hanzi.mistakes.length;
     return `${button(context === 'garden' ? 'hz-start' : 'hanzi-review', `汉字错题本（${count}）`, '', 'outline-button', `data-id="review" ${count ? '' : 'disabled'}`)}${button('records', '学习记录', 'book', 'outline-button')}`;
   }
-  return `${button('mode', `拼音错题本（<b>${state.mistakes.length}</b>）`, '', 'outline-button', `data-id="mistakes" ${state.mistakes.length ? '' : 'disabled'}`)}${button('mode', `我的收藏（<b>${state.favorites.length}</b>）`, 'heart', 'outline-button', 'data-id="favorites"')}${button('records', '学习记录', 'book', 'outline-button')}`;
+  return `${button('mode', `拼音错题本（${state.mistakes.length}）`, '', 'outline-button', `data-id="mistakes" ${state.mistakes.length ? '' : 'disabled'}`)}${button('mode', `我的收藏（${state.favorites.length}）`, 'heart', 'outline-button', 'data-id="favorites"')}${button('records', '学习记录', 'book', 'outline-button')}`;
 }
 
 function equippedRewards() {

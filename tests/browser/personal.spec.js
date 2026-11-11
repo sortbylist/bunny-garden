@@ -104,11 +104,11 @@ test('答错重试可收获新题星，完成有效练习每日加星，错题�
     await page.locator('[data-action="next-question"]').click();
   }
   expect(await stars(page)).toBe('8');
-  await expect(page.locator('.garden-links [data-id="mistakes"] b')).toHaveText('1');
+  await expect(page.locator('.garden-links [data-id="mistakes"]')).toHaveText('拼音错题本（1）');
   await chooseMode(page, 'mistakes');
   await page.locator(`[data-action="answer"][data-value="${questions[0].answer}"]`).click();
   expect(await stars(page)).toBe('10');
-  await expect(page.locator('.garden-links [data-id="mistakes"] b')).toHaveText('0');
+  await expect(page.locator('.garden-links [data-id="mistakes"]')).toHaveText('拼音错题本（0）');
   expect((await stored(page)).rewards.unlocks['brave-mushroom']).toBeTruthy();
   expect((await stored(page)).rewards.unlocks['garden-sprout']).toBeTruthy();
   await page.locator('[data-action="next-question"]').click();
