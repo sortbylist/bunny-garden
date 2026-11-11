@@ -13,6 +13,18 @@ export const measureWords = [
   { text: '座桥', noun: '桥', tip: '“座”常用来数桥。' },
   { text: '片云', noun: '云', tip: '“片”常用来数云。' },
   { text: '阵风', noun: '风', tip: '“阵”常用来数一阵风。' },
+  { text: '把伞', noun: '伞', tip: '“把”常用来数有柄的器具。' },
+  { text: '辆车', noun: '车', tip: '“辆”常用来数车。' },
+  { text: '艘船', noun: '船', tip: '“艘”常用来数船。' },
+  { text: '架飞机', noun: '飞机', tip: '“架”常用来数飞机。' },
+  { text: '双鞋', noun: '鞋', tip: '一双鞋包括配成对的两只鞋。' },
+  { text: '颗星', noun: '星', tip: '“颗”常用来数星星等小而圆的东西。' },
+  { text: '粒米', noun: '米', tip: '“粒”常用来数一粒粒的粮食。' },
+  { text: '封信', noun: '信', tip: '“封”常用来数封装好的信。' },
+  { text: '面旗', noun: '旗', tip: '“面”常用来数旗帜。' },
+  { text: '盏灯', noun: '灯', tip: '“盏”常用来数灯。' },
+  { text: '串葡萄', noun: '葡萄', tip: '“串”表示一个个连在一起的一组东西。' },
+  { text: '束花', noun: '花束', tip: '“束”表示捆扎在一起的一组花。', blank: '一____扎好的花', answer: '束', example: '一束花' },
 ];
 
 export const verbPairs = [
@@ -24,6 +36,18 @@ export const verbPairs = [
   { verb: '品尝', action: '水果', sentence: '洗净水果后，大家一起品尝香甜的果肉。', note: '“品尝”是仔细体会食物的滋味。', distractors: ['倾听', '朗读'] },
   { verb: '提高', action: '水平', sentence: '每天坚持练习，可以逐步提高写字水平。', note: '“提高”常和水平、能力等搭配，表示向更好的方向发展。', distractors: ['增加', '加重'] },
   { verb: '养成', action: '习惯', sentence: '坚持每天读书，能养成阅读的好习惯。', note: '“养成”表示经过长期培养，形成习惯。', distractors: ['提高', '抬起'] },
+  { verb: '保护', action: '环境', sentence: '不乱丢垃圾，是保护环境的好习惯。', note: '“保护”指尽力照顾，使它不受损害。', distractors: ['演奏', '穿戴'] },
+  { verb: '爱护', action: '公物', sentence: '我们要爱护公物，不在课桌上乱刻乱画。', note: '“爱护”表示爱惜并保护。', distractors: ['欣赏', '种植'] },
+  { verb: '遵守', action: '规则', sentence: '过马路时要遵守交通规则。', note: '“遵守规则”指按照规定去做。', distractors: ['品尝', '穿上'] },
+  { verb: '改正', action: '错误', sentence: '发现错误后，他立刻改正了错误。', note: '“改正”针对错误、缺点。', distractors: ['欣赏', '增添'] },
+  { verb: '改善', action: '条件', sentence: '新建的图书馆改善了大家的阅读条件。', note: '“改善”表示使原来的状况变好。', distractors: ['改正', '朗读'] },
+  { verb: '积累', action: '知识', sentence: '阅读能帮助我们积累知识。', note: '“积累”表示一点点聚集起来。', distractors: ['穿戴', '演唱'] },
+  { verb: '珍惜', action: '时间', sentence: '时间一去不回，我们应该珍惜时间。', note: '“珍惜”表示重视、爱惜。', distractors: ['品尝', '驾驶'] },
+  { verb: '解决', action: '问题', sentence: '大家一起想办法，终于解决了问题。', note: '“解决问题”表示找到办法并处理好。', distractors: ['提高', '穿过'] },
+  { verb: '演奏', action: '乐曲', sentence: '小提琴手在舞台上演奏乐曲。', note: '“演奏”指用乐器表现音乐。', distractors: ['朗读', '播种'] },
+  { verb: '朗读', action: '课文', sentence: '早读时，同学们大声朗读课文。', note: '“朗读”表示清楚、响亮地读出来。', distractors: ['演奏', '浇灌'] },
+  { verb: '播种', action: '种子', sentence: '春天，农民在田里播种玉米种子。', note: '“播种”表示把种子撒到或种进土里。', distractors: ['演奏', '倾听'] },
+  { verb: '收获', action: '果实', sentence: '秋天，果农满怀喜悦地收获果实。', note: '“收获”在这里指收取成熟的农产品。', distractors: ['朗读', '演奏'] },
 ];
 
 export const deSamples = [
@@ -31,6 +55,10 @@ export const deSamples = [
   { id: 'de-adverb', marker: '地', title: '地 + 动作', body: '“地”常连接修饰语和表示动作的词，说明“怎样做”。', examples: ['轻轻地走', '认真地读', '飞快地跑'], ask: '先找表示动作的词，再看前面的修饰语。' },
   { id: 'de-result', marker: '得', title: '得 + 程度', body: '“得”常放在动作或状态后面，补充说明程度或结果。', examples: ['跑得飞快', '笑得开心', '写得工整'], ask: '看到动作后面补充“怎么样”，常会用到“得”。' },
   { id: 'de-context', marker: '的 地 得', title: '三个字要放回句子里', body: '不要只背一句口诀。先判断后面的词是事物、动作，还是对前面动作的补充，再结合句子读一读。', examples: ['清澈的小河静静地流过村子。', '妹妹跑得满头大汗。', '老师满意地笑了。'], ask: '同一个句子里可能同时出现三个字，要分别判断。' },
+  { id: 'de-same-word', marker: '的 地 得', title: '认真，放在哪里？', body: '同一个词放在不同位置，搭配也会变化。先看它修饰什么。', examples: ['认真的同学：修饰“同学”。', '认真地读书：修饰“读”。', '读得认真：补充读的样子。'], ask: '把“认真”分别放进三个句式里读一读。' },
+  { id: 'de-happy', marker: '的 地 得', title: '开心的笑脸，开心地笑', body: '事物前用“的”，动作前常用“地”，动作后的补充说明常用“得”。', examples: ['开心的笑脸', '开心地笑', '笑得很开心'], ask: '“笑脸”和“笑”分别是事物还是动作？' },
+  { id: 'de-quiet', marker: '的 地 得', title: '安静可以怎样说？', body: '先找句子的中心词，再判断修饰关系。不是见到“安静”就填固定的一个字。', examples: ['安静的教室', '安静地等待', '教室里安静得能听见钟声'], ask: '用“安静”说一个与例句不同的句子。' },
+  { id: 'de-result-more', marker: '得', title: '补充结果与程度', body: '“得”后面不一定只有一个词，也可以是说明结果的一小段话。', examples: ['累得满头大汗', '高兴得跳了起来', '忙得顾不上喝水'], ask: '说说“累得满头大汗”中哪部分说明了累的程度。' },
 ];
 
 export const deQuestions = [
@@ -46,19 +74,45 @@ export const deQuestions = [
   { display: '清澈____小河静静地流过村子。', answer: '的', explanation: '“清澈的小河”中，“小河”是事物，用“的”。' },
   { display: '妹妹跑____满头大汗。', answer: '得', explanation: '“满头大汗”补充说明跑的结果，用“得”。' },
   { display: '老师满意____笑了。', answer: '地', explanation: '“笑”是动作，用“满意地笑了”。' },
+  ...[
+    ['认真____同学', '的', '“同学”是人，前面的修饰语用“的”。'],
+    ['认真____读书', '地', '“读书”是动作，用“认真地读书”。'],
+    ['读____认真', '得', '“认真”补充说明读的样子。'],
+    ['开心____笑脸', '的', '“笑脸”是事物，用“开心的笑脸”。'],
+    ['开心____笑', '地', '“笑”是动作，用“开心地笑”。'],
+    ['笑____很开心', '得', '“很开心”补充说明笑的样子。'],
+    ['安静____教室', '的', '“教室”是事物。'],
+    ['安静____等待', '地', '“等待”是动作。'],
+    ['教室里安静____能听见钟声。', '得', '后半句补充安静的程度。'],
+    ['累____满头大汗', '得', '“满头大汗”补充说明累的程度。'],
+    ['高兴____跳了起来', '得', '后面说明高兴产生的表现。'],
+    ['忙____顾不上喝水', '得', '后面补充说明忙的程度。'],
+    ['弯弯____小路', '的', '“小路”是事物。'],
+    ['悄悄____靠近', '地', '“靠近”是动作。'],
+    ['字写____十分端正', '得', '“十分端正”补充写字的效果。'],
+    ['洁白____云朵', '的', '“云朵”是事物。'],
+    ['耐心____讲解', '地', '“讲解”是动作。'],
+    ['急____团团转', '得', '“团团转”说明着急的程度。'],
+  ].map(([display, answer, explanation]) => ({ display, answer, explanation })),
 ];
 
 export const collocationTopic = defineTopic({
   id: 'collocations', name: '词语搭配与辨析', description: '量词要合适，动作和修饰语要搭得上，“的、地、得”要放回句子里判断。',
   categories: [{ id: 'measure', name: '量词搭配' }, { id: 'verb', name: '动词与修饰' }, { id: 'de', name: '区分“的、地、得”' }],
   lessons: [
-    ...measureWords.map(item => ({ id: `measure-${item.noun}`, category: 'measure', title: `一${item.text}`, body: `${item.tip}同一事物在不同语境中也可能使用其他量词，这里学习常见搭配。`, examples: [`一${item.text}、两${item.text}、三${item.text}`, `“${item.text[0]}”是量词，“${item.noun}”是所数的事物。`], task: `找一找能用“${item.text[0]}”来数的东西，说给家人听。` })),
+    ...measureWords.map(item => ({ id: `measure-${item.noun}`, category: 'measure', title: item.example || `一${item.text}`, body: `${item.tip}同一事物在不同语境中也可能使用其他量词，这里学习常见搭配。`, examples: [`一${item.text}、两${item.text}、三${item.text}`, `“${item.text[0]}”是量词。`], task: `找一找能用“${item.text[0]}”来数的东西，说给家人听。` })),
     ...verbPairs.map((item, index) => ({ id: `verb-${index}`, category: 'verb', title: `${item.verb}${item.action}`, body: `${item.note}动词要和后面的对象搭配得自然。`, examples: [item.sentence, `动作：${item.verb}；对象：${item.action}`], task: `用“${item.verb}${item.action}”说一句完整的话，还可以加上合适的修饰语。` })),
     ...deSamples.map(item => ({ id: item.id, category: 'de', title: item.title, body: item.body, examples: item.examples, task: item.ask })),
   ],
   questions: [
-    ...measureWords.map(item => choice(`measure-${item.noun}`, 'measure', '选出常用、合适的量词。', item.text[0], ['本', '张', '匹', '棵', '座'].filter(word => word !== item.text[0]).slice(0, 3), `应说“一${item.text}”。${item.tip}`, `一____${item.noun}`)),
-    ...verbPairs.map((item, index) => choice(`verb-${index}`, 'verb', '选出与句子搭配的动词。', item.verb, item.distractors, `${item.sentence}${item.note}`, item.sentence.replace(item.verb, '____'))),
+    ...measureWords.flatMap(item => [
+      choice(`measure-${item.noun}`, 'measure', '选出常用、合适的量词。', item.text[0], ['本', '张', '匹', '棵', '座'].filter(word => word !== item.text[0]).slice(0, 3), `应说“一${item.text}”。${item.tip}`, item.blank || `一____${item.noun}`),
+      choice(`measure-object-${item.noun}`, 'measure', '这个量词适合数哪种事物？', item.noun === '花束' ? '扎好的花' : item.noun, ['想法', '心情', '速度'], `常见搭配：一${item.text}。${item.tip}`, `一${item.text[0]}____`),
+    ]),
+    ...verbPairs.flatMap((item, index) => [
+      choice(`verb-${index}`, 'verb', '选出与句子搭配的动词。', item.verb, item.distractors, `${item.sentence}${item.note}`, item.sentence.replace(item.verb, '____')),
+      choice(`verb-object-${index}`, 'verb', '哪种解释符合句子中的这个动作？', item.note, ['表示衣服的颜色', '表示物体的重量'], `${item.sentence}${item.note}`, item.sentence),
+    ]),
     ...deQuestions.map((item, index) => choice(`de-${index}`, 'de', '横线处应填哪个字？', item.answer, ['的', '地', '得'].filter(marker => marker !== item.answer), `${item.explanation}正确写法：${item.display.replace('____', item.answer)}`, item.display)),
   ],
 });
