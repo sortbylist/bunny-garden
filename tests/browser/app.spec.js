@@ -19,7 +19,7 @@ test('顺序学习、点读、收藏、进度恢复与学科切换', async ({ pa
   expect(state.known).toContain('single-a');
   expect(state.favorites).toContain('single-a');
   await page.locator('[data-action="subject"][data-id="math"]').click();
-  await expect(page.getByRole('heading', { name: '数学小天地，正在准备中' })).toBeVisible();
+  await expect(page.locator('.math-topic h1')).toHaveText('数的认识✿');
   await page.locator('[data-action="subject"][data-id="chinese"]').first().click();
   await expect(page.locator('.pinyin-display')).toHaveText('o');
   await page.getByRole('button', { name: '收起侧栏', exact: true }).click();

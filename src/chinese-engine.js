@@ -3,7 +3,7 @@ import { dictionaryLookup } from './dictionary-data.js';
 import { practiceLengths, selectPractice } from './chinese-practice.js';
 
 export function topicDefaults(topic) {
-  return { category: topic.categories[0].id, lessonId: topic.lessons[0].id, view: 'learn', known: [], mistakes: [], round: null, activities: {}, lookup: { method: 'sound', selections: [] }, showPinyin: true, practiceLength: 10, practiceSeen: [] };
+  return { category: topic.categories[0].id, lessonId: topic.lessons[0].id, view: 'learn', known: [], mistakes: [], round: null, activities: {}, lookup: { method: 'sound', selections: [] }, showPinyin: topic.subject !== 'math', practiceLength: 10, practiceSeen: [] };
 }
 
 export function updateTopicActivity(topic, state, action, value) {
@@ -24,7 +24,7 @@ export function updateTopicActivity(topic, state, action, value) {
 export function normalizeTopic(topic, saved) {
   const state = topicDefaults(topic);
   if (!saved || typeof saved !== 'object') return state;
-  state.showPinyin = saved.showPinyin !== false;
+  state.showPinyin = topic.subject !== 'math' && saved.showPinyin !== false;
   if (practiceLengths.includes(saved.practiceLength)) state.practiceLength = saved.practiceLength;
   state.practiceSeen = [...new Set(Array.isArray(saved.practiceSeen) ? saved.practiceSeen.filter(id => topic.questions.some(item => item.id === id)) : [])];
   if (topic.categories.some(item => item.id === saved.category)) state.category = saved.category;

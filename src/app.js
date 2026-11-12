@@ -9,7 +9,8 @@ import { rewardArt } from './reward-art.js';
 import { normalizeHanziState } from './hanzi-engine.js';
 import { hanziLessons } from './hanzi-data.js';
 import { renderHanzi, handleHanziAction } from './hanzi.js';
-import { chineseTopics, topicById } from './chinese-topics.js';
+import { chineseTopics } from './chinese-topics.js';
+import { mathTopics } from './math-topics.js';
 import { normalizeTopic, topicDefaults, startTopicRound, updateTopicActivity } from './chinese-engine.js';
 import { renderTopic, handleTopicAction } from './chinese.js';
 import { createPhonicsView } from './phonics.js';
@@ -19,8 +20,11 @@ const app = document.querySelector('#app');
 const dialog = document.querySelector('#dialog');
 const loaded = loadState({ getItem: key => localStorage.getItem(key) });
 let state = loaded.state;
+const learningTopics = [...chineseTopics, ...mathTopics];
+const topicById = id => learningTopics.find(topic => topic.id === id);
+const activeTopic = () => ['chinese', 'math'].includes(state.subject) ? topicById(state.features[state.subject]) : null;
 state.hanzi = normalizeHanziState(state.hanzi);
-state.topics = Object.fromEntries(chineseTopics.map(topic => [topic.id, normalizeTopic(topic, state.topics?.[topic.id])]));
+state.topics = Object.fromEntries(learningTopics.map(topic => [topic.id, normalizeTopic(topic, state.topics?.[topic.id])]));
 let storageAvailable = loaded.available;
 let mobileMenu = false;
 let toastTimer;
@@ -109,14 +113,17 @@ function currentItem() {
 function render() {
   navigation.capture();
   state.hanzi ||= normalizeHanziState(null);
-  for (const topic of chineseTopics) state.topics[topic.id] ||= topicDefaults(topic);
+  for (const topic of learningTopics) state.topics[topic.id] ||= topicDefaults(topic);
+  for (const subject of subjects) {
+    if (!subject.features.some(feature => feature.id === state.features[subject.id])) state.features[subject.id] = subject.features[0]?.id;
+  }
   const focused = document.activeElement;
   const focusedAction = focused?.closest('#app') ? focused.dataset.action : null;
   const focusedNavigation = focused?.closest('.learning-navigation')?.dataset.navigation;
   const focusData = focusedAction ? { action: focusedAction, id: focused.dataset.id, value: focused.dataset.value, index: focused.dataset.index } : null;
   const subject = subjects.find(item => item.id === state.subject);
   const isHanzi = state.subject === 'chinese' && state.features.chinese === 'hanzi-structure';
-  const topic = state.subject === 'chinese' ? topicById(state.features.chinese) : null;
+  const topic = activeTopic();
   document.title = `${topic ? topic.name : isHanzi ? '汉字笔画与结构' : subject.name === '语文' ? currentMode().name + ' · 拼音学习' : subject.name} · 小兔学习乐园`;
   app.className = `${state.collapsed ? 'sidebar-collapsed' : ''} ${mobileMenu ? 'mobile-open' : ''}`;
   app.classList.toggle('no-reward-motion', !state.settings.animations);
@@ -178,10 +185,10 @@ function personalLinks(className = '') {
 
 function personalButtons(context = 'garden') {
   if (state.subject === 'english') return phonics.personalButtons();
-  const topic = state.subject === 'chinese' ? topicById(state.features.chinese) : null;
+  const topic = activeTopic();
   if (topic) {
     const count = state.topics[topic.id].mistakes.length;
-    return `${button(context === 'garden' ? 'ct-start' : 'topic-review', `${topic.name}错题本（${count}）`, 'notebook', 'outline-button', `data-id="${context === 'garden' ? 'review' : topic.id}" ${count ? '' : 'disabled'}`)}${button(context === 'garden' ? 'topic-records' : 'records', '学习记录', 'book', 'outline-button')}`;
+    return `${button(context === 'garden' ? 'ct-start' : 'topic-review', `${topic.name}错题本（${count}）`, 'notebook', 'outline-button', `data-id="${context === 'garden' ? 'review' : topic.id}" ${count ? '' : 'disabled'}`)}${button(context === 'garden' ? 'topic-records' : topic.subject === 'math' ? 'math-records' : 'records', '学习记录', 'book', 'outline-button')}`;
   }
   if (state.subject === 'chinese' && state.features.chinese === 'hanzi-structure') {
     const count = state.hanzi.mistakes.length;
@@ -239,7 +246,7 @@ function studyGrid(value) {
 }
 
 function progressCard() {
-  const topic = state.subject === 'chinese' ? topicById(state.features.chinese) : null;
+  const topic = activeTopic();
   const progress = state.subject === 'english' ? phonics.gardenData()
     : topic ? { learned: state.topics[topic.id].known.length, total: topic.lessons.length, label: '项学习内容自评认识' }
     : state.features.chinese === 'hanzi-structure' ? { learned: state.hanzi.known.length, total: hanziLessons.length, label: '项汉字内容自评认识' }
@@ -395,9 +402,9 @@ function showRecords() {
 }
 
 function showTopicRecords() {
-  const activeTopic = topicById(state.features.chinese);
-  const topics = activeTopic ? [activeTopic] : chineseTopics;
-  openDialog('语文主题学习记录', `<p>自评认识与首次答对分别统计；各主题错题互不混用。</p>${topics.map(topic => `<section class="ct-record"><h3>${topic.name}</h3><p>自评认识 ${state.topics[topic.id].known.length} / ${topic.lessons.length} 项 · 待复习错题 ${state.topics[topic.id].mistakes.length} 道</p>${button('topic-review', `${topic.name}错题本`, 'notebook', 'outline-button', `data-id="${topic.id}" ${state.topics[topic.id].mistakes.length ? '' : 'disabled'}`)}</section>`).join('')}${button('records', '查看最近完成的练习', 'book', 'text-button')}`);
+  const current = activeTopic();
+  const topics = current ? [current] : state.subject === 'math' ? mathTopics : chineseTopics;
+  openDialog(`${state.subject === 'math' ? '数学' : '语文'}主题学习记录`, `<p>自评认识与首次答对分别统计；各主题错题互不混用。</p>${topics.map(topic => `<section class="ct-record"><h3>${topic.name}</h3><p>自评认识 ${state.topics[topic.id].known.length} / ${topic.lessons.length} 项 · 待复习错题 ${state.topics[topic.id].mistakes.length} 道</p>${button('topic-review', `${topic.name}错题本`, 'notebook', 'outline-button', `data-id="${topic.id}" ${state.topics[topic.id].mistakes.length ? '' : 'disabled'}`)}</section>`).join('')}${button('records', '查看最近完成的练习', 'book', 'text-button')}`);
 }
 
 function showAbout() {
@@ -504,17 +511,17 @@ function handleAction(event) {
   const action = target.dataset.action;
   if (action === 'ct-draft') return;
   if (action.startsWith('ct-')) {
-    const topic = state.subject === 'chinese' ? topicById(state.features.chinese) : null;
+    const topic = activeTopic();
     if (!topic) return;
     halt();
     const result = handleTopicAction(state, topic, action, target.dataset);
     render(); if (result.correct) chime(state.settings.effects); celebrateReward(result.reward); return;
   }
-  if (action === 'topic-records') { showTopicRecords(); return; }
+  if (['topic-records', 'math-records'].includes(action)) { showTopicRecords(); return; }
   if (action === 'topic-review') {
     const topic = topicById(target.dataset.id);
     if (!topic) return;
-    halt(); state.settings.continuous = false; state.subject = 'chinese'; state.features.chinese = topic.id;
+    halt(); state.settings.continuous = false; state.subject = topic.subject || 'chinese'; state.features[state.subject] = topic.id;
     if (!startTopicRound(topic, state.topics[topic.id], 'review')) { state.topics[topic.id].view = 'learn'; toast('这个主题还没有错题，可以先自由学习。'); }
     closeDialog(); render(); return;
   }
