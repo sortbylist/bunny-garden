@@ -5,8 +5,8 @@ test('主题按阶段分类，目录搜索、空结果、Escape和分类内选�
   await page.goto('/');
   const navigation = page.locator('.feature-navigation');
   await navigation.locator('.nav-group-picker summary').click();
-  await expect(navigation.locator('.nav-group-item')).toHaveCount(3);
-  await expect(navigation.locator('.nav-groups')).not.toContainText('第三阶段');
+  await expect(navigation.locator('.nav-group-item')).toHaveCount(4);
+  await expect(navigation.locator('.nav-groups')).toContainText('第三阶段');
   await navigation.locator('[data-action="nav-group"]').filter({ hasText: '字词基础' }).click();
   await expect(navigation.getByRole('tab')).toHaveCount(6);
   const height = (await navigation.boundingBox()).height;
@@ -118,14 +118,14 @@ test('手机切回桌面时选中项自动可见，导航方向键不翻学习�
 test('新增阶段按数据自动归类，手机只有一个主题时仍显示主题入口', async ({ page }) => {
   await page.route('**/src/data.js*', async route => {
     const response = await route.fetch();
-    await route.fulfill({ response, body: `${await response.text()}\nsubjects[0].features.push({ id: 'navigation-reading', name: '新增阅读主题', category: '第三阶段 · 字词进阶、阅读与积累', icon: 'book' });` });
+    await route.fulfill({ response, body: `${await response.text()}\nsubjects[0].features.push({ id: 'navigation-reading', name: '新增阅读主题', category: '第三阶段 · 阅读专项', icon: 'book' });` });
   });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   const navigation = page.locator('.feature-navigation');
   await navigation.locator('.nav-group-picker summary').click();
-  await expect(navigation.locator('.nav-group-item')).toHaveCount(4);
-  await navigation.locator('.nav-group-item').filter({ hasText: '阅读与积累' }).click();
+  await expect(navigation.locator('.nav-group-item')).toHaveCount(5);
+  await navigation.locator('[data-action="nav-group"][data-id="第三阶段 · 阅读专项"]').click();
   await expect(navigation.locator('.nav-mobile-label')).toHaveText('新增阅读主题');
   await navigation.locator('.nav-catalog-picker summary').click();
   await expect(navigation.locator('.nav-catalog-item:visible')).toHaveText('新增阅读主题');
@@ -150,8 +150,9 @@ test('两级分类带彩色编号，入口文字紧凑且主题图标各有区�
     })).toBeLessThanOrEqual(10);
     await summary.click();
     const colors = await root.locator('.nav-group-item .nav-group-index').evaluateAll(elements => elements.map(element => getComputedStyle(element).backgroundColor));
-    expect(new Set(colors).size).toBe(3);
-    expect(await root.locator('.nav-group-item .nav-group-index').evaluateAll(elements => elements.map(element => element.dataset.number))).toEqual(['01', '02', '03']);
+    const groupCount = await root.locator('.nav-group-item').count();
+    expect(new Set(colors).size).toBe(groupCount);
+    expect(await root.locator('.nav-group-item .nav-group-index').evaluateAll(elements => elements.map(element => element.dataset.number))).toEqual(Array.from({ length: groupCount }, (_, index) => String(index + 1).padStart(2, '0')));
     await page.keyboard.press('Escape');
   }
   await chooseMode(page, 'audio');

@@ -3,7 +3,7 @@ import { chineseTopics } from '../../src/chinese-topics.js';
 import { stored, selectTopic } from './helpers.js';
 
 test('句子主题归入独立分类，目录和学习操作不影响草稿与选择', async ({ page }) => {
-  const topic = chineseTopics.at(-1);
+  const topic = chineseTopics.filter(item => item.stage.startsWith('第二阶段')).at(-1);
   await page.goto('/');
   await selectTopic(page, topic.name);
   await expect(page.getByRole('tab')).toHaveCount(5);
