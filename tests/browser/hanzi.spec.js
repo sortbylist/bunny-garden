@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { stored } from './helpers.js';
+import { stored, selectTopic } from './helpers.js';
 
 async function openHanzi(page) {
   await page.goto('/');
-  await page.getByRole('tab', { name: '汉字笔画与结构' }).click();
+  await selectTopic(page, '汉字笔画与结构');
 }
 
 async function answerCurrent(page, correct = true) {
@@ -19,7 +19,7 @@ test('独立入口、自由切换、笔顺前后演示与刷新恢复，拼音�
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
   await page.locator('[data-action="known"]').click();
-  await page.getByRole('tab', { name: '汉字笔画与结构' }).click();
+  await selectTopic(page, '汉字笔画与结构');
   await expect(page).toHaveTitle('汉字笔画与结构 · 小兔学习乐园');
   await expect(page.locator('.hz-category')).toHaveCount(6);
   await page.locator('[data-action="hz-category"][data-id="top-bottom"]').click();
@@ -39,7 +39,7 @@ test('独立入口、自由切换、笔顺前后演示与刷新恢复，拼音�
   await expect(page.locator('.hz-step-status')).toHaveText('第 3 / 4 笔：横');
   await page.locator('[data-action="hz-stroke-reset"]').click();
   await expect(page.locator('.hz-step-status')).toContainText('准备好了吗');
-  await page.getByRole('tab', { name: '拼音学习' }).click();
+  await selectTopic(page, '拼音学习');
   await expect(page.locator('.pinyin-display')).toHaveText('o');
   expect((await stored(page)).known).toEqual(['single-a']);
   expect(errors).toEqual([]);
@@ -106,8 +106,8 @@ test('查看答案保留错题，离开与继续保留题目和首次结果', as
   await page.locator('[data-action="hz-skip"]').click();
   await expect(page.locator('.hz-feedback')).toContainText('先认识答案');
   await page.locator('[data-action="hz-learn"]').click();
-  await page.getByRole('tab', { name: '拼音学习' }).click();
-  await page.getByRole('tab', { name: '汉字笔画与结构' }).click();
+  await selectTopic(page, '拼音学习');
+  await selectTopic(page, '汉字笔画与结构');
   await page.locator('[data-action="hz-resume"]').click();
   await expect(page.locator('.hz-feedback')).toContainText('先认识答案');
   const state = (await stored(page)).hanzi;

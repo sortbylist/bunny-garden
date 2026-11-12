@@ -3,15 +3,12 @@ import { chooseMode, stored } from './helpers.js';
 
 async function stars(page) { return page.locator('.topbar .star-counter b').textContent(); }
 
-test('默认只显示认识拼音，展开收起及偏好保存，常用复习入口及字号可见', async ({ page }) => {
+test('拼音玩法按分类单行显示，保存选择，常用复习入口及字号可见', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('.play-selector')).not.toContainText('今天，想怎么玩？');
-  await expect(page.locator('.play-mode-group-1 [data-action="toggle-modes"]')).toHaveAttribute('aria-expanded', 'false');
-  await expect(page.locator('.play-mode-group-1 .play-mode')).toHaveCount(3);
-  await expect(page.locator('#play-mode-more')).toBeHidden();
-  await page.locator('[data-action="toggle-modes"]').click();
-  await expect(page.locator('.play-selector [data-action="mode"]')).toHaveCount(12);
-  for (const mode of await page.locator('.play-selector [data-action="mode"]').all()) await expect(mode).toBeVisible();
+  await expect(page.locator('.mode-navigation .nav-group-picker summary')).toHaveText('认识拼音');
+  await expect(page.locator('.mode-navigation .nav-tabs .play-mode')).toHaveCount(3);
+  await expect(page.locator('[data-action="toggle-modes"]')).toHaveCount(0);
   await expect(page.locator('.play-selector')).not.toContainText('声母学习');
   await expect(page.locator('.garden-links')).toContainText('错题本');
   await expect(page.locator('.garden-links')).toContainText('我的收藏');
@@ -20,21 +17,17 @@ test('默认只显示认识拼音，展开收起及偏好保存，常用复习�
   await records.click();
   await expect(page.locator('dialog')).toContainText('最近完成的练习');
   await page.locator('[data-action="close-dialog"]').click();
-  await page.locator('[data-action="toggle-modes"]').click();
-  for (const mode of await page.locator('.play-mode-group-1 .play-mode').all()) await expect(mode).toBeVisible();
-  await expect(page.locator('#play-mode-more')).toBeHidden();
   await page.reload();
-  await expect(page.locator('[data-action="toggle-modes"]')).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.locator('.mode-navigation .nav-group-picker summary')).toHaveText('认识拼音');
   await chooseMode(page, 'hanzi');
   await expect(page.locator('.play-selector .selected')).toContainText('看字选拼音');
   await page.reload();
-  await expect(page.locator('[data-action="toggle-modes"]')).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.locator('.mode-navigation .nav-group-picker summary')).toHaveText('趣味练习');
   await expect(page.locator('.play-selector .selected')).toContainText('看字选拼音');
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.locator('[data-action="toggle-modes"]').click();
-  const heading = await page.locator('.play-mode-group-1 h3').boundingBox();
-  const toggle = await page.locator('[data-action="toggle-modes"]').boundingBox();
-  expect(Math.abs((heading.y + heading.height / 2) - (toggle.y + toggle.height / 2))).toBeLessThan(2);
+  await expect(page.locator('.mode-navigation .nav-catalog-picker summary')).toContainText('看字选拼音');
+  await chooseMode(page, 'sequence');
+  await expect(page.locator('.mode-navigation .nav-group-picker summary')).toHaveText('认识拼音');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
@@ -143,7 +136,8 @@ test('末项发奖在完成弹窗中可见，减少动态效果生效，清空�
 test('手机个人中心、奖励收藏册可操作且没有横向溢出', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await expect(page.locator('.play-mode')).toHaveCount(12);
+  await expect(page.locator('.mode-navigation .nav-mobile-label')).toHaveText('顺序学习');
+  await expect(page.locator('.mode-navigation .nav-rail')).toBeHidden();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.locator('.my-menu-toggle').click();
   await page.locator('.my-menu [data-action="profile"]').click();

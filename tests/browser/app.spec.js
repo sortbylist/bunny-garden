@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
-import { chooseMode, stored } from './helpers.js';
+import { chooseMode, stored, selectTopic } from './helpers.js';
 
 test('顺序学习、点读、收藏、进度恢复与学科切换', async ({ page }) => {
   const errors = [];
@@ -92,70 +92,20 @@ test('配对可用点击完成且保存重试错题', async ({ page }) => {
   expect((await stored(page)).history.at(-1).correct).toBe(3);
 });
 
-test('功能标签保持展开，切换标签、学习操作、刷新和切换学科后只由按钮收起', async ({ page }) => {
-  await page.route('**/src/data.js*', async route => {
-    const response = await route.fetch();
-    const source = await response.text();
-    await route.fulfill({ response, body: `${source}\nsubjects[0].features = [subjects[0].features[0], ...Array.from({ length: 11 }, (_, index) => ({ id: 'fixture-' + index, name: '测试功能 ' + (index + 2), icon: 'book' }))];` });
-  });
+test('分类、主题、学习操作和刷新保持各自选择与进度', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('tab')).toHaveCount(10);
-  const toggle = page.locator('[data-action="expand-tabs"]');
-  await toggle.click();
-  await expect(page.getByRole('tab')).toHaveCount(12);
-  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-  await page.getByRole('tab', { name: '测试功能 12', exact: true }).click();
-  await expect(page.getByRole('tab')).toHaveCount(12);
-  await expect(page.getByRole('tab', { name: '测试功能 12', exact: true })).toHaveAttribute('aria-selected', 'true');
   await page.locator('[data-action="next"]').click();
   await expect(page.locator('.pinyin-display')).toHaveText('o');
-  await expect(page.getByRole('tab')).toHaveCount(12);
+  await selectTopic(page, '近义词与反义词');
+  await expect(page.getByRole('tab')).toHaveCount(6);
   await page.reload();
-  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-  await expect(page.getByRole('tab')).toHaveCount(12);
+  await expect(page.getByRole('tab', { name: '近义词与反义词', exact: true })).toHaveAttribute('aria-selected', 'true');
   await page.locator('[data-action="subject"][data-id="english"]').click();
   await page.locator('[data-action="subject"][data-id="chinese"]').click();
-  await expect(page.getByRole('tab')).toHaveCount(12);
-  await toggle.click();
-  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-  await expect(page.getByRole('tab')).toHaveCount(10);
-  await expect(page.getByRole('tab', { name: '测试功能 12', exact: true })).toHaveAttribute('aria-selected', 'true');
-  await page.reload();
-  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-  await expect(page.getByRole('tab')).toHaveCount(10);
+  await expect(page.getByRole('tab', { name: '近义词与反义词', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await selectTopic(page, '拼音学习');
+  await expect(page.locator('.pinyin-display')).toHaveText('o');
 });
-
-for (const width of [320, 390, 820, 1440]) {
-  test(`${width}px 顶部标签展开时按钮和首项位置固定，切换标签不改变排列`, async ({ page }) => {
-    await page.setViewportSize({ width, height: 1100 });
-    await page.goto('/');
-    const toggle = page.locator('[data-action="expand-tabs"]');
-    const tabPositions = () => page.getByRole('tab').evaluateAll(elements => elements.map(element => {
-      const bounds = element.getBoundingClientRect();
-      return { id: element.dataset.id, left: bounds.left, top: bounds.top + scrollY, width: bounds.width };
-    }));
-    const originalToggle = await toggle.boundingBox();
-    const originalFirst = (await tabPositions())[0];
-    await toggle.click();
-    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    const expandedToggle = await toggle.boundingBox();
-    expect(expandedToggle.x).toBeCloseTo(originalToggle.x, 0);
-    expect(expandedToggle.y).toBeCloseTo(originalToggle.y, 0);
-    expect(expandedToggle.width).toBeCloseTo(originalToggle.width, 0);
-    const expanded = await tabPositions();
-    expect(expanded[0]).toEqual(originalFirst);
-    expect(expanded.length).toBeGreaterThan(10);
-    for (const tab of [page.getByRole('tab').last(), page.getByRole('tab').first()]) {
-      await tab.click();
-      await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-      expect(await tabPositions()).toEqual(expanded);
-    }
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await toggle.click();
-    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    await expect(page.getByRole('tab')).toHaveCount(10);
-  });
-}
 
 test('设置弹窗、清空确认与键盘关闭', async ({ page }) => {
   await page.goto('/');

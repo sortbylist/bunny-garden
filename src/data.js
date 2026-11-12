@@ -67,7 +67,7 @@ export const modes = [
   { id: 'confusing', name: '易混专项', icon: 'compare', group: '巩固提高', description: '把长得像、读得像的分清楚' },
   { id: 'rules', name: '标调与拼写', icon: 'pen', group: '巩固提高', description: '声调应该戴在哪个字母上' },
   { id: 'challenge', name: '综合闯关', icon: 'flag', group: '巩固提高', description: '用一组小挑战检验收获' },
-  { id: 'mistakes', name: '错题本', icon: 'refresh', group: '我的复习', description: '再练一次，每次都有进步' },
+  { id: 'mistakes', name: '错题本', icon: 'notebook', group: '我的复习', description: '再练一次，每次都有进步' },
   { id: 'favorites', name: '我的收藏', icon: 'heart', group: '我的复习', description: '把不熟悉的朋友再认一认' },
 ];
 
@@ -111,7 +111,7 @@ export const toneItems = [1, 2, 3, 4].map(tone => ({ id: `tone-ma${tone}`, sound
 export const tonePracticeSounds = ['ma', 'ba', 'yi', 'wu', 'yu'].flatMap(syllable => [1, 2, 3, 4].map(tone => `${syllable}${tone}`));
 
 export const subjects = [
-  { id: 'chinese', name: '语文', english: 'CHINESE', icon: 'book', color: 'pink', features: [{ id: 'pinyin', name: '拼音学习', icon: 'type' }, { id: 'hanzi-structure', name: '汉字笔画与结构', icon: 'pen' }, ...chineseTopics.map(topic => ({ id: topic.id, name: topic.name, icon: ({ dictionary: 'book', 'word-categories': 'grid', 'word-relations': 'book', collocations: 'pen', 'word-patterns': 'flower' })[topic.id] || 'pen' }))] },
+  { id: 'chinese', name: '语文', english: 'CHINESE', icon: 'book', color: 'pink', features: [{ id: 'pinyin', name: '拼音学习', icon: 'type', category: '拼音学习' }, { id: 'hanzi-structure', name: '汉字笔画与结构', icon: 'pen', category: '第一阶段 · 字词基础' }, ...chineseTopics.map(topic => ({ id: topic.id, name: topic.name, category: topic.stage, icon: ({ dictionary: 'search', 'word-categories': 'grid', 'word-relations': 'compare', collocations: 'link', 'word-patterns': 'flower', 'sentence-building': 'puzzle', punctuation: 'quote', 'sentence-patterns': 'layers', 'sentence-revision': 'refresh', 'vivid-expression': 'leaf' })[topic.id] || 'book' }))] },
   { id: 'math', name: '数学', english: 'MATH', icon: 'math', color: 'blue', features: [] },
   { id: 'english', name: '英语', english: 'ENGLISH', icon: 'globe', color: 'yellow', features: [{ id: 'phonics', name: '自然拼读', icon: 'type' }] },
 ];

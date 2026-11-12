@@ -154,7 +154,7 @@ export const defaultState = () => ({
   group: 'all', wordScope: 'all', confusion: 'retroflex', length: 10,
   seen: [], known: [], favorites: [], mistakes: [], history: [], sessions: {},
   settings: { slow: false, effects: true, continuous: false, animations: true },
-  nickname: '小小探索家', modesExpanded: false, tabsExpanded: false, modePickerVersion: 2, rewards: null,
+  nickname: '小小探索家', navigationSelections: {}, rewards: null,
   tonePractice: false, modeGroups: {}, hanzi: null, topics: {},
 });
 
@@ -168,9 +168,7 @@ export function loadState(storage) {
       if (!Array.isArray(parsed[key])) throw new Error('invalid collection');
     }
     const state = { ...defaultState(), ...parsed, settings: { ...defaultState().settings, ...parsed.settings } };
-    state.tabsExpanded = parsed.tabsExpanded === true;
-    if (parsed.modePickerVersion !== 2) state.modesExpanded = false;
-    state.modePickerVersion = 2;
+    state.navigationSelections = Object.fromEntries(Object.entries(parsed.navigationSelections && typeof parsed.navigationSelections === 'object' ? parsed.navigationSelections : {}).filter(([, value]) => typeof value === 'string'));
     if (['initials', 'finals', 'whole'].includes(state.mode)) {
       const legacyGroups = { initials: 'initial', finals: 'all', whole: 'whole' };
       state.group = state.group === 'all' ? legacyGroups[state.mode] : state.group;

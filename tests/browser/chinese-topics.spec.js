@@ -32,7 +32,7 @@ for (const topic of chineseTopics) {
     await page.locator('[data-action="ct-known"]').click();
     expect((await stored(page)).topics[topic.id].known).toHaveLength(1);
     await expect(page.locator('.star-counter b')).toHaveText('2');
-    await page.getByRole('tab', { name: '拼音学习', exact: true }).click();
+    await selectTopic(page, '拼音学习');
     await expect(page.locator('.pinyin-display')).toHaveText('o');
     expect((await stored(page)).known).toEqual(['single-a']);
     expect(errors).toEqual([]);
@@ -142,7 +142,7 @@ test('字词主题在浏览器存储不可用时仍能学习、查字和作答',
     await page.locator('[data-action="ct-skip"]').click();
     await expect(page.locator('.hz-feedback')).toContainText('先认识答案');
   }
-  await page.getByRole('tab', { name: '查字典', exact: true }).click();
+  await selectTopic(page, '查字典');
   await page.locator('[data-action="ct-lookup"]').click();
   for (const value of ['H', 'he', '河']) await page.locator(`[data-action="ct-lookup-pick"][data-value="${value}"]`).click();
   await expect(page.locator('.ct-entry')).toContainText('天然的大水道');
@@ -189,7 +189,7 @@ test('教学图解和难词拼音在320像素宽度可读，同音节查字能�
   ];
   for (const [topicId, category, lessonId] of examples) {
     const topic = chineseTopics.find(item => item.id === topicId);
-    await page.getByRole('tab', { name: topic.name, exact: true }).click();
+    await selectTopic(page, topic.name);
     await page.locator(`[data-action="ct-category"][data-id="${category}"]`).click();
     await page.locator(`[data-action="ct-lesson"][data-id="${lessonId}"]`).click();
     await expect(page.locator('.ct-visual')).toBeVisible();

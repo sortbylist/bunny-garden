@@ -1,5 +1,7 @@
 const paths = {
   book: '<path d="M12 6c-3-3-7-3-9-2v15c3-1 6 0 9 2 3-2 6-3 9-2V4c-2-1-6-1-9 2Zm0 0v15"/>',
+  notebook: '<rect x="5" y="3" width="15" height="18" rx="2"/><path d="M9 3v18M3 7h4M3 12h4M3 17h4m6-9h4m-4 4h4"/>',
+  quote: '<path d="M4 6h6v6H4V6Zm10 0h6v6h-6V6Zm-4 6c0 4-2 6-5 7m15-7c0 4-2 6-5 7"/>',
   math: '<rect x="4" y="3" width="16" height="18" rx="4"/><path d="M8 8h8M8 13h2m4 0h2m-8 4h2m4 0h2"/>',
   globe: '<circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/>',
   menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, stat } from 'node:fs/promises';
 import { basics, groups, characters, words, vocabulary, marked, confusionSets } from '../src/data.js';
-import { shuffle, visibleTabs, studyPool, questionPool, createRound, recordAnswer, roundStats, loadState } from '../src/engine.js';
+import { shuffle, visibleTabs, studyPool, questionPool, createRound, recordAnswer, roundStats, loadState, defaultState } from '../src/engine.js';
 
 test('基础内容分类完整，顺序从 a o e i u ü 开始', () => {
   assert.equal(basics.length, 63);
@@ -76,6 +76,20 @@ test('浏览器存储不可用或损坏时可降级', () => {
   assert.equal(blocked.state.mode, 'sequence');
   assert.equal(loadState({ getItem: () => '{' }).available, false);
   assert.equal(loadState({ getItem: () => null }).available, true);
+});
+
+test('旧记录补齐导航偏好，损坏偏好不丢学习进度', () => {
+  const saved = { ...defaultState(), known: ['single-a'], mode: 'audio', modesExpanded: true, tabsExpanded: true };
+  delete saved.navigationSelections;
+  const restore = value => loadState({ getItem: () => JSON.stringify(value) });
+  assert.deepEqual(restore(saved).state.navigationSelections, {});
+  for (const navigationSelections of [null, 'broken', { 'pinyin-modes:group': '趣味练习', invalid: null, numeric: 5 }]) {
+    const result = restore({ ...saved, navigationSelections });
+    assert.equal(result.available, true);
+    assert.equal(result.state.mode, 'audio');
+    assert.deepEqual(result.state.known, ['single-a']);
+    assert.deepEqual(result.state.navigationSelections, navigationSelections && typeof navigationSelections === 'object' ? { 'pinyin-modes:group': '趣味练习' } : {});
+  }
 });
 
 test('所有基础点读与练习音频均有本地资源，完整词语缺失时允许逐字拼读', async () => {

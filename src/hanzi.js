@@ -5,6 +5,7 @@ import { roundStats } from './engine.js';
 import { grantRewards } from './rewards.js';
 import { readingText } from './chinese-reading.js';
 import { practiceLengths } from './chinese-practice.js';
+import { icon } from './icons.js';
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 const control = (action, label, attributes = '', className = 'outline-button') => `<button type="button" data-action="hz-${action}" class="${className}" ${attributes}>${label}</button>`;
@@ -61,7 +62,7 @@ function quizCard(state) {
   const round = state.round;
   if (round.finished) {
     const stats = roundStats(round);
-    return `<section class="hz-card hz-result" aria-label="汉字练习结果"><h2>这一轮完成啦！</h2><p class="hz-result-score">${stats.correct} / ${stats.total}</p><p>首次答对 ${stats.correct} 题，首次跳过 ${stats.skipped} 题。</p><p>答错后再试也是进步。错题会留在汉字错题本中，独立答对后移出。</p><div class="hz-actions">${control('learn', '回到学习')}${control('start', '再练一轮', `data-id="${round.scope}" ${round.scope === 'review' && !state.mistakes.length ? 'disabled' : ''}`, 'solid-button')}${control('start', `汉字错题本（${state.mistakes.length}）`, `data-id="review" ${state.mistakes.length ? '' : 'disabled'}`)}</div></section>`;
+    return `<section class="hz-card hz-result" aria-label="汉字练习结果"><h2>这一轮完成啦！</h2><p class="hz-result-score">${stats.correct} / ${stats.total}</p><p>首次答对 ${stats.correct} 题，首次跳过 ${stats.skipped} 题。</p><p>答错后再试也是进步。错题会留在汉字错题本中，独立答对后移出。</p><div class="hz-actions">${control('learn', '回到学习')}${control('start', '再练一轮', `data-id="${round.scope}" ${round.scope === 'review' && !state.mistakes.length ? 'disabled' : ''}`, 'solid-button')}${control('start', `${icon('notebook')}汉字错题本（${state.mistakes.length}）`, `data-id="review" ${state.mistakes.length ? '' : 'disabled'}`)}</div></section>`;
   }
   const question = round.questions[round.index];
   const response = round.responses[round.index];

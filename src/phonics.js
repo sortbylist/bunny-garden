@@ -80,12 +80,12 @@ export function createPhonicsView({ redraw, notify, haltOtherAudio, renderGarden
     return ['review', 'favorites', 'records'].map(id => {
       const entry = phonicsModes.find(mode => mode.id === id);
       const count = id === 'review' ? `（${state.mistakes.length}）` : id === 'favorites' ? `（${state.favorites.length}）` : '';
-      return control('mode', `${entry.name}${count}`, `data-id="${id}" aria-pressed="${state.mode === id}" ${id === 'review' && !state.mistakes.length ? 'disabled' : ''}`, 'outline-button');
+      return control('mode', `${icon({ review: 'notebook', favorites: 'heart', records: 'book' }[id])}${entry.name}${count}`, `data-id="${id}" aria-pressed="${state.mode === id}" ${id === 'review' && !state.mistakes.length ? 'disabled' : ''}`, 'outline-button');
     }).join('');
   }
 
   function reviewButton() {
-    return control('mode', '错题本', `data-id="review" ${state.mistakes.length ? '' : 'disabled'}`);
+    return control('mode', `${icon('notebook')}错题本`, `data-id="review" ${state.mistakes.length ? '' : 'disabled'}`);
   }
 
   function gardenData() {

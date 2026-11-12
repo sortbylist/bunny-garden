@@ -8,6 +8,15 @@ test('语文各页都有成长花园，只显示本页错题本和进度', async
   const review = garden.getByRole('button', { name: /错题本/ });
   await expect(review).toHaveCount(1);
   await expect(review).toHaveText('拼音错题本（0）');
+  await expect(review.locator('svg')).toHaveCount(1);
+  const reviewGraphic = await review.locator('svg').innerHTML();
+  const expectReviewGraphic = async () => {
+    expect(await review.locator('svg').innerHTML()).toBe(reviewGraphic);
+    const menuReview = page.locator('.my-menu-content').getByRole('button', { name: /错题本/, includeHidden: true });
+    await expect(menuReview.locator('svg')).toHaveCount(1);
+    expect(await menuReview.locator('svg').innerHTML()).toBe(reviewGraphic);
+  };
+  await expectReviewGraphic();
   await expect(review).toBeDisabled();
   await expect(page.locator('.my-menu-content')).not.toContainText('汉字错题本');
   await chooseMode(page, 'rules');
@@ -17,9 +26,10 @@ test('语文各页都有成长花园，只显示本页错题本和进度', async
   await review.click();
   await expect(page.locator('.learning-main>.section-title')).toContainText('错题本');
 
-  await page.getByRole('tab', { name: '汉字笔画与结构' }).click();
+  await selectTopic(page, '汉字笔画与结构');
   await expect(garden).toHaveCount(1);
   await expect(review).toHaveText('汉字错题本（0）');
+  await expectReviewGraphic();
   await expect(review).toBeDisabled();
   await page.locator('[data-action="hz-known"]').click();
   await expect(garden.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1');
@@ -37,6 +47,7 @@ test('语文各页都有成长花园，只显示本页错题本和进度', async
     await selectTopic(page, topic.name);
     await expect(garden).toHaveCount(1);
     await expect(review).toHaveText(`${topic.name}错题本（0）`);
+    await expectReviewGraphic();
     await expect(review).toBeDisabled();
     await expect(garden.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
     await expect(garden.getByRole('progressbar')).toHaveAttribute('aria-valuemax', String(topic.lessons.length));
@@ -52,7 +63,7 @@ test('语文各页都有成长花园，只显示本页错题本和进度', async
     await review.click();
     await expect(page.locator('.ct-quiz')).toBeVisible();
   }
-  await page.getByRole('tab', { name: '拼音学习' }).click();
+  await selectTopic(page, '拼音学习');
   await expect(review).toHaveText('拼音错题本（1）');
   await page.reload();
   await expect(review).toHaveText('拼音错题本（1）');
@@ -69,6 +80,9 @@ test('自然拼读的个人入口移入成长花园，错题与语文隔离且�
   await expect(page.locator('.ph-modes')).not.toContainText('我的收藏');
   await expect(page.locator('.ph-modes')).not.toContainText('学习记录');
   await expect(review).toHaveText('错题本（0）');
+  await expect(review.locator('svg')).toHaveCount(1);
+  const reviewGraphic = await review.locator('svg').innerHTML();
+  expect(await page.locator('.my-menu-content [data-id="review"] svg').innerHTML()).toBe(reviewGraphic);
   await expect(review).toBeDisabled();
   await page.locator('[data-action="ph-favorite"]').click();
   await page.locator('[data-action="ph-known"]').click();
@@ -90,5 +104,6 @@ test('自然拼读的个人入口移入成长花园，错题与语文隔离且�
   await garden.locator('[data-id="records"]').click();
   await expect(page.locator('.ph-section-title h2')).toHaveText('学习记录');
   await expect(page.locator('.ph-main [data-id="review"]')).toBeDisabled();
+  expect(await page.locator('.ph-main [data-id="review"] svg').innerHTML()).toBe(reviewGraphic);
   await expect(garden).toBeVisible();
 });

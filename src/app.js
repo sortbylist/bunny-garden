@@ -1,7 +1,7 @@
 import './style.css';
 import './personal.css';
 import { basics, groups, modes, playModes, modeSections, subjects, vocabulary, marked, confusionSets, toneItems } from './data.js';
-import { shuffle, visibleTabs, studyPool, learningGroups, nextStudyGroup, visitQuestion, nextUnfinishedQuestion, createRound, recordAnswer, roundStats, loadState, defaultState } from './engine.js';
+import { shuffle, studyPool, learningGroups, nextStudyGroup, visitQuestion, nextUnfinishedQuestion, createRound, recordAnswer, roundStats, loadState, defaultState } from './engine.js';
 import { icon, bunny } from './icons.js';
 import { playAudio, stopAudio, onAudioStatus, chime, hasAudio } from './audio.js';
 import { initializeRewards, grantRewards, rewardStats, rewardCatalog, equipReward, normalizeNickname } from './rewards.js';
@@ -13,6 +13,7 @@ import { chineseTopics, topicById } from './chinese-topics.js';
 import { normalizeTopic, topicDefaults, startTopicRound, updateTopicActivity } from './chinese-engine.js';
 import { renderTopic, handleTopicAction } from './chinese.js';
 import { createPhonicsView } from './phonics.js';
+import { createNavigation, featureGroups } from './navigation.js';
 
 const app = document.querySelector('#app');
 const dialog = document.querySelector('#dialog');
@@ -50,6 +51,13 @@ const button = (action, label, symbol, className = '', attributes = '') => `<but
 const currentMode = () => modes.find(mode => mode.id === state.mode);
 const groupName = id => groups.find(group => group.id === id)?.name || '全部拼音';
 const key = () => `${state.mode === 'tones' && state.tonePractice ? 'tonequiz' : state.mode}:${state.group}:${state.wordScope}:${state.confusion}:${state.length}`;
+const navigation = createNavigation((action, id) => {
+  if (action === 'mode') { changeMode(id); return; }
+  state.features[state.subject] = id;
+  halt();
+  state.settings.continuous = false;
+  render();
+});
 
 function persist() {
   try { localStorage.setItem('bunny-garden-v1', JSON.stringify(state)); }
@@ -99,10 +107,12 @@ function currentItem() {
 }
 
 function render() {
+  navigation.capture();
   state.hanzi ||= normalizeHanziState(null);
   for (const topic of chineseTopics) state.topics[topic.id] ||= topicDefaults(topic);
   const focused = document.activeElement;
   const focusedAction = focused?.closest('#app') ? focused.dataset.action : null;
+  const focusedNavigation = focused?.closest('.learning-navigation')?.dataset.navigation;
   const focusData = focusedAction ? { action: focusedAction, id: focused.dataset.id, value: focused.dataset.value, index: focused.dataset.index } : null;
   const subject = subjects.find(item => item.id === state.subject);
   const isHanzi = state.subject === 'chinese' && state.features.chinese === 'hanzi-structure';
@@ -127,16 +137,18 @@ function render() {
         <div class="breadcrumb">学习乐园 ${icon('chevron')} <span>${subject.name}</span></div>
         <div class="topbar-right"><button class="star-counter" data-action="reward-rules" aria-label="查看星星收获与获取规则">${icon('star')}<b>${rewardStats(state.rewards).stars}</b><span>颗成长星</span>${icon('info')}</button><details class="my-menu"><summary class="my-menu-toggle" aria-label="打开我的菜单"><img src="/bunny.svg" alt="" width="38" height="38"><span>${escape(state.nickname)}<small>我的 ${icon('down')}</small></span></summary><div class="my-menu-content"><strong>你好，${escape(state.nickname)}</strong>${button('profile', '我的成长空间', 'sprout')}${personalButtons('menu')}${button('reward-collection', '奖励收藏册', 'star')}${button('edit-nickname', '设置昵称', 'pen')}</div></details></div>
       </header>
-      <div class="feature-bar"><div role="tablist" aria-label="${subject.name}小功能" class="feature-tabs ${state.tabsExpanded ? 'expanded' : ''}">${visibleTabs(subject.features, state.features[subject.id], state.tabsExpanded).map(feature => `<button role="tab" aria-selected="${state.features[subject.id] === feature.id}" data-action="feature" data-id="${feature.id}" class="feature-tab ${state.features[subject.id] === feature.id ? 'active' : ''}">${icon(feature.icon)}${feature.name}<span class="tiny-dot"></span></button>`).join('')}${subject.features.length === 0 ? '<span class="feature-placeholder">新的学习冒险，正在准备中</span>' : ''}</div>${subject.features.length > 10 ? button('expand-tabs', state.tabsExpanded ? '收起' : `展开全部（${subject.features.length}）`, 'down', 'expand-tabs', `aria-expanded="${state.tabsExpanded}"`) : ''}<span class="feature-decoration">LEARN · PLAY · GROW ${icon('flower')}</span></div>
+      ${navigation.render({ id: `features-${subject.id}`, label: `${subject.name}主题`, groups: featureGroups(subject), selected: state.features[subject.id], memories: state.navigationSelections, action: 'feature', className: 'feature-navigation' })}
       <main id="main-content" tabindex="-1">${topic ? renderTopic(topic, state.topics[topic.id], progressCard()) : isHanzi ? renderHanzi(state.hanzi, progressCard()) : state.subject === 'chinese' ? learningPage() : state.subject === 'english' ? phonics.render() : comingSoon(subject)}</main>
       <footer>用一点好奇心，收获一点新知识。${icon('heart')}<span>小兔陪你慢慢学</span></footer>
     </div>`;
   if (focusData && !dialog.open) {
     const candidates = [...app.querySelectorAll('[data-action]')];
-    const replacement = candidates.find(element => element.dataset.action === focusData.action && element.dataset.id === focusData.id && element.dataset.value === focusData.value && element.dataset.index === focusData.index && !element.disabled);
+    const replacement = candidates.find(element => element.dataset.action === focusData.action && element.dataset.id === focusData.id && element.dataset.value === focusData.value && element.dataset.index === focusData.index && !element.disabled && element.getClientRects().length);
     if (replacement) replacement.focus({ preventScroll: true });
+    else if (focusedNavigation) app.querySelector(`[data-navigation="${focusedNavigation}"] ${focusData.action === 'nav-group' ? '.nav-group-picker' : '.nav-catalog-picker'} summary`)?.focus({ preventScroll: true });
     else (app.querySelector('[data-action="ct-advance"]') || app.querySelector('[data-action="ct-answer"]:not(:disabled)') || app.querySelector('[data-action="ct-learn"], [data-action="hz-advance"], [data-action="hz-stroke-previous"]:not(:disabled), [data-action="next-question"]:not(:disabled)'))?.focus({ preventScroll: true });
   }
+  navigation.bind();
   persist();
 }
 
@@ -157,8 +169,7 @@ function learningPage() {
 }
 
 function modePicker() {
-  const group = (section, index) => `<div class="play-mode-group play-mode-group-${index + 1}"><h3><span>0${index + 1}</span>${section}</h3><div class="play-mode-buttons">${playModes.filter(mode => mode.group === section).map(mode => button('mode', mode.name, mode.icon, `play-mode ${state.mode === mode.id ? 'selected' : ''}`, `data-id="${mode.id}" aria-pressed="${state.mode === mode.id}" title="${mode.description}"`)).join('')}</div>${index === 0 ? button('toggle-modes', state.modesExpanded ? '收起玩法' : '展开玩法', 'down', `play-selector-toggle ${state.modesExpanded ? 'expanded' : ''}`, `aria-expanded="${state.modesExpanded}" aria-controls="play-mode-more"`) : ''}</div>`;
-  return `<section class="play-selector" aria-label="拼音玩法">${group(modeSections[0], 0)}<div id="play-mode-more" ${state.modesExpanded ? '' : 'hidden'}>${modeSections.slice(1).map((section, index) => group(section, index + 1)).join('')}</div></section>`;
+  return navigation.render({ id: 'pinyin-modes', label: '拼音玩法', groups: modeSections.map(section => ({ id: section, name: section, items: playModes.filter(mode => mode.group === section) })), selected: state.mode, memories: state.navigationSelections, action: 'mode', className: 'play-selector mode-navigation' });
 }
 
 function personalLinks(className = '') {
@@ -170,13 +181,13 @@ function personalButtons(context = 'garden') {
   const topic = state.subject === 'chinese' ? topicById(state.features.chinese) : null;
   if (topic) {
     const count = state.topics[topic.id].mistakes.length;
-    return `${button(context === 'garden' ? 'ct-start' : 'topic-review', `${topic.name}错题本（${count}）`, '', 'outline-button', `data-id="${context === 'garden' ? 'review' : topic.id}" ${count ? '' : 'disabled'}`)}${button(context === 'garden' ? 'topic-records' : 'records', '学习记录', 'book', 'outline-button')}`;
+    return `${button(context === 'garden' ? 'ct-start' : 'topic-review', `${topic.name}错题本（${count}）`, 'notebook', 'outline-button', `data-id="${context === 'garden' ? 'review' : topic.id}" ${count ? '' : 'disabled'}`)}${button(context === 'garden' ? 'topic-records' : 'records', '学习记录', 'book', 'outline-button')}`;
   }
   if (state.subject === 'chinese' && state.features.chinese === 'hanzi-structure') {
     const count = state.hanzi.mistakes.length;
-    return `${button(context === 'garden' ? 'hz-start' : 'hanzi-review', `汉字错题本（${count}）`, '', 'outline-button', `data-id="review" ${count ? '' : 'disabled'}`)}${button('records', '学习记录', 'book', 'outline-button')}`;
+    return `${button(context === 'garden' ? 'hz-start' : 'hanzi-review', `汉字错题本（${count}）`, 'notebook', 'outline-button', `data-id="review" ${count ? '' : 'disabled'}`)}${button('records', '学习记录', 'book', 'outline-button')}`;
   }
-  return `${button('mode', `拼音错题本（${state.mistakes.length}）`, '', 'outline-button', `data-id="mistakes" ${state.mistakes.length ? '' : 'disabled'}`)}${button('mode', `我的收藏（${state.favorites.length}）`, 'heart', 'outline-button', 'data-id="favorites"')}${button('records', '学习记录', 'book', 'outline-button')}`;
+  return `${button('mode', `拼音错题本（${state.mistakes.length}）`, 'notebook', 'outline-button', `data-id="mistakes" ${state.mistakes.length ? '' : 'disabled'}`)}${button('mode', `我的收藏（${state.favorites.length}）`, 'heart', 'outline-button', 'data-id="favorites"')}${button('records', '学习记录', 'book', 'outline-button')}`;
 }
 
 function equippedRewards() {
@@ -279,7 +290,7 @@ function quizCard(round) {
 
 function resultCard(round) {
   const stats = roundStats(round);
-  return `<section class="quiz-card result-card"><div class="result-star">${icon('star')}</div><span class="eyebrow">又完成了一次小小的冒险</span><h3>认真练习的你，真棒！</h3><p>休息一下，或者带着新收获继续出发。</p><div class="result-stats"><div><b>${stats.total}</b><span>本轮题目</span></div><div><b>${stats.correct}</b><span>首次答对</span></div><div><b>${stats.skipped}</b><span>跳过题目</span></div></div><div class="review-summary">${stats.correct === stats.total ? '这一轮全部首次答对，给自己一个大大的赞！' : `还有 ${stats.total - stats.correct} 道题值得再练一次，已经放进错题本。`}</div><div class="result-actions">${button('restart-now', '再来一轮', 'refresh', 'solid-button')}${button('mode', '拼音错题本', 'book', 'outline-button', `data-id="mistakes" ${state.mistakes.length ? '' : 'disabled'}`)}</div></section>`;
+  return `<section class="quiz-card result-card"><div class="result-star">${icon('star')}</div><span class="eyebrow">又完成了一次小小的冒险</span><h3>认真练习的你，真棒！</h3><p>休息一下，或者带着新收获继续出发。</p><div class="result-stats"><div><b>${stats.total}</b><span>本轮题目</span></div><div><b>${stats.correct}</b><span>首次答对</span></div><div><b>${stats.skipped}</b><span>跳过题目</span></div></div><div class="review-summary">${stats.correct === stats.total ? '这一轮全部首次答对，给自己一个大大的赞！' : `还有 ${stats.total - stats.correct} 道题值得再练一次，已经放进错题本。`}</div><div class="result-actions">${button('restart-now', '再来一轮', 'refresh', 'solid-button')}${button('mode', '拼音错题本', 'notebook', 'outline-button', `data-id="mistakes" ${state.mistakes.length ? '' : 'disabled'}`)}</div></section>`;
 }
 
 function matchCard(value) {
@@ -386,7 +397,7 @@ function showRecords() {
 function showTopicRecords() {
   const activeTopic = topicById(state.features.chinese);
   const topics = activeTopic ? [activeTopic] : chineseTopics;
-  openDialog('语文主题学习记录', `<p>自评认识与首次答对分别统计；各主题错题互不混用。</p>${topics.map(topic => `<section class="ct-record"><h3>${topic.name}</h3><p>自评认识 ${state.topics[topic.id].known.length} / ${topic.lessons.length} 项 · 待复习错题 ${state.topics[topic.id].mistakes.length} 道</p>${button('topic-review', `${topic.name}错题本`, 'book', 'outline-button', `data-id="${topic.id}" ${state.topics[topic.id].mistakes.length ? '' : 'disabled'}`)}</section>`).join('')}${button('records', '查看最近完成的练习', 'book', 'text-button')}`);
+  openDialog('语文主题学习记录', `<p>自评认识与首次答对分别统计；各主题错题互不混用。</p>${topics.map(topic => `<section class="ct-record"><h3>${topic.name}</h3><p>自评认识 ${state.topics[topic.id].known.length} / ${topic.lessons.length} 项 · 待复习错题 ${state.topics[topic.id].mistakes.length} 道</p>${button('topic-review', `${topic.name}错题本`, 'notebook', 'outline-button', `data-id="${topic.id}" ${state.topics[topic.id].mistakes.length ? '' : 'disabled'}`)}</section>`).join('')}${button('records', '查看最近完成的练习', 'book', 'text-button')}`);
 }
 
 function showAbout() {
@@ -518,7 +529,6 @@ function handleAction(event) {
   }
   if (action.startsWith('ph-') && state.subject === 'english') { if (dialog.open) closeDialog(); phonics.handle(target); return; }
   if (action === 'close-dialog') { closeDialog(); return; }
-  if (action === 'toggle-modes') { state.modesExpanded = !state.modesExpanded; render(); return; }
   if (action === 'settings') { showSettings(); return; }
   if (action === 'about') { showAbout(); return; }
   if (action === 'records') { if (state.subject === 'english') { closeDialog(); phonics.handle({ dataset: { action: 'ph-mode', id: 'records' } }); } else showRecords(); return; }
@@ -551,7 +561,6 @@ function handleAction(event) {
     render(); return;
   }
   if (action === 'mobile-menu') { mobileMenu = !mobileMenu; render(); return; }
-  if (action === 'expand-tabs') { state.tabsExpanded = !state.tabsExpanded; render(); return; }
   if (action === 'feature') { state.features[state.subject] = target.dataset.id; halt(); state.settings.continuous = false; render(); return; }
   if (action === 'map-group') { if (learningGroups(state.mode).some(group => group.id === target.dataset.id)) changeScope('group', target.dataset.id); return; }
   if (action === 'map-word-scope') { if (availableWordScopes().some(scope => scope.id === target.dataset.id)) changeScope('wordScope', target.dataset.id); return; }
@@ -656,10 +665,11 @@ function handleAction(event) {
 document.addEventListener('click', event => {
   if (!event.target.closest('.my-menu')) app.querySelector('.my-menu')?.removeAttribute('open');
   else if (event.target.closest('[data-action]')) app.querySelector('.my-menu')?.removeAttribute('open');
-  handleAction(event);
+  if (!navigation.click(event)) handleAction(event);
 });
 
 document.addEventListener('input', event => {
+  if (navigation.input(event)) return;
   if (event.target.dataset.action !== 'ct-draft') return;
   const topic = state.subject === 'chinese' ? topicById(state.features.chinese) : null;
   if (!topic) return;
@@ -700,6 +710,7 @@ document.addEventListener('submit', event => {
 document.addEventListener('input', event => { if (state.subject === 'english') phonics.input(event.target); });
 
 document.addEventListener('keydown', event => {
+  if (navigation.keydown(event)) return;
   if (event.key === 'Escape' && app.querySelector('.my-menu[open]')) { app.querySelector('.my-menu').removeAttribute('open'); app.querySelector('.my-menu-toggle').focus(); return; }
   if (event.key === 'Escape' && mobileMenu) { mobileMenu = false; render(); }
   const tab = event.target.closest('[role="tab"]');
@@ -712,7 +723,7 @@ document.addEventListener('keydown', event => {
     tabs[nextIndex].click();
     return;
   }
-  if (dialog.open || event.target.closest('input, select, textarea, button, a')) return;
+  if (dialog.open || event.target.closest('input, select, textarea, button, a, summary')) return;
   if (state.subject === 'chinese' && state.features.chinese !== 'hanzi-structure' && !topicById(state.features.chinese) && studyModes.includes(state.mode) && ['ArrowLeft', 'ArrowRight'].includes(event.key)) {
     const value = session();
     const next = value.index + (event.key === 'ArrowRight' ? 1 : -1);

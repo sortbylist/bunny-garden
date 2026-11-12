@@ -2,19 +2,17 @@ import { test, expect } from '@playwright/test';
 import { chineseTopics } from '../../src/chinese-topics.js';
 import { stored, selectTopic } from './helpers.js';
 
-test('真实句子主题超十项时可展开、收起且选中入口不丢失', async ({ page }) => {
+test('句子主题归入独立分类，目录和学习操作不影响草稿与选择', async ({ page }) => {
   const topic = chineseTopics.at(-1);
   await page.goto('/');
-  await expect(page.getByRole('tab')).toHaveCount(10);
-  await page.locator('[data-action="expand-tabs"]').click();
-  await expect(page.getByRole('tab')).toHaveCount(chineseTopics.length + 2);
-  await page.getByRole('tab', { name: topic.name, exact: true }).click();
-  await expect(page.getByRole('tab')).toHaveCount(10);
+  await selectTopic(page, topic.name);
+  await expect(page.getByRole('tab')).toHaveCount(5);
   await expect(page.getByRole('tab', { name: topic.name, exact: true })).toHaveAttribute('aria-selected', 'true');
-  await page.locator('[data-action="expand-tabs"]').click();
+  await page.locator('.feature-navigation .nav-catalog-picker summary').click();
+  await expect(page.locator('.feature-navigation .nav-catalog')).toBeVisible();
   await page.locator('#ct-draft').click();
   await page.locator('#ct-draft').fill('我写下了自己的句子。');
-  await expect(page.getByRole('tab')).toHaveCount(10);
+  await expect(page.getByRole('tab')).toHaveCount(5);
   await page.reload();
   await expect(page.locator('#ct-draft')).toHaveValue('我写下了自己的句子。');
   await expect(page.getByRole('tab', { name: topic.name, exact: true })).toHaveAttribute('aria-selected', 'true');
