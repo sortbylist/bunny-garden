@@ -11,6 +11,10 @@ export function updateTopicActivity(topic, state, action, value) {
   if (state.view !== 'learn' || !lesson?.activity) return;
   const activity = lesson.activity;
   const saved = state.activities[lesson.id] ||= { text: '', order: [], checked: false, showExample: false };
+  if (lesson.poem) {
+    saved.hidePoem = saved.hidePoem === true;
+    if (action === 'recite') saved.hidePoem = !saved.hidePoem;
+  }
   if (action === 'draft' && activity.type === 'write' && typeof value === 'string') saved.text = value.slice(0, 500);
   if (action === 'example') saved.showExample = !saved.showExample;
   if (activity.type !== 'order') return;
@@ -41,6 +45,7 @@ export function normalizeTopic(topic, saved) {
       text: typeof entry.text === 'string' ? entry.text.slice(0, 500) : '',
       order, checked: Boolean(entry.checked && order.length === lesson.activity.tokens?.length),
       showExample: entry.showExample === true,
+      ...(lesson.poem ? { hidePoem: entry.hidePoem === true } : {}),
     };
   }
   if (topic.id === 'dictionary') {

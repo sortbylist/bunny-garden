@@ -17,6 +17,18 @@
 .ct-activity textarea { display: block; width: 100%; max-width: 100%; box-sizing: border-box; resize: vertical; padding: 14px; border: 1px solid var(--border); border-radius: 12px; font: inherit; line-height: 1.8; color: inherit; background: white; }
 .ct-activity textarea:focus-visible { outline: 3px solid #b37b9b; outline-offset: 2px; }
 .ct-built, .ct-sample { padding: 14px; border-radius: 12px; background: #fff; }
+.ct-comparison { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr)); gap: 12px; margin: 22px 0; }
+.ct-comparison article { min-width: 0; padding: 20px 14px; border: 1px solid #e3d5de; border-radius: 16px; background: #f8f4ec; overflow-wrap: anywhere; }
+.ct-compare-character { display: block; text-align: center; font-family: KaiTi, STKaiti, serif; font-size: 52px; line-height: 1.8; color: #97637f; }
+.chinese-topic .ct-compare-character rt { font-family: inherit; font-size: 16px; }
+.ct-comparison h4 { text-align: center; font-size: 18px; }
+.chinese-topic .ct-comparison p { font-size: 14px; line-height: 1.9; }
+.ct-poem { margin: 20px 0; padding: 22px 12px; text-align: center; background: #f8f4ec; border: 1px solid #e3d5de; border-radius: 16px; }
+.ct-poem-lines { margin: 24px 0; min-height: 180px; }
+.chinese-topic .ct-poem-lines p { font-size: clamp(18px, 2.2vw, 26px); line-height: 2.8; margin: 6px 0; }
+.ct-poem-lines rt { font-family: inherit; }
+.chinese-topic .ct-poem-lines .ct-recite-hint { padding: 20px 8px; font-size: 16px; line-height: 2; }
+.chinese-topic .ct-poem-author { color: #796375; font-size: 16px; }
 .feature-bar .feature-tabs { min-width: 0; overflow-x: auto; }
 .feature-tab { flex-shrink: 0; }
 .feature-tabs.expanded { flex-wrap: wrap; }
@@ -114,6 +126,7 @@
   .ct-sentence-topic .ct-tools > small { font-size: 11px; }
 }
 @media (max-width: 440px) {
+  .ct-poem { padding: 20px 8px; }
   .ct-sentence-topic .ct-sentence-card { padding-left: 16px; padding-right: 16px; }
   .ct-sentence-topic .ct-lesson-intro h3 { font-size: 22px; }
   .ct-sentence-topic .ct-lesson-intro > p { font-size: 14px; }

@@ -3,7 +3,7 @@ import { chineseTopics } from '../../src/chinese-topics.js';
 import { stored, selectTopic } from './helpers.js';
 
 test('真实句子主题超十项时可展开、收起且选中入口不丢失', async ({ page }) => {
-  const topic = chineseTopics.at(-1);
+  const topic = chineseTopics.filter(item => item.stage.startsWith('第二阶段')).at(-1);
   await page.goto('/');
   await expect(page.getByRole('tab')).toHaveCount(10);
   await page.locator('[data-action="expand-tabs"]').click();
