@@ -21,7 +21,6 @@ let state = loaded.state;
 state.hanzi = normalizeHanziState(state.hanzi);
 state.topics = Object.fromEntries(chineseTopics.map(topic => [topic.id, normalizeTopic(topic, state.topics?.[topic.id])]));
 let storageAvailable = loaded.available;
-let expandedTabs = false;
 let mobileMenu = false;
 let toastTimer;
 let dialogReturnFocus;
@@ -128,7 +127,7 @@ function render() {
         <div class="breadcrumb">学习乐园 ${icon('chevron')} <span>${subject.name}</span></div>
         <div class="topbar-right"><button class="star-counter" data-action="reward-rules" aria-label="查看星星收获与获取规则">${icon('star')}<b>${rewardStats(state.rewards).stars}</b><span>颗成长星</span>${icon('info')}</button><details class="my-menu"><summary class="my-menu-toggle" aria-label="打开我的菜单"><img src="/bunny.svg" alt="" width="38" height="38"><span>${escape(state.nickname)}<small>我的 ${icon('down')}</small></span></summary><div class="my-menu-content"><strong>你好，${escape(state.nickname)}</strong>${button('profile', '我的成长空间', 'sprout')}${personalButtons('menu')}${button('reward-collection', '奖励收藏册', 'star')}${button('edit-nickname', '设置昵称', 'pen')}</div></details></div>
       </header>
-      <div class="feature-bar"><div role="tablist" aria-label="${subject.name}小功能" class="feature-tabs ${expandedTabs ? 'expanded' : ''}">${visibleTabs(subject.features, state.features[subject.id], expandedTabs).map(feature => `<button role="tab" aria-selected="${state.features[subject.id] === feature.id}" data-action="feature" data-id="${feature.id}" class="feature-tab ${state.features[subject.id] === feature.id ? 'active' : ''}">${icon(feature.icon)}${feature.name}<span class="tiny-dot"></span></button>`).join('')}${subject.features.length === 0 ? '<span class="feature-placeholder">新的学习冒险，正在准备中</span>' : ''}</div>${subject.features.length > 10 ? button('expand-tabs', expandedTabs ? '收起' : `展开全部（${subject.features.length}）`, 'down', 'expand-tabs', `aria-expanded="${expandedTabs}"`) : ''}<span class="feature-decoration">LEARN · PLAY · GROW ${icon('flower')}</span></div>
+      <div class="feature-bar"><div role="tablist" aria-label="${subject.name}小功能" class="feature-tabs ${state.tabsExpanded ? 'expanded' : ''}">${visibleTabs(subject.features, state.features[subject.id], state.tabsExpanded).map(feature => `<button role="tab" aria-selected="${state.features[subject.id] === feature.id}" data-action="feature" data-id="${feature.id}" class="feature-tab ${state.features[subject.id] === feature.id ? 'active' : ''}">${icon(feature.icon)}${feature.name}<span class="tiny-dot"></span></button>`).join('')}${subject.features.length === 0 ? '<span class="feature-placeholder">新的学习冒险，正在准备中</span>' : ''}</div>${subject.features.length > 10 ? button('expand-tabs', state.tabsExpanded ? '收起' : `展开全部（${subject.features.length}）`, 'down', 'expand-tabs', `aria-expanded="${state.tabsExpanded}"`) : ''}<span class="feature-decoration">LEARN · PLAY · GROW ${icon('flower')}</span></div>
       <main id="main-content" tabindex="-1">${topic ? renderTopic(topic, state.topics[topic.id], progressCard()) : isHanzi ? renderHanzi(state.hanzi, progressCard()) : state.subject === 'chinese' ? learningPage() : state.subject === 'english' ? phonics.render() : comingSoon(subject)}</main>
       <footer>用一点好奇心，收获一点新知识。${icon('heart')}<span>小兔陪你慢慢学</span></footer>
     </div>`;
@@ -544,7 +543,7 @@ function handleAction(event) {
   if (action === 'shuffle-favorites') { halt(); const value = session(); value.ids = shuffle(value.ids); value.index = 0; render(); toast('顺序打乱啦，来看看还认识谁。'); return; }
   if (action === 'subject') {
     if (!subjects.some(subject => subject.id === target.dataset.id)) return;
-    halt(); state.subject = target.dataset.id; mobileMenu = false; expandedTabs = false; state.settings.continuous = false; render(); return;
+    halt(); state.subject = target.dataset.id; mobileMenu = false; state.settings.continuous = false; render(); return;
   }
   if (action === 'collapse') {
     if (window.matchMedia('(max-width: 760px)').matches) mobileMenu = false;
@@ -552,8 +551,8 @@ function handleAction(event) {
     render(); return;
   }
   if (action === 'mobile-menu') { mobileMenu = !mobileMenu; render(); return; }
-  if (action === 'expand-tabs') { expandedTabs = !expandedTabs; render(); return; }
-  if (action === 'feature') { state.features[state.subject] = target.dataset.id; expandedTabs = false; halt(); state.settings.continuous = false; render(); return; }
+  if (action === 'expand-tabs') { state.tabsExpanded = !state.tabsExpanded; render(); return; }
+  if (action === 'feature') { state.features[state.subject] = target.dataset.id; halt(); state.settings.continuous = false; render(); return; }
   if (action === 'map-group') { if (learningGroups(state.mode).some(group => group.id === target.dataset.id)) changeScope('group', target.dataset.id); return; }
   if (action === 'map-word-scope') { if (availableWordScopes().some(scope => scope.id === target.dataset.id)) changeScope('wordScope', target.dataset.id); return; }
   if (action === 'next-section') {
@@ -657,9 +656,7 @@ function handleAction(event) {
 document.addEventListener('click', event => {
   if (!event.target.closest('.my-menu')) app.querySelector('.my-menu')?.removeAttribute('open');
   else if (event.target.closest('[data-action]')) app.querySelector('.my-menu')?.removeAttribute('open');
-  const collapseAfterAction = expandedTabs && event.target.closest('#main-content');
   handleAction(event);
-  if (collapseAfterAction && expandedTabs) { expandedTabs = false; render(); }
 });
 
 document.addEventListener('input', event => {
