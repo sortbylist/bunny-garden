@@ -44,6 +44,7 @@ function learningCard(topic, state) {
   const lesson = lessons.find(item => item.id === state.lessonId);
   const index = lessons.indexOf(lesson);
   const sentence = isSentenceTopic(topic);
+  const literacy = isLiteracyTopic(topic);
   const polished = isPolishedTopic(topic);
   const picker = `<div class="hz-item-list ct-lesson-list" aria-label="选择学习内容">${lessons.map(item => control('lesson', `${read(item.title)}${state.known.includes(item.id) ? ' ✓' : ''}`, `data-id="${item.id}" aria-label="${escape(item.title)}" aria-pressed="${state.lessonId === item.id}"`, 'hz-chip')).join('')}</div>`;
   const heading = sentence
