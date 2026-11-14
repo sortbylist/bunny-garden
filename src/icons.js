@@ -95,8 +95,12 @@ const paths = {
   play: '<path d="m8 4 12 8-12 8V4Z"/>',
   pause: '<path d="M8 4v16M16 4v16"/>',
 };
+export function iconPaths(name) {
+  return paths[name] || paths.star;
+}
+
 export function icon(name, extra = '') {
-  return `<svg class="icon ${extra}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.star}</svg>`;
+  return `<svg class="icon ${extra}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${iconPaths(name)}</svg>`;
 }
 
 export function bunny() {

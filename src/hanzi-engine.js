@@ -45,11 +45,11 @@ export function normalizeHanziState(saved) {
   return state;
 }
 
-export function startHanziRound(state, scope) {
+export function startHanziRound(state, scope, length = state.practiceLength || 10) {
   if (!['all', 'review', ...hanziCategories.map(item => item.id)].includes(scope)) return false;
   const pool = hanziQuestions.filter(item => scope === 'all' || (scope === 'review' ? state.mistakes.includes(item.id) : item.category === scope));
   if (!pool.length) return false;
-  const selection = selectPractice(pool, scope === 'all' ? hanziCategories.map(item => item.id) : [], state.practiceLength || 10, state.practiceSeen || [], shuffle);
+  const selection = selectPractice(pool, scope === 'all' ? hanziCategories.map(item => item.id) : [], length, state.practiceSeen || [], shuffle);
   if (scope !== 'review') state.practiceSeen = selection.seenIds;
   state.round = { scope, questions: selection.questions.map(item => ({ ...item, options: shuffle(item.options) })), index: 0, responses: [], selected: null, revealed: false, finished: false };
   state.view = 'quiz';

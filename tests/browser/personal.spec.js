@@ -70,7 +70,7 @@ test('认读星星去重、规则流水可查、贴纸展示与庆祝重播不�
   await expect(page.locator('.reward-ledger')).toContainText('第一次认识：a');
   await expect(page.locator('.reward-rule-list')).toContainText('每天奖励一次');
   await page.locator('dialog [data-action="reward-collection"]').click();
-  await expect(page.locator('.reward-card')).toHaveCount(16);
+  await expect(page.locator('.reward-card')).toHaveCount(89);
   await expect(page.locator('[data-reward="hello-bunny"]')).toHaveClass(/unlocked/);
   await page.locator('[data-action="equip-reward"][data-id="hello-bunny"]').click();
   await expect(page.locator('[data-reward="hello-bunny"]')).toContainText('展示中');
@@ -144,6 +144,6 @@ test('手机个人中心、奖励收藏册可操作且没有横向溢出', async
   await expect(page.locator('.profile-heading')).toBeVisible();
   await page.locator('dialog [data-action="reward-collection"]').click();
   await page.locator('[data-action="reward-filter"][data-id="badge"]').click();
-  await expect(page.locator('.reward-card')).toHaveCount(4);
+  await expect(page.locator('.reward-card')).toHaveCount(42);
   expect(await page.locator('dialog').evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
 });

@@ -77,11 +77,11 @@ export function normalizeTopic(topic, saved) {
   return state;
 }
 
-export function startTopicRound(topic, state, scope) {
+export function startTopicRound(topic, state, scope, length = state.practiceLength || 10) {
   if (!['all', 'review', ...topic.categories.map(item => item.id)].includes(scope)) return false;
   const pool = topic.questions.filter(item => scope === 'all' || (scope === 'review' ? state.mistakes.includes(item.id) : item.category === scope));
   if (!pool.length) return false;
-  const selection = selectPractice(pool, scope === 'all' ? topic.categories.map(item => item.id) : [], state.practiceLength || 10, state.practiceSeen || [], shuffle);
+  const selection = selectPractice(pool, scope === 'all' ? topic.categories.map(item => item.id) : [], length, state.practiceSeen || [], shuffle);
   const questions = selection.questions;
   if (scope !== 'review') state.practiceSeen = selection.seenIds;
   state.round = { scope, questions: questions.map(item => ({ ...item, options: shuffle(item.options) })), index: 0, responses: [], selected: null, revealed: false, finished: false };

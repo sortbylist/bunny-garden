@@ -130,7 +130,7 @@ export function handleHanziAction(root, action, data) {
     if (history) {
       root.history.push(history);
       root.history = root.history.slice(-100);
-      outcome.reward = grantRewards(root, { type: 'round', mode: 'hanzi-structure', name: history.name, total: history.total, answered: state.round.responses.filter(response => response && !response.skipped).length });
+      outcome.reward = grantRewards(root, { type: 'round', topicId: 'hanzi-structure', questions: state.round.questions, responses: state.round.responses, mode: 'hanzi-structure', name: history.name, total: history.total, answered: state.round.responses.filter(response => response && !response.skipped).length });
     }
   }
   return outcome;

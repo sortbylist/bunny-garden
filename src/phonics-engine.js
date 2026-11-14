@@ -115,7 +115,7 @@ export function readPhonicsState(storage) {
     const saved = JSON.parse(raw);
     if (!saved || saved.version !== 1 || saved.locale !== 'en-GB') throw new Error('Invalid phonics state');
     if (phonicsLessonById.has(saved.lessonId)) state.lessonId = saved.lessonId;
-    if ([...phonicsModes.map(mode => mode.id), 'alphabet', 'diagnostic'].includes(saved.mode)) state.mode = saved.mode;
+    if ([...phonicsModes.map(mode => mode.id), 'alphabet', 'diagnostic', 'assessment'].includes(saved.mode)) state.mode = saved.mode;
     if (saved.scope === 'all') state.scope = 'all';
     if ([5, 10, 20].includes(saved.length)) state.length = saved.length;
     state.slow = saved.slow === true;

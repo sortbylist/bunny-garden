@@ -4,9 +4,13 @@ import { basics, groups, modes, playModes, modeSections, subjects, vocabulary, m
 import { shuffle, studyPool, learningGroups, nextStudyGroup, visitQuestion, nextUnfinishedQuestion, createRound, recordAnswer, roundStats, loadState, defaultState } from './engine.js';
 import { icon, bunny } from './icons.js';
 import { playAudio, stopAudio, onAudioStatus, chime, hasAudio } from './audio.js';
-import { initializeRewards, grantRewards, rewardStats, rewardCatalog, equipReward, normalizeNickname } from './rewards.js';
-import { rewardArt } from './reward-art.js';
-import { normalizeHanziState } from './hanzi-engine.js';
+import { initializeRewards, grantRewards, rewardStats, rewardCatalog, rewardProgress, equipReward, normalizeNickname } from './rewards.js';
+import { rewardArt, rewardStamp } from './reward-art.js';
+import { rewardStages, rewardSections, curriculumProgress, sectionProgress } from './reward-curriculum.js';
+import { rewardHelp } from './reward-help.js';
+import { createRewardCelebration } from './reward-celebration.js';
+import { rewardViewer, mountRewardViewer } from './reward-viewer.js';
+import { normalizeHanziState, startHanziRound } from './hanzi-engine.js';
 import { hanziLessons } from './hanzi-data.js';
 import { renderHanzi, handleHanziAction } from './hanzi.js';
 import { chineseTopics } from './chinese-topics.js';
@@ -31,9 +35,13 @@ let toastTimer;
 let dialogReturnFocus;
 let continuousToken = 0;
 const studyModes = ['sequence', 'random', 'favorites'];
-let rewardTimer;
-let rewardNotice;
 let rewardFilter = 'all';
+let rewardHelpReturn = null;
+let rewardHelpHistory = [];
+let activeRewardHelp = null;
+let rewardDetailReturn = null;
+let disposeRewardViewer = () => {};
+let disposeRewardHelp = () => {};
 initializeRewards(state);
 state.nickname = normalizeNickname(state.nickname) || '小小探索家';
 const allItems = [...basics, ...vocabulary];
@@ -48,7 +56,12 @@ if (!modes.some(mode => mode.id === state.mode)) state.mode = 'sequence';
 if (state.group !== 'all' && !groups.some(group => group.id === state.group)) state.group = 'all';
 if (!confusionSets[state.confusion]) state.confusion = 'retroflex';
 state.features.english = 'phonics';
-const phonics = createPhonicsView({ redraw: render, notify: toast, renderGarden: progressCard, haltOtherAudio: () => { continuousToken++; stopAudio(); } });
+const phonics = createPhonicsView({
+  redraw: render, notify: toast, renderGarden: progressCard,
+  haltOtherAudio: () => { continuousToken++; stopAudio(); },
+  rewardAction: action => celebrateReward(grantRewards(state, action)),
+});
+initializeRewards(state, new Date(), phonics.getState());
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 const button = (action, label, symbol, className = '', attributes = '') => `<button type="button" class="${className}" data-action="${action}" ${attributes}>${symbol ? icon(symbol) : ''}${label}</button>`;
@@ -70,6 +83,12 @@ function persist() {
     storageAvailable = false;
   }
 }
+
+const celebrations = createRewardCelebration({
+  getState: () => state, persist, mainDialog: dialog,
+  myTarget: () => app.querySelector('.my-menu-toggle'),
+  playSound: () => chime(state.settings.effects),
+});
 
 function toast(message) {
   const element = document.querySelector('#toast');
@@ -157,6 +176,7 @@ function render() {
   }
   navigation.bind();
   persist();
+  celebrations.resume();
 }
 
 function learningPage() {
@@ -180,7 +200,18 @@ function modePicker() {
 }
 
 function personalLinks(className = '') {
-  return `<div class="personal-links ${className}">${personalButtons(className === 'garden-links' ? 'garden' : 'menu')}${button('reward-collection', '奖励收藏册', 'star', 'outline-button')}</div>`;
+  return `${className === 'garden-links' ? sectionRewardPanel() : ''}<div class="personal-links ${className}">${personalButtons(className === 'garden-links' ? 'garden' : 'menu')}${button('reward-collection', '奖励收藏册', 'star', 'outline-button')}</div>`;
+}
+
+function sectionRewardPanel() {
+  const topic = activeTopic();
+  const sectionId = state.subject === 'english' ? `english/${phonics.getState().lessonId}`
+    : topic ? `${topic.id}/${state.topics[topic.id].category}`
+    : state.features.chinese === 'hanzi-structure' ? `hanzi-structure/${state.hanzi.category}` : null;
+  const section = rewardSections.get(sectionId);
+  if (!section) return '';
+  const progress = sectionProgress(state.rewards, section);
+  return `<div class="section-reward-panel"><strong>${progress.complete ? '本小节完成啦 ✓' : '本小节成长目标'}</strong><p>学习确认 ${progress.learned} / ${progress.total}<br>独立练习：${progress.passed ? '已达标 ✓' : '等待达标'}</p>${button('section-assessment', '小节达标练习 · 最多5题', 'pen', 'outline-button', `data-id="${section.id}"`)}<small>全部学习确认＋一次练习至少80%独立答对</small></div>`;
 }
 
 function personalButtons(context = 'garden') {
@@ -200,7 +231,7 @@ function personalButtons(context = 'garden') {
 function equippedRewards() {
   return Object.entries(state.rewards.equipped).map(([type, id]) => {
     const reward = rewardCatalog.find(item => item.id === id);
-    return reward ? `<span class="equipped-item ${type}" title="${reward.name}">${rewardArt(reward.art)}<span>${reward.name}</span></span>` : '';
+    return reward ? button('equipped-reward-preview', `${rewardArt(reward.art, '', reward.icon)}<span>${reward.name}</span>`, '', `equipped-item ${type}`, `data-id="${reward.id}" aria-label="查看${reward.name}动效"`) : '';
   }).join('');
 }
 
@@ -315,6 +346,10 @@ function comingSoon(subject) {
 
 function openDialog(title, content, className = '') {
   clearRewardNotice();
+  disposeRewardHelp();
+  disposeRewardHelp = () => {};
+  disposeRewardViewer();
+  disposeRewardViewer = () => {};
   halt();
   if (state.settings.continuous) { state.settings.continuous = false; render(); }
   if (!dialog.open) dialogReturnFocus = document.activeElement;
@@ -322,13 +357,23 @@ function openDialog(title, content, className = '') {
   dialog.innerHTML = `<div class="dialog-heading"><h2 id="dialog-title">${title}</h2>${button('close-dialog', '', 'close', 'icon-button', 'aria-label="关闭弹窗"')}</div>${content}`;
   dialog.setAttribute('aria-labelledby', 'dialog-title');
   if (!dialog.open) dialog.showModal();
+  bindRewardHelp();
+  celebrations.resume();
 }
 
-function closeDialog() {
+function closeDialog(returnFromPreview = true) {
+  if (dialog.classList.contains('reward-help-dialog')) { returnFromRewardHelp(); return; }
+  if (returnFromPreview && dialog.classList.contains('reward-detail-dialog')) { returnFromRewardDetail(); return; }
+  disposeRewardHelp();
+  disposeRewardHelp = () => {};
+  disposeRewardViewer();
+  disposeRewardViewer = () => {};
+  rewardDetailReturn = null;
   clearRewardNotice();
   dialog.close();
   restoreDialogFocus();
 }
+  celebrations.resume();
 
 function restoreDialogFocus() {
   if (dialogReturnFocus?.isConnected && dialogReturnFocus.checkVisibility()) dialogReturnFocus.focus();
@@ -360,40 +405,147 @@ function showRewardRules() {
 
 function showRewardCollection() {
   const stats = rewardStats(state.rewards);
-  const names = { all: '全部', sticker: '贴纸', badge: '徽章', decoration: '花园摆件' };
+  const names = { all: '全部', sticker: '贴纸', badge: '徽章', medal: '奖牌', decoration: '花园摆件' };
   const filters = Object.entries(names).map(([id, name]) => button('reward-filter', name, '', `collection-filter ${rewardFilter === id ? 'active' : ''}`, `data-id="${id}" aria-pressed="${rewardFilter === id}"`)).join('');
-  const items = rewardCatalog.filter(reward => rewardFilter === 'all' || reward.type === rewardFilter);
-  openDialog('我的奖励收藏册', `<div class="collection-intro"><div><p>一共收获了 <b>${Object.keys(state.rewards.unlocks).length} / ${rewardCatalog.length}</b> 件奖励</p><span>每一件都有明确的目标，慢慢收集就很好。</span></div>${button('reward-rules', `${stats.stars} 颗成长星`, 'star', 'stars-small')}</div><div class="collection-filters" role="group" aria-label="奖励分类">${filters}</div><div class="collection-grid">${items.map(reward => {
+  const typeOrder = { sticker: 0, badge: 1, medal: 2, decoration: 3 };
+  const items = rewardCatalog.filter(reward => rewardFilter === 'all' || reward.type === rewardFilter).sort((left, right) => {
+    if (left.type !== right.type) return typeOrder[left.type] - typeOrder[right.type];
+    if (left.metric === 'solved' && right.metric === 'solved') return left.target - right.target;
+    if (left.metric === 'solved') return -1;
+    if (right.metric === 'solved') return 1;
+    return 0;
+  });
+  const progress = curriculumProgress(state.rewards);
+  openDialog('我的奖励收藏册', `<div class="collection-intro"><div><p>一共收获了 <b>${Object.keys(state.rewards.unlocks).length} / ${rewardCatalog.length}</b> 件奖励</p><span>每一件都有明确的目标，慢慢收集就很好。</span><div class="collection-rule-label">收藏规则 ${rewardHelpButton('all')}</div></div>${button('reward-rules', `${stats.stars} 颗成长星`, 'star', 'stars-small')}</div><div class="collection-filters" role="group" aria-label="奖励分类">${filters}</div>${rewardFilter !== 'all' ? `<div class="collection-category-help">${names[rewardFilter]}规则 ${rewardHelpButton(rewardFilter)}</div>` : ''}<div class="collection-grid">${items.map(reward => {
     const unlocked = Boolean(state.rewards.unlocks[reward.id]);
     const equipped = state.rewards.equipped[reward.type] === reward.id;
-    const progress = Math.min(reward.target, stats[reward.metric]);
-    return `<article class="reward-card ${unlocked ? 'unlocked' : 'locked'} ${equipped ? 'equipped' : ''}" data-reward="${reward.id}"><span class="reward-kind">${names[reward.type]}${equipped ? ' · 展示中' : ''}</span>${rewardArt(reward.art)}<h3>${reward.name}</h3><p>${reward.rule}</p>${unlocked ? `<span class="unlock-date">${new Date(state.rewards.unlocks[reward.id]).toLocaleDateString('zh-CN')} 获得</span><div class="reward-card-actions">${button('equip-reward', equipped ? '取消展示' : reward.type === 'badge' ? '佩戴徽章' : reward.type === 'decoration' ? '摆进花园' : '展示贴纸', equipped ? 'check' : '', 'reward-equip', `data-id="${reward.id}" aria-pressed="${equipped}"`)}${button('reward-detail', '看看', 'search', 'reward-detail-button', `data-id="${reward.id}" aria-label="查看${reward.name}"`)}</div>` : `<span class="reward-progress-text">${progress} / ${reward.target}</span><progress value="${progress}" max="${reward.target}" aria-label="${reward.name}解锁进度"></progress>`}</article>`;
+    const condition = rewardProgress(state.rewards, reward, progress, stats);
+    return `<article class="reward-card ${unlocked ? 'unlocked' : 'locked'} ${equipped ? 'equipped' : ''}" data-reward="${reward.id}">${unlocked ? rewardStamp() : ''}<span class="reward-kind">${names[reward.type]}${equipped ? ' · 展示中' : ''}</span>${button('reward-detail', rewardArt(reward.art, '', reward.icon), '', 'reward-preview-trigger', `data-id="${reward.id}" aria-label="放大查看${reward.name}"`)}<h3><span>${reward.name}</span>${reward.help ? rewardHelpButton(reward.help, reward.id) : ''}</h3><p>${reward.rule}</p>${unlocked ? `<span class="unlock-date">${new Date(state.rewards.unlocks[reward.id]).toLocaleDateString('zh-CN')} 获得${state.rewards.unlockDetails[reward.id]?.retroactive ? ' · 历史补发' : ''}</span><div class="reward-card-actions">${button('equip-reward', equipped ? '取消展示' : reward.type === 'badge' ? '佩戴徽章' : reward.type === 'medal' ? '展示奖牌' : reward.type === 'decoration' ? '摆进花园' : '展示贴纸', equipped ? 'check' : '', 'reward-equip', `data-id="${reward.id}" aria-pressed="${equipped}"`)}</div>` : `<span class="reward-progress-text">${Math.min(condition.value, condition.target)} / ${condition.target}</span><progress value="${Math.min(condition.value, condition.target)}" max="${condition.target}" aria-label="${reward.name}解锁进度"></progress>`}</article>`;
   }).join('')}</div><p class="personal-footnote">已获得的奖励一直属于你。星星只累计，不消费；更换展示不花星星。</p>`, 'collection-dialog');
 }
 
 function showRewardDetail(id) {
-  const reward = rewardCatalog.find(item => item.id === id && state.rewards.unlocks[id]);
+  const reward = rewardCatalog.find(item => item.id === id);
   if (!reward) return;
-  openDialog(reward.name, `<div class="reward-detail">${rewardArt(reward.art)}<h3>${reward.description}</h3><p>${reward.rule}</p><small>${new Date(state.rewards.unlocks[id]).toLocaleDateString('zh-CN')} 解锁</small><div class="dialog-actions">${button('replay-reward', '再庆祝一下', 'star', 'outline-button', `data-id="${id}"`)}${button('reward-collection', '返回收藏册', 'book', 'solid-button')}</div></div>`);
+  if (!dialog.open || !dialog.classList.contains('reward-help-dialog')) {
+    const origin = dialog.open && dialog.classList.contains('collection-dialog') ? 'collection' : dialog.open && dialog.classList.contains('profile-dialog') ? 'profile' : 'page';
+    rewardDetailReturn = { origin, scroll: dialog.scrollTop, id };
+  }
+  const unlocked = Boolean(state.rewards.unlocks[id]);
+  const condition = rewardProgress(state.rewards, reward, curriculumProgress(state.rewards), rewardStats(state.rewards));
+  openDialog(`<span id="reward-detail-name">${reward.name}</span>${reward.help ? rewardHelpButton(reward.help, reward.id) : ''}`, `<div class="reward-detail">${rewardViewer(reward)}<span class="reward-preview-status ${unlocked ? 'obtained' : ''}">${unlocked ? `已获得 · ${new Date(state.rewards.unlocks[id]).toLocaleDateString('zh-CN')}` : '尚未获得 · 可以先看看它的样子'}</span><h3>${reward.description}</h3><p>${reward.rule}</p>${unlocked ? '' : `<span class="reward-detail-progress">当前进度 ${Math.min(condition.value, condition.target)} / ${condition.target}</span>`}${unlocked ? `<div class="dialog-actions">${button('replay-reward', '再庆祝一下', 'star', 'outline-button', `data-id="${id}"`)}</div>` : ''}</div>`, 'reward-detail-dialog');
+  dialog.setAttribute('aria-labelledby', 'reward-detail-name');
+  disposeRewardViewer = mountRewardViewer(dialog, { animations: state.settings.animations });
+  dialog.scrollTop = 0;
+  dialog.querySelector('.reward-viewer-stage').focus({ preventScroll: true });
+}
+
+function returnFromRewardDetail() {
+  const previous = rewardDetailReturn;
+  rewardDetailReturn = null;
+  if (previous?.origin === 'page') { closeDialog(false); return; }
+  if (previous?.origin === 'profile') showProfile();
+  else showRewardCollection();
+  dialog.scrollTop = previous?.scroll || 0;
+  if (previous) dialog.querySelector(`[data-action="reward-detail"][data-id="${previous.id}"], [data-action="equipped-reward-preview"][data-id="${previous.id}"]`)?.focus({ preventScroll: true });
+}
+
+function rewardHelpButton(id, rewardId = '') {
+  const help = rewardHelp[id];
+  const reward = rewardCatalog.find(item => item.id === rewardId);
+  const identifier = `reward-help-${rewardId || id}`;
+  const summary = `${help.summary}${rewardId ? '' : '点击查看完整说明。'}`;
+  return `<span class="reward-help-wrap"><button type="button" class="reward-help-button" data-action="reward-help" data-id="${id}" data-reward-id="${rewardId}" aria-label="查看${escape(reward ? `${reward.name}获得条件` : help.title)}" aria-describedby="${identifier}"><span class="reward-help-symbol" aria-hidden="true">?</span></button><span role="tooltip" popover="manual" class="reward-help-tooltip" id="${identifier}">${escape(summary)}</span></span>`;
+}
+
+function bindRewardHelp() {
+  const controller = new AbortController();
+  const options = { signal: controller.signal };
+  const tooltips = [...dialog.querySelectorAll('.reward-help-tooltip')];
+  disposeRewardHelp = () => {
+    controller.abort();
+    for (const tooltip of tooltips) if (tooltip.matches(':popover-open')) tooltip.hidePopover();
+  };
+  for (const wrapper of dialog.querySelectorAll('.reward-help-wrap')) {
+    const tooltip = wrapper.querySelector('[role="tooltip"]');
+    const trigger = wrapper.querySelector('button');
+    const show = () => {
+      if (trigger.dataset.helpSuppressed || !dialog.open) return;
+      const bounds = trigger.getBoundingClientRect();
+      tooltip.showPopover();
+      const size = tooltip.getBoundingClientRect();
+      tooltip.style.left = `${Math.max(10, Math.min(innerWidth - size.width - 10, bounds.left + bounds.width / 2 - size.width / 2))}px`;
+      tooltip.style.top = `${bounds.top >= size.height + 12 ? bounds.top - size.height - 8 : Math.min(innerHeight - size.height - 10, bounds.bottom + 8)}px`;
+    };
+    const hide = () => { if (tooltip.matches(':popover-open')) tooltip.hidePopover(); };
+    wrapper.addEventListener('pointerenter', event => { if (event.pointerType !== 'touch') show(); }, options);
+    wrapper.addEventListener('pointermove', event => {
+      if (event.pointerType !== 'touch' && trigger.dataset.helpSuppressed && (event.movementX || event.movementY)) {
+        delete trigger.dataset.helpSuppressed;
+        show();
+      }
+    }, options);
+    wrapper.addEventListener('pointerleave', () => { delete trigger.dataset.helpSuppressed; if (!wrapper.contains(document.activeElement)) hide(); }, options);
+    wrapper.addEventListener('focusin', show, options);
+    wrapper.addEventListener('focusout', () => { delete trigger.dataset.helpSuppressed; hide(); }, options);
+    trigger.addEventListener('click', () => { trigger.dataset.helpSuppressed = 'true'; hide(); }, options);
+    trigger.addEventListener('keydown', event => { if (event.key === 'Escape' && tooltip.matches(':popover-open')) { event.preventDefault(); event.stopPropagation(); trigger.dataset.helpSuppressed = 'true'; hide(); } }, options);
+  }
+}
+
+function showRewardHelp(id, rewardId = '', fromHistory = false) {
+  const help = rewardHelp[id];
+  if (!help) return;
+  if (!dialog.classList.contains('reward-help-dialog')) {
+    rewardHelpReturn = { scroll: dialog.scrollTop, id, rewardId, detail: dialog.classList.contains('reward-detail-dialog') };
+    rewardHelpHistory = [];
+  } else if (!fromHistory && activeRewardHelp) {
+    rewardHelpHistory.push({ ...activeRewardHelp, scroll: dialog.scrollTop, focusId: id, focusRewardId: rewardId });
+  }
+  activeRewardHelp = { id, rewardId };
+  const reward = rewardCatalog.find(item => item.id === rewardId);
+  let scope = '';
+  if (id === 'stage' && reward?.stageId) {
+    const stage = rewardStages.find(item => item.id === reward.stageId);
+    const progress = curriculumProgress(state.rewards);
+    scope = `<div class="reward-scope"><h3>${escape(stage.label)} · ${escape(stage.name)}</h3>${stage.topics.map(topic => `<details><summary>${escape(topic.name)} · ${topic.sections.filter(section => progress.sections.get(section.id).complete).length} / ${topic.sections.length} 小节</summary><ul>${topic.sections.map(section => {
+      const result = progress.sections.get(section.id);
+      return `<li><strong>${escape(section.name)}${result.complete ? ' ✓' : ''}</strong><span>学习确认 ${result.learned} / ${result.total} · 练习${result.passed ? '已达标' : '待达标'}</span></li>`;
+    }).join('')}</ul></details>`).join('')}</div>`;
+  }
+  openDialog(reward ? `${reward.name} · 获得条件` : help.title, `<div class="reward-help-content">${help.paragraphs.map(paragraph => `<p>${escape(paragraph)}</p>`).join('')}${scope}${id === 'all' ? `<nav class="reward-help-links" aria-label="各类奖励规则">${['sticker', 'badge', 'medal', 'decoration'].map(type => button('reward-help', rewardHelp[type].title, 'info', 'outline-button', `data-id="${type}"`)).join('')}</nav>` : ''}${button('reward-help-back', rewardHelpReturn?.detail ? '返回物品展示' : '返回收藏册', 'book', 'solid-button')}</div>`, `reward-help-dialog${rewardHelpHistory.length ? ' has-rule-history' : ''}`);
+  if (rewardHelpHistory.length) dialog.querySelector('.dialog-heading').insertAdjacentHTML('afterbegin', button('reward-help-previous', '<span aria-hidden="true">←</span>返回', '', 'reward-help-previous', 'aria-label="返回上一级规则"'));
+  dialog.scrollTop = 0;
+}
+
+function returnToPreviousRewardHelp() {
+  const previous = rewardHelpHistory.pop();
+  if (!previous) return;
+  showRewardHelp(previous.id, previous.rewardId, true);
+  dialog.scrollTop = previous.scroll;
+  dialog.querySelector(`[data-action="reward-help"][data-id="${previous.focusId}"]`)?.focus({ preventScroll: true });
+}
+
+function returnFromRewardHelp() {
+  const previous = rewardHelpReturn;
+  rewardHelpReturn = null;
+  rewardHelpHistory = [];
+  activeRewardHelp = null;
+  if (previous?.detail) showRewardDetail(previous.rewardId);
+  else showRewardCollection();
+  dialog.scrollTop = previous?.scroll || 0;
+  if (previous) {
+    const trigger = dialog.querySelector(`[data-action="reward-help"][data-id="${previous.id}"][data-reward-id="${previous.rewardId}"]`);
+    if (trigger) { trigger.dataset.helpSuppressed = 'true'; trigger.focus({ preventScroll: true }); }
+  }
 }
 
 function clearRewardNotice() {
-  clearTimeout(rewardTimer);
-  rewardNotice?.remove();
-  rewardNotice = null;
+  celebrations.clear();
 }
 
 function celebrateReward(result) {
-  if (!result || (!result.stars && !result.unlocked.length)) return;
-  clearRewardNotice();
-  const reward = rewardCatalog.find(item => item.id === result.unlocked[0]);
-  rewardNotice = document.createElement('aside');
-  rewardNotice.className = `reward-notice ${state.settings.animations ? 'animate-reward' : ''}`;
-  rewardNotice.setAttribute('role', 'status');
-  rewardNotice.setAttribute('aria-live', 'polite');
-  rewardNotice.innerHTML = `<div class="reward-confetti" aria-hidden="true">${Array.from({ length: 9 }, (_, index) => `<i style="--i:${index}"></i>`).join('')}</div>${reward ? rewardArt(reward.art) : icon('star')}<div><strong>${reward ? `解锁了${reward.name}${result.unlocked.length > 1 ? `等 ${result.unlocked.length} 件奖励` : ''}` : `收获 ${result.stars} 颗成长星`}</strong><p>${reward && result.stars ? `+${result.stars} 星 · ` : ''}${escape(reward ? reward.rule : result.reasons[0] || '认真尝试，值得庆祝')}</p></div>${button('reward-collection', '查看', '', 'reward-notice-view')}${button('dismiss-reward', '', 'close', 'reward-notice-close', 'aria-label="收起奖励提示"')}`;
-  (dialog.open ? dialog : document.body).append(rewardNotice);
-  rewardTimer = setTimeout(clearRewardNotice, 6500);
+  celebrations.celebrate(result);
 }
 
 function showRecords() {
@@ -506,7 +658,7 @@ function changeScope(field, value) {
 }
 
 function handleAction(event) {
-  const target = event.target.closest('[data-action]');
+  const target = event.target.closest('[data-action]') || event.target.closest('.reward-card')?.querySelector('[data-action="reward-detail"]');
   if (!target || target.disabled) return;
   const action = target.dataset.action;
   if (action === 'ct-draft') return;
@@ -543,11 +695,24 @@ function handleAction(event) {
   if (action === 'edit-nickname') { showNickname(); return; }
   if (action === 'reward-rules') { showRewardRules(); return; }
   if (action === 'reward-collection') { showRewardCollection(); return; }
-  if (action === 'reward-filter') { if (['all', 'sticker', 'badge', 'decoration'].includes(target.dataset.id)) rewardFilter = target.dataset.id; showRewardCollection(); return; }
+  if (action === 'reward-filter') { if (['all', 'sticker', 'badge', 'medal', 'decoration'].includes(target.dataset.id)) rewardFilter = target.dataset.id; showRewardCollection(); return; }
+  if (action === 'reward-help') { showRewardHelp(target.dataset.id, target.dataset.rewardId); return; }
+  if (action === 'reward-help-back') { returnFromRewardHelp(); return; }
+  if (action === 'reward-help-previous') { returnToPreviousRewardHelp(); return; }
+  if (action === 'section-assessment') {
+    const section = rewardSections.get(target.dataset.id);
+    if (!section) return;
+    halt();
+    if (section.subject === 'english') phonics.assess();
+    else if (section.topicId === 'hanzi-structure') { startHanziRound(state.hanzi, state.hanzi.category, 5); render(); }
+    else { const topic = topicById(section.topicId); startTopicRound(topic, state.topics[topic.id], state.topics[topic.id].category, 5); render(); }
+    return;
+  }
   if (action === 'reward-detail') { showRewardDetail(target.dataset.id); return; }
   if (action === 'equip-reward') { if (equipReward(state.rewards, target.dataset.id)) { render(); const scroll = dialog.scrollTop; showRewardCollection(); dialog.scrollTop = scroll; } return; }
-  if (action === 'replay-reward') { const reward = rewardCatalog.find(item => item.id === target.dataset.id && state.rewards.unlocks[item.id]); if (reward) celebrateReward({ stars: 0, unlocked: [reward.id], reasons: [] }); return; }
-  if (action === 'dismiss-reward') { clearRewardNotice(); return; }
+  if (action === 'equipped-reward-preview') { if (state.rewards.unlocks[target.dataset.id]) showRewardDetail(target.dataset.id); return; }
+  if (action === 'replay-reward') { const reward = rewardCatalog.find(item => item.id === target.dataset.id && state.rewards.unlocks[item.id]); if (reward) celebrateReward({ stars: 0, unlocked: [reward.id], reasons: [], replay: true }); return; }
+  if (action === 'dismiss-reward') { celebrations.dismiss(); return; }
   if (action === 'mode') { changeMode(target.dataset.id); return; }
   if (action === 'hanzi-review') {
     halt(); state.settings.continuous = false;
@@ -581,8 +746,8 @@ function handleAction(event) {
   if (action === 'slow') { halt(); state.settings.slow = !state.settings.slow; state.settings.continuous = false; render(); return; }
   if (action === 'restart') { openDialog('重新开始这一轮？', `<p>当前这一轮的进度会重置，收藏、错题和以前的学习记录都会保留。</p><div class="dialog-actions">${button('close-dialog', '继续当前练习', '', 'outline-button')}${button('restart-now', '重新开始', 'refresh', 'solid-button')}</div>`); return; }
   if (action === 'restart-now') { restart(); return; }
-  if (action === 'reset-confirm') { openDialog('确定清空本机记录吗？', `<p>这会清空学习进度、错题、收藏、昵称、星星、贴纸、徽章、花园摆件和设置，清空后无法恢复。</p><div class="dialog-actions">${button('close-dialog', '保留我的记录', '', 'outline-button')}${button('reset-all', '确认清空', '', 'danger-button')}</div>`); return; }
-  if (action === 'reset-all') { halt(); phonics.reset(); clearRewardNotice(); state = defaultState(); state.features.english = 'phonics'; initializeRewards(state); closeDialog(); render(); toast('记录已清空，可以重新出发啦。'); return; }
+  if (action === 'reset-confirm') { openDialog('确定清空本机记录吗？', `<p>这会清空学习进度、错题、收藏、昵称、星星、贴纸、徽章、奖牌、花园摆件和设置，清空后无法恢复。</p><div class="dialog-actions">${button('close-dialog', '保留我的记录', '', 'outline-button')}${button('reset-all', '确认清空', '', 'danger-button')}</div>`); return; }
+  if (action === 'reset-all') { halt(); celebrations.reset(); phonics.reset(); state = defaultState(); state.features.english = 'phonics'; initializeRewards(state); closeDialog(); render(); toast('记录已清空，可以重新出发啦。'); return; }
   if (action === 'sound') { continuousToken++; playAudio({ sound: target.dataset.sound }, state.settings.slow); return; }
   if (action === 'word-sound') { continuousToken++; const item = vocabulary.find(entry => entry.text === target.dataset.word); playAudio({ word: target.dataset.word, sounds: item?.sounds }, state.settings.slow); return; }
   if (studyModes.includes(state.mode)) {
@@ -743,8 +908,8 @@ dialog.addEventListener('click', event => {
   const bounds = dialog.getBoundingClientRect();
   if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) closeDialog();
 });
-dialog.addEventListener('cancel', () => { clearRewardNotice(); restoreDialogFocus(); });
-document.addEventListener('visibilitychange', () => { if (document.hidden) { halt(); state.settings.continuous = false; persist(); } else if (!dialog.open) render(); });
+dialog.addEventListener('cancel', event => { event.preventDefault(); closeDialog(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { halt(); clearRewardNotice(); state.settings.continuous = false; persist(); } else { if (!dialog.open) render(); celebrations.resume(); } });
 onAudioStatus((status, message) => {
   document.querySelectorAll('.primary-audio').forEach(element => { element.classList.toggle('playing', status === 'playing'); element.setAttribute('aria-busy', String(status === 'loading')); });
   if (status === 'error') toast(message);

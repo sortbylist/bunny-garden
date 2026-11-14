@@ -6,11 +6,11 @@ import { icon } from './icons.js';
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 const control = (action, label, attributes = '', style = 'ph-button') => `<button type="button" data-action="ph-${action}" class="${style}" ${attributes}>${label}</button>`;
-const quizModes = ['meaning', 'spelling', 'rules', 'listen', 'review', 'alphabet', 'diagnostic'];
+const quizModes = ['meaning', 'spelling', 'rules', 'listen', 'review', 'alphabet', 'diagnostic', 'assessment'];
 const lessonModes = ['learn', 'random', 'meaning', 'spelling', 'rules', 'listen', 'reading'];
 const rangeModes = ['random', 'meaning', 'spelling', 'rules', 'listen'];
 
-export function createPhonicsView({ redraw, notify, haltOtherAudio, renderGarden }) {
+export function createPhonicsView({ redraw, notify, haltOtherAudio, renderGarden, rewardAction = () => {} }) {
   const loaded = readPhonicsState({ getItem: key => localStorage.getItem(key) });
   let state = loaded.state;
   let storageAvailable = loaded.available;
@@ -41,6 +41,10 @@ export function createPhonicsView({ redraw, notify, haltOtherAudio, renderGarden
 
   function sessionKey() { return `${state.mode}:${state.scope}:${state.lessonId}:${state.length}`; }
   function lesson() { return phonicsLessonById.get(state.lessonId); }
+  function assessmentPool() {
+    const words = new Set(lesson().words.map(word => word.id));
+    return [...phonicsQuestionById.values()].filter(question => ['rule', 'meaning', 'spelling'].includes(question.kind) && (question.lessonId === state.lessonId || words.has(question.wordId)));
+  }
 
   function learningSession() {
     const key = `${state.mode}:${state.scope}:${state.lessonId}`;
@@ -58,7 +62,7 @@ export function createPhonicsView({ redraw, notify, haltOtherAudio, renderGarden
   function round() {
     const key = sessionKey();
     let value = state.sessions[key];
-    if (!value?.ids.length) value = createPhonicsRound(questionPool(state, audio.available), state.mode === 'diagnostic' ? 10 : state.length);
+    if (!value?.ids.length) value = createPhonicsRound(state.mode === 'assessment' ? assessmentPool() : questionPool(state, audio.available), state.mode === 'assessment' ? 5 : state.mode === 'diagnostic' ? 10 : state.length);
     if (audioReady && value.ids.some(id => { const question = phonicsQuestionById.get(id); return question.kind === 'listen' && !audio.available(question.wordId); })) {
       value = createPhonicsRound(questionPool(state, audio.available), state.length);
     }
@@ -174,7 +178,7 @@ export function createPhonicsView({ redraw, notify, haltOtherAudio, renderGarden
       if (!phonicsStories.some(story => story.lessonId === state.lessonId)) state.lessonId = phonicsStories[0].lessonId;
       state.scope = 'lesson';
     }
-    const mode = phonicsModes.find(entry => entry.id === state.mode)?.name || (state.mode === 'alphabet' ? '字母大小写' : '文字起点检查');
+    const mode = phonicsModes.find(entry => entry.id === state.mode)?.name || (state.mode === 'assessment' ? '小节达标练习' : state.mode === 'alphabet' ? '字母大小写' : '文字起点检查');
     const currentSection = lessonModes.includes(state.mode) ? rangeModes.includes(state.mode) && state.scope === 'all' ? '全部课程' : `第 ${lesson().number} 课 · ${lesson().title}` : '';
     const body = quizModes.includes(state.mode) ? quizCard() : state.mode === 'reading' ? readingCard() : state.mode === 'records' ? recordsCard() : learningCard();
     persist();
@@ -201,7 +205,9 @@ export function createPhonicsView({ redraw, notify, haltOtherAudio, renderGarden
     const value = round();
     const question = phonicsQuestionById.get(value.ids[value.index]);
     if (question?.kind === 'listen' && playedQuestion !== question.id) return;
-    answerPhonics(state, value, answer);
+    const wasMistake = state.mistakes.includes(question.id);
+    const result = answerPhonics(state, value, answer);
+    if (result?.correct) rewardAction({ type: 'answer', question: { ...question, id: `english:${question.id}` }, reviewed: state.mode === 'review' && wasMistake && result.first });
     stop();
   }
 
@@ -233,7 +239,11 @@ export function createPhonicsView({ redraw, notify, haltOtherAudio, renderGarden
     else if (action === 'confirm-restart') {
       delete state.sessions[sessionKey()]; delete state.positions[`${state.mode}:${state.scope}:${state.lessonId}`];
       draft = ''; playedQuestion = null; confirmRestart = false; storyResponse = null; currentStoryHint = false;
-    } else if (action === 'story-answer') storyResponse = target.dataset.value;
+    } else if (action === 'story-answer') {
+      storyResponse = target.dataset.value;
+      const story = phonicsStories.find(entry => entry.lessonId === state.lessonId);
+      if (storyResponse === story?.question.answer) rewardAction({ type: 'answer', question: { ...story.question, id: `english:${story.question.id}` } });
+    }
     else if (action === 'story-hint') currentStoryHint = !currentStoryHint;
     else if (action === 'due') {
       const ids = Object.entries(state.reviews).filter(([, entry]) => entry.due <= Date.now()).map(([id]) => id);
@@ -252,14 +262,27 @@ export function createPhonicsView({ redraw, notify, haltOtherAudio, renderGarden
         value.drafts[question.id] = draft;
       }
       if (action === 'erase') { draft = (document.querySelector('#ph-spelling-input')?.value ?? draft).slice(0, -1); value.drafts[question.id] = draft; }
-      if (action === 'next-question') { advancePhonicsRound(state, value, phonicsModes.find(entry => entry.id === state.mode)?.name || '起点/字母检查'); draft = ''; playedQuestion = null; }
+      if (action === 'next-question') {
+        const finished = value.finished;
+        advancePhonicsRound(state, value, phonicsModes.find(entry => entry.id === state.mode)?.name || '小节练习');
+        if (!finished && value.finished) rewardAction({
+          type: 'round', mode: `english:${state.mode}`, name: '英语练习', topicId: lesson().moduleId,
+          sectionId: `english/${state.lessonId}`, total: value.ids.length,
+          answered: Object.values(value.responses).filter(response => !response.skipped).length,
+          questions: value.ids.map(id => ({ id: `english:${id}` })), responses: value.ids.map(id => value.responses[id]),
+        });
+        draft = ''; playedQuestion = null;
+      }
       if (action === 'question') { const index = Number(target.dataset.index); if (Number.isInteger(index) && index >= 0 && index < value.ids.length) { value.index = index; draft = ''; playedQuestion = null; } }
     } else if (['learn', 'random', 'favorites'].includes(state.mode)) {
       const position = learningSession();
       const word = phonicsWordById.get(position.ids[position.index]);
       if (!word) return true;
       if (action === 'favorite') state.favorites = state.favorites.includes(word.id) ? state.favorites.filter(id => id !== word.id) : [...state.favorites, word.id];
-      if (action === 'known' && !state.known.includes(word.id)) state.known.push(word.id);
+      if (action === 'known') {
+        if (!state.known.includes(word.id)) state.known.push(word.id);
+        rewardAction({ type: 'recognize', item: { id: `english:${word.id}`, text: word.text } });
+      }
       if (action === 'later') { state.known = state.known.filter(id => id !== word.id); if (!state.favorites.includes(word.id)) state.favorites.push(word.id); }
       if (['known', 'later', 'next'].includes(action)) { if (position.index < position.ids.length - 1) position.index++; else position.finished = true; }
       if (action === 'previous') position.index = Math.max(0, position.index - 1);
@@ -292,7 +315,7 @@ export function createPhonicsView({ redraw, notify, haltOtherAudio, renderGarden
   }
 
   function input(target) {
-    if (target.id !== 'ph-spelling-input' || state.mode !== 'spelling' && state.mode !== 'review') return;
+    if (target.id !== 'ph-spelling-input' || !['spelling', 'review', 'assessment'].includes(state.mode)) return;
     const value = round();
     draft = target.value.slice(0, 40);
     value.drafts[value.ids[value.index]] = draft;
@@ -300,5 +323,10 @@ export function createPhonicsView({ redraw, notify, haltOtherAudio, renderGarden
   }
 
   function reset() { stop(); state = phonicsDefaults(); draft = ''; playedQuestion = null; storyResponse = null; currentStoryHint = false; confirmRestart = false; persist(); }
-  return { render, handle, change, submitForm, input, stop, reset, personalButtons, gardenData, knownCount: () => state.known.length };
+  function assess() {
+    stop(); state.mode = 'assessment'; state.scope = 'lesson'; state.length = 5;
+    state.sessions[sessionKey()] = createPhonicsRound(assessmentPool(), 5);
+    draft = ''; playedQuestion = null; persist(); redraw();
+  }
+  return { render, handle, change, submitForm, input, stop, reset, assess, getState: () => state, personalButtons, gardenData, knownCount: () => state.known.length };
 }

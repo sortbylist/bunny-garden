@@ -138,7 +138,7 @@ export function handleTopicAction(root, topic, action, data) {
     const history = advanceTopic(topic, state);
     if (history) {
       root.history.push(history); root.history = root.history.slice(-100);
-      outcome.reward = grantRewards(root, { type: 'round', mode: topic.id, name: topic.name, total: history.total, answered: state.round.responses.filter(response => response && !response.skipped).length });
+      outcome.reward = grantRewards(root, { type: 'round', topicId: topic.id, questions: state.round.questions, responses: state.round.responses, mode: topic.id, name: topic.name, total: history.total, answered: state.round.responses.filter(response => response && !response.skipped).length });
     }
   }
   if (topic.id === 'dictionary') {
