@@ -26,7 +26,7 @@ export async function stored(page) {
   return page.evaluate(() => JSON.parse(localStorage.getItem('bunny-garden-v1')));
 }
 
-export async function selectTopic(page, name) {
-  const feature = subjects.find(subject => subject.id === 'chinese').features.find(item => item.name === name);
+export async function selectTopic(page, name, subjectId = 'chinese') {
+  const feature = subjects.find(subject => subject.id === subjectId).features.find(item => item.name === name);
   await chooseNavigationItem(page, page.locator('.feature-navigation'), feature.id, feature.category);
 }

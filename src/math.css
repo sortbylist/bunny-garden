@@ -1,0 +1,14 @@
+.math-visual { text-align: center; }
+.math-places { width: 100%; max-width: 400px; margin: 18px auto; border-collapse: collapse; table-layout: fixed; }
+.math-places th, .math-places td { border: 1px solid #cddac5; padding: 12px 4px; }
+.math-places th { font-size: 14px; font-weight: 600; background: #e9f1e4; }
+.math-places td { font-size: 26px; background: #fffdfb; }
+.math-groups { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin: 20px 0; }
+.math-dot-group { display: grid; grid-template-columns: repeat(2, 24px); gap: 8px; padding: 14px; border: 1px dashed #b395a8; border-radius: 12px; background: #fffdfb; }
+.math-dot-group span { font-size: 22px; line-height: 1; color: #97637f; }
+.math-column { width: 6ch; margin: 20px auto; font: 28px/1.8 ui-monospace, Consolas, monospace; text-align: right; letter-spacing: .15em; color: #73506a; }
+.math-column-operand { position: relative; }
+.math-column-operand > span { position: absolute; left: 0; }
+.math-column-result { border-top: 2px solid #b395a8; }
+.math-products { margin: 16px auto; padding: 12px; border-radius: 12px; background: #fffdfb; }
+.math-topic .ct-context, .math-topic .ct-examples { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }

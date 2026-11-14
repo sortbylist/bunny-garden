@@ -10,7 +10,7 @@ export function featureGroups(subject) {
     const category = feature.category || subject.name;
     if (!groups.has(category)) {
       const [stage, name] = category.split(' · ');
-      groups.set(category, { id: category, name: categoryNames[stage] || name || stage, stage: name ? stage : '', items: [] });
+      groups.set(category, { id: category, name: (subject.id === 'chinese' ? categoryNames[stage] : '') || name || stage, stage: name ? stage : '', items: [] });
     }
     groups.get(category).items.push(feature);
   }
