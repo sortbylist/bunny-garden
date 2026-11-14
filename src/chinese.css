@@ -116,7 +116,6 @@
   .ct-sentence-topic .ct-sentence-card { padding-left: 35px; padding-right: 35px; }
 }
 @media (max-width: 760px) {
-  .ct-sentence-group h3 { margin-bottom: 10px; }
   .ct-sentence-topic .ct-sentence-card { padding-left: 20px; padding-right: 20px; }
   .ct-sentence-topic .ct-lesson-intro { padding-top: 26px; }
   .ct-sentence-topic .ct-lesson-intro h3 { font-size: 24px; }

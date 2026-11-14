@@ -21,7 +21,7 @@ test('二阶段沿用拼音的布局、卡片、导航和成长花园样式', as
   for (const topic of topics) {
     await selectTopic(page, topic.name);
     await expect(page.locator('.ct-sentence-topic .heading-sticker')).toBeVisible();
-    await expect(page.locator('.ct-sentence-topic .play-mode-group h3')).toHaveText('02句子小节');
+    await expect(page.locator('.ct-sentence-topic .play-selector h3')).toHaveCount(0);
     expect(await paint(page.locator('.ct-lesson'))).toEqual(card);
     expect(await paint(page.locator('.play-mode.selected'))).toEqual(mode);
     expect(await paint(page.locator('.growth-card'))).toEqual(garden);

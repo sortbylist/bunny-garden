@@ -130,6 +130,6 @@ export const phonicsStories = storyRows.map(([title, text, prompt, answer, alter
 export const phonicsSentences = [...new Set(phonicsStories.flatMap(story => story.text.match(/[^.!?]+[.!?]/g).map(sentence => sentence.trim())))];
 
 export const phonicsModes = [
-  ['learn', '课程学习'], ['random', '随机词卡'], ['meaning', '词义选择'], ['spelling', '字母拼词'],
-  ['rules', '规律小练习'], ['listen', '听音选词'], ['reading', '故事共读'], ['review', '错题本'], ['favorites', '我的收藏'], ['records', '学习记录'],
-].map(([id, name]) => ({ id, name }));
+  ['learn', '课程学习', 'book'], ['random', '随机词卡', 'shuffle'], ['meaning', '词义选择', 'search'], ['spelling', '字母拼词', 'puzzle'],
+  ['rules', '规律小练习', 'layers'], ['listen', '听音选词', 'headphones'], ['reading', '故事共读', 'quote'], ['review', '错题本', 'notebook'], ['favorites', '我的收藏', 'heart'], ['records', '学习记录', 'clock'],
+].map(([id, name, icon]) => ({ id, name, icon }));

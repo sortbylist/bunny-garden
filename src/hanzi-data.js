@@ -1,10 +1,10 @@
 export const hanziCategories = [
-  { id: 'strokes', name: '认识笔画', description: '一笔从哪里起，到哪里停' },
-  { id: 'order', name: '汉字笔顺', description: '放进田字格，一笔一笔看' },
-  { id: 'radicals', name: '偏旁部首', description: '认识组成汉字的小伙伴' },
-  { id: 'single', name: '独体字', description: '整体观察，不拆成两个部件' },
-  { id: 'left-right', name: '左右结构', description: '左边和右边，合起来成字' },
-  { id: 'top-bottom', name: '上下结构', description: '上面和下面，合起来成字' },
+  { id: 'strokes', name: '认识笔画', icon: 'pen', description: '一笔从哪里起，到哪里停' },
+  { id: 'order', name: '汉字笔顺', icon: 'stroke-order', description: '放进田字格，一笔一笔看' },
+  { id: 'radicals', name: '偏旁部首', icon: 'character-radical', description: '认识组成汉字的小伙伴' },
+  { id: 'single', name: '独体字', icon: 'character-single', description: '整体观察，不拆成两个部件' },
+  { id: 'left-right', name: '左右结构', icon: 'character-left-right', description: '左边和右边，合起来成字' },
+  { id: 'top-bottom', name: '上下结构', icon: 'character-top-bottom', description: '上面和下面，合起来成字' },
 ];
 
 export const strokes = [
