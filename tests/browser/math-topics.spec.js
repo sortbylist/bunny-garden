@@ -46,7 +46,10 @@ for (const topic of mathTopics) {
     await page.goto('/');
     await subject(page, 'math');
     await selectTopic(page, topic.name, 'math');
+    await expect(page.locator('[data-action="ct-length"]')).toHaveCount(0);
+    await page.locator('[data-action="ct-start"][data-id="all"]').click();
     await page.locator('[data-action="ct-length"][data-value="20"]').click();
+    await page.locator('[data-action="ct-learn"]').click();
     for (const category of topic.categories) {
       await page.locator(`[data-action="ct-category"][data-id="${category.id}"]`).click();
       await expect(page.locator('.ct-lesson .category-badge')).toHaveText(category.name);
@@ -88,8 +91,9 @@ test('数学自评、首次成绩、刷新、错题复习和学习记录完整�
   expect((await stored(page)).topics[topic.id].round.responses[0].correct).toBe(false);
   await page.locator('[data-action="ct-learn"]').click();
   await expect(page.locator('.ct-sample')).toBeVisible();
-  await page.locator('[data-action="ct-length"][data-value="30"]').click();
+  await expect(page.locator('[data-action="ct-length"]')).toHaveCount(0);
   await page.locator('[data-action="ct-resume"]').click();
+  await page.locator('[data-action="ct-length"][data-value="30"]').click();
   expect((await stored(page)).topics[topic.id].round.questions).toHaveLength(10);
   for (let index = 0; index < 10; index++) {
     if (index) {

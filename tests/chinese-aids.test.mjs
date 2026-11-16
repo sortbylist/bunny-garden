@@ -33,6 +33,19 @@ test('抽题先覆盖小节再优先未见题，不改原题库，题量不足�
   assert.equal(JSON.stringify(pool), original);
 });
 
+test('分类多于题数时，末尾分类仍可进入练习，后续轮次优先有未练题的分类', () => {
+  const categories = Array.from({ length: 12 }, (_, index) => `category-${index}`);
+  const pool = categories.flatMap(category => [0, 1].map(index => ({ id: `${category}-${index}`, category })));
+  const first = selectPractice(pool, categories, 10, [], items => [...items].reverse());
+  assert.ok(first.questions.some(question => question.category === categories.at(-1)));
+  assert.equal(new Set(first.questions.map(question => question.category)).size, 10);
+  const practicedCategories = categories.slice(0, 10);
+  const seenIds = pool.filter(question => practicedCategories.includes(question.category)).map(question => question.id);
+  const next = selectPractice(pool, categories, 10, seenIds, items => [...items]);
+  for (const category of categories.slice(10)) assert.ok(next.questions.some(question => question.category === category));
+  assert.equal(new Set(next.questions.map(question => question.id)).size, 10);
+});
+
 const practiceSubjects = [
   ...chineseTopics.map(topic => ({
     name: topic.name, questions: topic.questions, defaults: () => topicDefaults(topic),

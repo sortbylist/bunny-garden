@@ -1,6 +1,7 @@
 import './style.css';
 import './personal.css';
-import { basics, groups, modes, playModes, modeSections, subjects, vocabulary, marked, confusionSets, toneItems } from './data.js';
+import './learning-ui.css';
+import { basics, groups, modes, playModes, modeSections, subjects, vocabulary, marked, confusionSets, toneExamples, neutralToneExamples } from './data.js';
 import { shuffle, studyPool, learningGroups, nextStudyGroup, visitQuestion, nextUnfinishedQuestion, createRound, recordAnswer, roundStats, loadState, defaultState } from './engine.js';
 import { icon, bunny } from './icons.js';
 import { playAudio, stopAudio, onAudioStatus, chime, hasAudio } from './audio.js';
@@ -19,6 +20,7 @@ import { normalizeTopic, topicDefaults, startTopicRound, updateTopicActivity } f
 import { renderTopic, handleTopicAction } from './chinese.js';
 import { createPhonicsView } from './phonics.js';
 import { createNavigation, featureGroups } from './navigation.js';
+import { learningTokenClass } from './learning-ui.js';
 
 const app = document.querySelector('#app');
 const dialog = document.querySelector('#dialog');
@@ -302,7 +304,8 @@ function mapCard() {
 }
 
 function tonesCard() {
-  return `<section class="quiz-card tones-card"><span class="category-badge">${icon('wave')}声音也会走楼梯</span><h3>跟着 mā má mǎ mà，听四声</h3><p class="muted">点一点，对比声音的高低变化。</p><div class="tone-grid">${toneItems.map((item, index) => `<button class="tone-tile tone-${index}" data-action="sound" data-sound="${item.sound}"><span class="tone-contour">${['→', '↗', '∨', '↘'][index]}</span><b>${item.text}</b><span>${item.label}</span>${icon('sound')}</button>`).join('')}</div><div class="tone-note"><h4>轻声：轻轻地、短短地</h4><p>“妈妈”的第二个“妈”不标声调，读得轻而短。</p>${button('word-sound', 'mā ma · 妈妈', 'sound', 'soft-button', 'data-word="妈妈"')}</div><details class="lesson-details"><summary>再学一点：变调的小秘密</summary><p>两个三声音节连在一起时，前一个通常读成接近二声，例如“你好”。书面拼音仍标作 nǐ hǎo。</p><p>“一”单读时读 yī，在四声前通常读 yí（如“一定”），在一、二、三声前通常读 yì（如“一天”）。</p><p>“不”单读时读 bù，在四声前通常读 bú（如“不是”）。变调是实际读音的变化，要放进词语和句子里学习。</p></details>${button('mode', '去练标调与拼写', 'pen', 'solid-button', 'data-id="rules"')}</section>`;
+  const examples = toneExamples.map(group => `<section class="tone-example" aria-label="${group.syllable} 的四声示例"><h4>${group.items.map(item => item.text).join(' · ')}</h4><p class="muted">${group.tip}</p><div class="tone-grid">${group.items.map((item, index) => `<button class="tone-tile tone-${index}" data-action="sound" data-sound="${item.sound}" aria-label="${item.text} · ${item.character} · ${item.label}"><span class="tone-contour">${['→', '↗', '∨', '↘'][index]}</span><b>${item.text}</b><span class="tone-character">${item.character}</span><span>${item.label}</span>${icon('sound')}</button>`).join('')}</div></section>`).join('');
+  return `<section class="quiz-card tones-card"><span class="category-badge">${icon('wave')}声音也会走楼梯</span><h3>跟着 mā má mǎ mà，听四声</h3><p class="muted">点一点，听四组示例。每组从一声读到四声，对比同一个音节的高低变化。</p>${examples}<div class="tone-note"><h4>轻声：轻轻地、短短地</h4><p>“妈妈”的第二个“妈”不标声调，读得轻而短。听一听下面词语里读轻声的第二个字。</p><div class="neutral-tone-examples">${neutralToneExamples.map(item => button('word-sound', `${item.pinyin} · ${item.text}`, 'sound', 'soft-button', `data-word="${item.text}"`)).join('')}</div></div><details class="lesson-details"><summary>再学一点：变调的小秘密</summary><p>两个三声音节连在一起时，前一个通常读成接近二声，例如“你好”。书面拼音仍标作 nǐ hǎo。</p><p>“一”单读时读 yī，在四声前通常读 yí（如“一定”），在一、二、三声前通常读 yì（如“一天”）。</p><p>“不”单读时读 bù，在四声前通常读 bú（如“不是”）。变调是实际读音的变化，要放进词语和句子里学习。</p></details>${button('mode', '去练标调与拼写', 'pen', 'solid-button', 'data-id="rules"')}</section>`;
 }
 
 function quizCard(round) {
@@ -318,7 +321,7 @@ function quizCard(round) {
     <div class="answer-grid ${question.kind === 'audio' ? 'audio-answers' : ''}" role="group" aria-label="答案选项">${question.options.map((option, index) => {
       const text = typeof option === 'string' ? option : option.value;
       const status = answered && text === question.answer ? 'correct-answer' : round.selected === text && wrong ? 'wrong-answer' : '';
-      return typeof option === 'string' ? `<button class="answer-option ${status}" data-action="answer" data-value="${escape(text)}" ${answered ? 'disabled' : ''}><span class="option-letter">${'ABCD'[index]}</span><span>${escape(text)}</span>${status === 'correct-answer' ? icon('check') : ''}</button>` : `<div class="audio-option ${status}">${button('sound', `试听 ${'ABCD'[index]}`, 'sound', 'audio-choice-play', `data-sound="${option.sound}"`)}${button('answer', `选 ${'ABCD'[index]}`, '', 'audio-choice-pick', `data-value="${escape(text)}" ${answered ? 'disabled' : ''}`)}</div>`;
+      return typeof option === 'string' ? `<button class="answer-option${learningTokenClass(text)} ${status}" data-action="answer" data-value="${escape(text)}" ${answered ? 'disabled' : ''}><span class="option-letter">${'ABCD'[index]}</span><span>${escape(text)}</span>${status === 'correct-answer' ? icon('check') : ''}</button>` : `<div class="audio-option ${status}">${button('sound', `试听 ${'ABCD'[index]}`, 'sound', 'audio-choice-play', `data-sound="${option.sound}"`)}${button('answer', `选 ${'ABCD'[index]}`, '', 'audio-choice-pick', `data-value="${escape(text)}" ${answered ? 'disabled' : ''}`)}</div>`;
     }).join('')}</div>
     <div class="answer-feedback ${answered ? 'success' : wrong ? 'retry' : ''}" role="status">${answered ? `${icon(round.selected === null ? 'leaf' : 'check')}<div><strong>${round.selected === null ? '先认识答案，下次再试试' : '答对啦，你做得很棒！'}</strong><p>${escape(question.explanation)}</p></div>` : wrong ? `${icon('refresh')}<div><strong>差一点点，再试一次吧！</strong><p>可以再听一听，或者点“看看答案”。首次作答已经记下啦。</p></div>` : `${icon('leaf')}<span>想一想，再选出你的答案。</span>`}</div>
     ${answered && question.audio?.word && !hasAudio({ word: question.audio.word }) && question.audio.sounds?.length > 1 ? '<p class="small-note">这个词一个字一个字读，跟着一起拼一拼。</p>' : ''}
@@ -345,11 +348,11 @@ function comingSoon(subject) {
 }
 
 function openDialog(title, content, className = '') {
-  clearRewardNotice();
   disposeRewardHelp();
   disposeRewardHelp = () => {};
   disposeRewardViewer();
   disposeRewardViewer = () => {};
+  clearRewardNotice();
   halt();
   if (state.settings.continuous) { state.settings.continuous = false; render(); }
   if (!dialog.open) dialogReturnFocus = document.activeElement;
@@ -372,8 +375,8 @@ function closeDialog(returnFromPreview = true) {
   clearRewardNotice();
   dialog.close();
   restoreDialogFocus();
-}
   celebrations.resume();
+}
 
 function restoreDialogFocus() {
   if (dialogReturnFocus?.isConnected && dialogReturnFocus.checkVisibility()) dialogReturnFocus.focus();
@@ -709,8 +712,8 @@ function handleAction(event) {
     return;
   }
   if (action === 'reward-detail') { showRewardDetail(target.dataset.id); return; }
-  if (action === 'equip-reward') { if (equipReward(state.rewards, target.dataset.id)) { render(); const scroll = dialog.scrollTop; showRewardCollection(); dialog.scrollTop = scroll; } return; }
   if (action === 'equipped-reward-preview') { if (state.rewards.unlocks[target.dataset.id]) showRewardDetail(target.dataset.id); return; }
+  if (action === 'equip-reward') { if (equipReward(state.rewards, target.dataset.id)) { render(); const scroll = dialog.scrollTop; showRewardCollection(); dialog.scrollTop = scroll; } return; }
   if (action === 'replay-reward') { const reward = rewardCatalog.find(item => item.id === target.dataset.id && state.rewards.unlocks[item.id]); if (reward) celebrateReward({ stars: 0, unlocked: [reward.id], reasons: [], replay: true }); return; }
   if (action === 'dismiss-reward') { celebrations.dismiss(); return; }
   if (action === 'mode') { changeMode(target.dataset.id); return; }

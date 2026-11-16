@@ -1,0 +1,99 @@
+.chinese-topic .hz-item-list .learning-token,
+.hanzi-page .hz-item-list .learning-token,
+.hanzi-page .hz-stroke-list .learning-token,
+.hanzi-page .hz-options .learning-token,
+.chinese-topic .hz-options .learning-token,
+.answer-grid .answer-option.learning-token,
+.phonics-page .ph-options .learning-token {
+  font-size: 24px;
+  line-height: 1.8;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.chinese-topic .hz-item-list .learning-glyph,
+.hanzi-page .hz-item-list .learning-glyph,
+.hanzi-page .hz-options .learning-glyph,
+.chinese-topic .hz-options .learning-glyph,
+.answer-grid .answer-option.learning-glyph,
+.phonics-page .ph-options .learning-glyph {
+  font-size: 30px;
+}
+.chinese-topic .learning-token rt,
+.hanzi-page .learning-token rt {
+  font-size: 13px;
+}
+.chinese-topic .ct-lesson-intro h3.learning-token {
+  font-size: 32px;
+}
+.phonics-page .ph-word-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(120px, 100%), 1fr));
+}
+.phonics-page .ph-word-tile {
+  font-size: 24px;
+  line-height: 1.6;
+}
+.phonics-page .ph-alphabet-grid b {
+  font-size: 28px;
+}
+.letter-grid .letter-tile {
+  font-size: 22px;
+}
+.match-columns .match-tile {
+  font-size: 24px;
+}
+.memory-tip .example-tag,
+.tones-card .tone-example .tone-tile > .tone-character,
+.tones-card .neutral-tone-examples .soft-button {
+  font-size: 22px;
+}
+.tones-card .neutral-tone-examples .soft-button {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.chinese-topic .ct-comparison h4,
+.chinese-topic .math-places th {
+  font-size: 22px;
+}
+.chinese-topic .ct-tools button.reading-toggle,
+.hanzi-page .ct-tools button.reading-toggle {
+  min-height: 44px;
+  padding: 10px 17px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  border: 1.5px solid #d9c6d2;
+  border-radius: 11px;
+  background: #fffdfb;
+  color: #856077;
+}
+.chinese-topic .ct-tools button.reading-toggle:hover,
+.hanzi-page .ct-tools button.reading-toggle:hover {
+  background: #fbf0f5;
+}
+@media (max-width: 600px) {
+  .chinese-topic .ct-lesson-intro h3.learning-token {
+    font-size: 28px;
+  }
+  .chinese-topic .hz-item-list .learning-token,
+  .hanzi-page .hz-item-list .learning-token,
+  .hanzi-page .hz-stroke-list .learning-token,
+  .hanzi-page .hz-options .learning-token,
+  .chinese-topic .hz-options .learning-token,
+  .answer-grid .answer-option.learning-token,
+  .phonics-page .ph-options .learning-token,
+  .phonics-page .ph-word-tile {
+    font-size: 22px;
+  }
+  .chinese-topic .hz-item-list .learning-glyph,
+  .hanzi-page .hz-item-list .learning-glyph,
+  .hanzi-page .hz-options .learning-glyph,
+  .chinese-topic .hz-options .learning-glyph,
+  .answer-grid .answer-option.learning-glyph,
+  .phonics-page .ph-options .learning-glyph {
+    font-size: 28px;
+  }
+  .match-columns .match-tile {
+    font-size: 22px;
+  }
+}

@@ -1,14 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { hanziCategories, hanziLessons, hanziQuestions, strokeCharacters } from '../src/hanzi-data.js';
+import { hanziCategories, hanziLessons, hanziQuestions, strokeCharacters, radicals } from '../src/hanzi-data.js';
 import { createHanziState, normalizeHanziState, startHanziRound, answerHanzi, advanceHanziRound } from '../src/hanzi-engine.js';
 import { defaultState, loadState } from '../src/engine.js';
 import { initializeRewards, grantRewards, rewardStats } from '../src/rewards.js';
 
 test('六小节覆盖规划范围，学习项目和题目唯一且每题只有一个答案', () => {
   assert.deepEqual(hanziCategories.map(item => item.id), ['strokes', 'order', 'radicals', 'single', 'left-right', 'top-bottom']);
-  assert.equal(hanziLessons.length, 93);
-  assert.equal(hanziQuestions.length, 204);
+  assert.equal(hanziLessons.length, 109);
+  assert.equal(hanziQuestions.length, 358);
   assert.equal(new Set(hanziLessons.map(item => item.id)).size, hanziLessons.length);
   assert.equal(new Set(hanziQuestions.map(item => item.id)).size, hanziQuestions.length);
   for (const category of hanziCategories) {
@@ -19,6 +19,18 @@ test('六小节覆盖规划范围，学习项目和题目唯一且每题只有�
     assert.equal(question.options.filter(option => option === question.answer).length, 1);
     assert.equal(new Set(question.options).size, question.options.length);
     assert.ok(question.explanation);
+  }
+});
+
+test('三十种偏旁部首各有六个不重复例字，每个例字都有对应练习', () => {
+  assert.equal(radicals.length, 30);
+  for (const radical of radicals) {
+    assert.equal(radical.examples.length, 6, radical.text);
+    assert.equal(new Set(radical.examples).size, 6, radical.text);
+    assert.ok(radical.name && radical.tip && radical.word);
+    for (const text of radical.examples) {
+      assert.ok(hanziQuestions.some(question => question.category === 'radicals' && question.display === text && question.answer === radical.text), text);
+    }
   }
 });
 

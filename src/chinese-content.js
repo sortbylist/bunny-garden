@@ -1,6 +1,6 @@
 const categoryIcons = {
   dictionary: { sound: 'type', radical: 'search', meaning: 'quote' },
-  'word-categories': { people: 'person', animals: 'paw', plants: 'sprout', actions: 'running', feelings: 'smile', seasons: 'seasons' },
+  'word-categories': { people: 'person', animals: 'paw', plants: 'sprout', actions: 'running', feelings: 'smile', seasons: 'seasons', school: 'book', daily: 'heart', food: 'flower', transport: 'arrow-right', weather: 'seasons', places: 'grid' },
   'word-relations': { synonyms: 'link', antonyms: 'compare', context: 'quote' },
   collocations: { measure: 'ruler', verb: 'running', de: 'puzzle' },
   'word-patterns': { ABB: 'pattern-abb', AABB: 'pattern-aabb', ABAB: 'pattern-abab', four: 'four-words', idioms: 'scroll' },

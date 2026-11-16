@@ -1,5 +1,5 @@
 import { mkdir, readFile, writeFile, stat } from 'node:fs/promises';
-import { basics, vocabulary, spellingRules, blends, confusionSets, toneItems, tonePracticeSounds } from '../src/data.js';
+import { basics, vocabulary, spellingRules, blends, confusionSets, toneExamples, tonePracticeSounds } from '../src/data.js';
 
 const root = new URL('../public/audio/', import.meta.url);
 await mkdir(root, { recursive: true });
@@ -9,13 +9,14 @@ const syllables = new Set([
   ...spellingRules.map(rule => rule.sound).filter(Boolean),
   ...blends.map(item => item.sound),
   ...Object.values(confusionSets).flatMap(set => set.pairs.flat()),
-  ...toneItems.map(item => item.sound),
+  ...toneExamples.flatMap(group => group.items.map(item => item.sound)),
   ...tonePracticeSounds,
 ]);
+const overrides = JSON.parse(await readFile(new URL('overrides.json', root), 'utf8'));
 const tasks = [
   ...[...syllables].map(sound => ({ key: `syllable:${sound}`, file: `${sound}.mp3`, source: `64k/syllabs/cmn-${sound}.mp3` })),
   ...vocabulary.filter(item => item.sounds.length > 1).map(item => ({ key: `word:${item.text}`, file: `word-${item.text}.mp3`, source: `64k/hsk/cmn-${item.text}.mp3` })),
-];
+].map(task => ({ ...task, ...overrides[task.key] }));
 let previous = { files: {} };
 try { previous = JSON.parse(await readFile(new URL('manifest.json', root), 'utf8')); } catch {}
 const manifest = {
@@ -23,6 +24,7 @@ const manifest = {
   authors: { syllables: 'Chen Wang', words: 'Yue Tan', curation: 'Hugo Lopez, Nicolas Vion' },
   license: 'CC BY-SA (upstream README does not specify a version)',
   review: 'Source and file coverage checked; educational listening review pending.',
+  overrides,
   files: { ...previous.files }, missing: [],
 };
 let cursor = 0;
@@ -41,7 +43,7 @@ async function worker() {
     let downloaded = false;
     for (let attempt = 0; attempt < 3 && !downloaded; attempt++) {
       try {
-        const response = await fetch(`https://raw.githubusercontent.com/hugolpz/audio-cmn/master/${task.source.split('/').map(encodeURIComponent).join('/')}`, { signal: AbortSignal.timeout(18000) });
+        const response = await fetch(task.url || `https://raw.githubusercontent.com/hugolpz/audio-cmn/master/${task.source.split('/').map(encodeURIComponent).join('/')}`, { signal: AbortSignal.timeout(18000) });
         if (response.status === 404) break;
         if (!response.ok) continue;
         const bytes = Buffer.from(await response.arrayBuffer());

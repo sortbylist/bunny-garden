@@ -2,6 +2,12 @@
 
 本目录录音来自 [hugolpz/audio-cmn](https://github.com/hugolpz/audio-cmn)。
 
+### má（二声）的替换录音
+
+`ma2-yue-tan.ogg` 是“麻 má”的完整真人录音，由 Yue Tan 朗读，来自 The Shtooka Project，经 [Wikimedia Commons 的 Zh-má.ogg](https://commons.wikimedia.org/wiki/File:Zh-m%C3%A1.ogg) 获取，许可为 [CC BY-SA 3.0 US](https://creativecommons.org/licenses/by-sa/3.0/us/)。本项目未剪辑或修改录音内容；该文件替换原先不适合二声教学的 `ma2.mp3`，声调学习和听辨练习均使用新文件。来源和下载覆盖关系记录在 `overrides.json`，重新下载时继续保留这一替换。
+
+### 其余拼音录音
+
 - 音节录音：Chen Wang。
 - HSK 字词录音：Yue Tan，Shtooka Project。
 - 项目组织、整理、压缩和文件命名：Hugo Lopez。

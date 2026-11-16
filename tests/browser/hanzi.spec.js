@@ -55,7 +55,7 @@ test('自评与奖励去重，所有结构与偏旁示例可直接访问', async
   await expect(page.locator('.star-counter b')).toHaveText('1');
   await page.locator('[data-action="hz-category"][data-id="radicals"]').click();
   await expect(page.locator('.hz-note').first()).toContainText('不完全相同');
-  await expect(page.locator('.hz-examples')).toHaveText('河海湖');
+  await expect(page.locator('.hz-examples > span')).toHaveText(['河', '海', '湖', '江', '洋', '清']);
   await page.locator('[data-action="hz-category"][data-id="single"]').click();
   await expect(page.locator('.hz-demo')).toContainText('独体字');
   await page.locator('[data-action="hz-category"][data-id="left-right"]').click();
@@ -171,6 +171,8 @@ test('新增笔顺、拼音辅助和30题轮次可保存，切换题量不重置
   await page.locator('[data-action="hz-lesson"][data-id="order-山"]').click();
   await page.locator('[data-action="hz-stroke-jump"][data-index="2"]').click();
   await expect(page.locator('.hz-step-status')).toHaveText('第 2 / 3 笔：竖折');
+  await expect(page.locator('[data-action="hz-length"]')).toHaveCount(0);
+  await page.locator('[data-action="hz-start"][data-id="all"]').click();
   await page.locator('[data-action="hz-length"][data-value="30"]').click();
   await page.locator('[data-action="hz-start"][data-id="all"]').click();
   const questions = (await stored(page)).hanzi.round.questions;

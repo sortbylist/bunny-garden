@@ -107,7 +107,23 @@ export const confusionSets = {
   jqx: { name: 'j / q / x', pairs: [['ji1', 'qi1', 'xi1'], ['jia1', 'qia1', 'xia1'], ['ju1', 'qu1', 'xu1'], ['jie1', 'qie1', 'xie1']] },
 };
 
-export const toneItems = [1, 2, 3, 4].map(tone => ({ id: `tone-ma${tone}`, sound: `ma${tone}`, label: ['一声 · 平平的', '二声 · 往上扬', '三声 · 拐个弯', '四声 · 往下降'][tone - 1], text: marked(`ma${tone}`) }));
+export const toneExamples = [
+  { syllable: 'ma', characters: ['妈', '麻', '马', '骂'], tip: '妈妈的妈，芝麻的麻，小马的马，责骂的骂。' },
+  { syllable: 'ba', characters: ['八', '拔', '把', '爸'], tip: '八个的八，拔草的拔，一把伞的把，爸爸的爸。' },
+  { syllable: 'yi', characters: ['衣', '姨', '椅', '易'], tip: '衣服的衣，阿姨的姨，椅子的椅，容易的易。' },
+  { syllable: 'wu', characters: ['屋', '无', '五', '物'], tip: '房屋的屋，无人的无，五个的五，动物的物。' },
+].map(group => ({
+  ...group,
+  items: group.characters.map((character, index) => ({
+    id: `tone-${group.syllable}${index + 1}`, sound: `${group.syllable}${index + 1}`, character,
+    label: ['一声 · 平平的', '二声 · 往上扬', '三声 · 拐个弯', '四声 · 往下降'][index],
+    text: marked(`${group.syllable}${index + 1}`),
+  })),
+}));
+
+export const toneItems = toneExamples[0].items;
+
+export const neutralToneExamples = ['妈妈', '爸爸', '哥哥', '姐姐', '朋友', '月亮'].map(text => words.find(item => item.text === text));
 
 export const tonePracticeSounds = ['ma', 'ba', 'yi', 'wu', 'yu'].flatMap(syllable => [1, 2, 3, 4].map(tone => `${syllable}${tone}`));
 

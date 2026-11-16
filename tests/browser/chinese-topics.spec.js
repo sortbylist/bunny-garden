@@ -149,9 +149,12 @@ test('字词主题在浏览器存储不可用时仍能学习、查字和作答',
 });
 
 test('各主题题量和拼音设置分别保存，按实际题量刷新续练且保留原文判分', async ({ page }) => {
+  test.setTimeout(60000);
   await page.goto('/');
   for (const topic of chineseTopics) {
     await selectTopic(page, topic.name);
+    await expect(page.locator('[data-action="ct-length"]')).toHaveCount(0);
+    await page.locator('[data-action="ct-start"][data-id="all"]').click();
     await page.locator('[data-action="ct-length"][data-value="30"]').click();
     await page.locator('[data-action="ct-start"][data-id="all"]').click();
     await expect(page.locator('.ct-quiz .hz-card-heading')).toContainText(`第 1 / ${Math.min(30, topic.questions.length)} 题`);

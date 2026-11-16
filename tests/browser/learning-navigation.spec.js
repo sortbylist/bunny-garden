@@ -1,6 +1,25 @@
 import { test, expect } from '@playwright/test';
 import { chooseMode, stored } from './helpers.js';
 
+test('鼠标停在学习小地图上时，页面仍能上下滚动', async ({ page }) => {
+  for (const viewport of [{ width: 1440, height: 800 }, { width: 820, height: 1180 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    const stop = page.locator('.learning-map .map-stop').first();
+    await stop.evaluate(element => {
+      window.scrollTo(0, window.scrollY + element.getBoundingClientRect().top - window.innerHeight / 2);
+    });
+    await stop.hover();
+    const before = await page.evaluate(() => window.scrollY);
+    await page.mouse.wheel(0, 300);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(before);
+    const after = await page.evaluate(() => window.scrollY);
+    await stop.hover();
+    await page.mouse.wheel(0, -300);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(after);
+  }
+});
+
 for (const mode of ['sequence', 'random']) {
   test(`${mode} 自评后前进，末项完成后进入下一节且保留玩法`, async ({ page }) => {
     await page.goto('/');

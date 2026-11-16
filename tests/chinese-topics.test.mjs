@@ -41,15 +41,15 @@ test('所有语文主题的真实入口完整，与内容注册一致', () => {
   for (const topic of chineseTopics) assert.equal(features.find(item => item.id === topic.id).name, topic.name);
 });
 
-test('词语积累覆盖六类、每类十词，分类与用词练习均有完整语境', () => {
-  assert.equal(vocabularyEntries.length, 60);
-  assert.equal(new Set(vocabularyEntries.map(item => item.text)).size, 60);
+test('词语积累覆盖十二类150词，人物、动物、植物各二十词，分类与用词练习均有完整语境', () => {
+  assert.equal(vocabularyEntries.length, 150);
+  assert.equal(new Set(vocabularyEntries.map(item => item.text)).size, 150);
   const topic = chineseTopics.find(item => item.id === 'word-categories');
-  assert.deepEqual(topic.categories.map(item => item.id), ['people', 'animals', 'plants', 'actions', 'feelings', 'seasons']);
-  assert.equal(topic.questions.length, 180);
-  for (const category of topic.categories) assert.equal(vocabularyEntries.filter(item => item.category === category.id).length, 10);
+  assert.deepEqual(topic.categories.map(item => item.id), ['people', 'animals', 'plants', 'actions', 'feelings', 'seasons', 'school', 'daily', 'food', 'transport', 'weather', 'places']);
+  assert.equal(topic.questions.length, 450);
+  for (const category of topic.categories) assert.equal(vocabularyEntries.filter(item => item.category === category.id).length, ['people', 'animals', 'plants'].includes(category.id) ? 20 : 10);
   for (const question of topic.questions) assert.ok(question.display && question.explanation);
-  assert.equal(topic.questions.filter(item => item.display.includes('____')).length, 60);
+  assert.equal(topic.questions.filter(item => item.display.includes('____')).length, 150);
 });
 
 test('近反义词都在完整句子中辨认，并覆盖不可随意互换的语境', () => {
@@ -120,7 +120,7 @@ for (const topic of chineseTopics) {
       assert.ok(state.round.questions.every(item => item.category === category.id));
     }
     startTopicRound(topic, state, 'all');
-    assert.equal(new Set(state.round.questions.map(item => item.category)).size, topic.categories.length);
+    assert.equal(new Set(state.round.questions.map(item => item.category)).size, Math.min(topic.categories.length, state.round.questions.length));
     assert.equal(new Set(state.round.questions.map(item => item.id)).size, state.round.questions.length);
     assert.equal(state.round.questions.length, 10);
     assert.equal(advanceTopic(topic, state), null);

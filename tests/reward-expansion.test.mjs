@@ -24,8 +24,22 @@ test('目录包含中间里程碑、三科主题与八套奖牌，标识唯一�
   assert.deepEqual(rewardCatalog.filter(reward => reward.id.startsWith('solved-')).map(reward => reward.target), [50, 75, 100, 150, 200, 250, 300]);
   assert.equal(rewardCatalog.filter(reward => reward.type === 'medal').length, 24);
   assert.equal(rewardStages.filter(stage => stage.subject === 'english').length, 4);
-  assert.equal(rewardSections.size, 136);
+  assert.equal(rewardSections.size, 142);
   for (const help of Object.values(rewardHelp)) assert.ok([...help.summary].length <= 100);
+});
+
+test('词语和部首扩充同步登记学习确认、专项练习与阶段范围', () => {
+  const words = rewardTopics.find(topic => topic.id === 'word-categories');
+  assert.equal(words.sections.length, 12);
+  for (const section of words.sections) {
+    const count = ['people', 'animals', 'plants'].some(category => section.id.endsWith(`/${category}`)) ? 20 : 10;
+    assert.equal(section.learnIds.length, count);
+    assert.equal(section.questionIds.length, count * 3);
+  }
+  const radicals = rewardSections.get('hanzi-structure/radicals');
+  assert.equal(radicals.learnIds.length, 30);
+  assert.equal(radicals.questionIds.length, 210);
+  assert.ok(rewardStages.find(stage => stage.id === 'chinese-1').topics.includes(words));
 });
 
 test('所有主题徽章复用学习入口图标，汉字结构用笔，英语模块支持独立图标', () => {

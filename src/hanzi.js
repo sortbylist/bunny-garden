@@ -6,6 +6,7 @@ import { grantRewards } from './rewards.js';
 import { readingText } from './chinese-reading.js';
 import { practiceLengths } from './chinese-practice.js';
 import { icon } from './icons.js';
+import { learningTokenClass, learningTools } from './learning-ui.js';
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 const control = (action, label, attributes = '', className = 'outline-button') => `<button type="button" data-action="hz-${action}" class="${className}" ${attributes}>${label}</button>`;
@@ -31,12 +32,12 @@ function lessonContent(state, lesson) {
     <div class="hz-demo">${writingGrid(lesson.strokes, state.strokeStep, `“${lesson.text}”的笔顺示意，已写 ${state.strokeStep} / ${lesson.strokes.length} 笔`)}<div><h3>${lesson.text} <small>${lesson.strokes.length} 笔</small></h3><p><strong>${read(lesson.rule)}</strong></p><p>${read(lesson.tip)}</p><p class="hz-caption">绿色小点表示当前一笔的起点，紫色表示当前一笔。</p></div></div>
     <p class="hz-step-status" role="status">${state.strokeStep ? `第 ${state.strokeStep} / ${lesson.strokes.length} 笔：${lesson.strokes[state.strokeStep - 1].name}` : '准备好了吗？点“下一笔”开始。'}</p>
     <div class="hz-actions">${control('stroke-reset', '从头看', state.strokeStep === 0 ? 'disabled' : '')}${control('stroke-previous', '上一笔', state.strokeStep === 0 ? 'disabled' : '')}${control('stroke-next', '下一笔', state.strokeStep === lesson.strokes.length ? 'disabled' : '', 'solid-button')}</div>
-    <div class="hz-stroke-list" aria-label="逐笔选择">${lesson.strokes.map((item, index) => control('stroke-jump', `${index + 1}. ${item.name}`, `data-index="${index + 1}" aria-pressed="${state.strokeStep === index + 1}"`, 'hz-chip')).join('')}</div>
+    <div class="hz-stroke-list" aria-label="逐笔选择">${lesson.strokes.map((item, index) => control('stroke-jump', `${index + 1}. ${item.name}`, `data-index="${index + 1}" aria-pressed="${state.strokeStep === index + 1}"`, 'hz-chip learning-token')).join('')}</div>
     <p class="hz-caption">按笔顺观察的线条示意。看完后，可以拿纸和笔试写一次。</p>`;
   if (lesson.category === 'radicals') return `
     <div class="hz-demo"><div class="hz-character">${lesson.text}</div><div><h3>${read(lesson.name)}</h3><p>${read(lesson.tip)}</p><p>读一读：${read(lesson.word)}</p></div></div>
-    <div class="hz-examples">${lesson.examples.map(text => `<span>${text}</span>`).join('')}</div>
-    <div class="hz-note"><strong>偏旁和部首，有什么不同？</strong><p>偏旁是合体字的组成部分。部首是字典给汉字归类、方便查找的标目，二者不完全相同。</p><p>在这里，${lesson.text}既是这些例字的偏旁，也是它们的部首。偏旁可以帮助猜字义，还要结合词语确认。</p></div>`;
+    <div class="hz-examples">${lesson.examples.map(text => `<span>${read(text)}</span>`).join('')}</div>
+    <div class="hz-note"><strong>偏旁和部首，有什么不同？</strong><p>偏旁是合体字的组成部分。部首是字典给汉字归类、方便查找的标目，二者不完全相同。</p><p>${lesson.text === '⺮' ? '竹作字头时常写成⺮，查字典时部首通常列作“竹”。' : `在这里，${lesson.text}既是这些例字的偏旁，也是它们的部首。`}偏旁可以帮助猜字义，还要结合词语确认。</p></div>`;
   const category = hanziCategories.find(item => item.id === lesson.category);
   const positions = lesson.category === 'left-right' ? ['左边', '右边'] : ['上面', '下面'];
   return `<div class="hz-demo"><div class="hz-character">${lesson.text}</div><div><h3>${category.name}</h3><p>${lesson.category === 'single' ? `“${lesson.text}”是独体字，由笔画构成一个整体。` : `“${lesson.text}”可以按${lesson.category === 'left-right' ? '左右' : '上下'}分成两个部分。`}</p><p>${category.description}。</p></div></div>
@@ -50,7 +51,7 @@ function learningCard(state) {
   const index = items.indexOf(lesson);
   return `<section class="hz-card" aria-label="汉字学习卡">
     <div class="hz-card-heading"><h2>${hanziCategories.find(item => item.id === state.category).name}</h2><span>第 ${index + 1} / ${items.length} 个</span></div>
-    <div class="hz-item-list" aria-label="选择学习内容">${items.map(item => control('lesson', `${escape(item.title)}${state.known.includes(item.id) ? ' ✓' : ''}`, `data-id="${item.id}" aria-pressed="${item.id === lesson.id}"`, 'hz-chip')).join('')}</div>
+    <div class="hz-item-list" aria-label="选择学习内容">${items.map(item => control('lesson', `${escape(item.title)}${state.known.includes(item.id) ? ' ✓' : ''}`, `data-id="${item.id}" aria-pressed="${item.id === lesson.id}"`, `hz-chip${learningTokenClass(item.title)}`)).join('')}</div>
     ${lessonContent(state, lesson)}
     <div class="hz-actions hz-card-footer">${control('previous', '上一个', index === 0 ? 'disabled' : '')}${control('known', state.known.includes(lesson.id) ? '已经认识啦 ✓' : '我认识啦', `aria-pressed="${state.known.includes(lesson.id)}"`, 'soft-button mint')}${control('next', '下一个', index === items.length - 1 ? 'disabled' : '')}</div>
     <div class="hz-actions">${control('start', '练练这一节', `data-id="${state.category}"`, 'solid-button')}</div>
@@ -70,7 +71,7 @@ function quizCard(state) {
   return `<section class="hz-card hz-quiz" aria-label="汉字练习"><div class="hz-card-heading"><h2>${round.scope === 'review' ? '汉字错题本' : '汉字小练习'}</h2><span>第 ${round.index + 1} / ${round.questions.length} 题</span></div>
     <h3 class="question-prompt">${read(question.prompt)}</h3>
     ${sample ? writingGrid([sample], 1, '待辨认的笔画，请观察形状') : `<div class="hz-question-character">${question.display}</div>`}
-    <div class="hz-options">${question.options.map(option => control('answer', read(option), `data-value="${escape(option)}" aria-label="${escape(option)}" ${round.revealed ? 'disabled' : ''}`, `hz-option ${round.revealed && option === question.answer ? 'is-correct' : round.selected === option ? 'is-wrong' : ''}`)).join('')}</div>
+    <div class="hz-options">${question.options.map(option => control('answer', read(option), `data-value="${escape(option)}" aria-label="${escape(option)}" ${round.revealed ? 'disabled' : ''}`, `hz-option${learningTokenClass(option)} ${round.revealed && option === question.answer ? 'is-correct' : round.selected === option ? 'is-wrong' : ''}`)).join('')}</div>
     <div class="hz-feedback" role="status">${round.revealed ? `<strong>${round.selected === question.answer ? '答对啦！' : '先认识答案，再来练一练。'}</strong><p>${read(question.explanation)}</p>` : response ? '<strong>再试一次，你可以的。</strong><p>也可以先看答案，再回到学习卡观察。</p>' : '仔细观察，选一个答案。'}</div>
     <div class="hz-actions">${control('learn', '回到学习')}${round.revealed ? control('advance', round.index === round.questions.length - 1 ? '查看本轮结果' : '下一题', '', 'solid-button') : control('skip', '先看答案')}</div>
   </section>`;
@@ -79,7 +80,7 @@ function quizCard(state) {
 export function renderHanzi(state, garden) {
   return `<section class="hanzi-page"><div class="page-heading"><div><div class="eyebrow"><span></span>字词基础 · 汉字小天地</div><h1>汉字笔画与结构<span class="heading-flower">✿</span></h1><p>认一笔，拆一拆，发现汉字的样子。每个小节都可以直接开始。</p></div></div>
     <nav class="play-selector" aria-label="汉字学习小节"><div class="play-mode-buttons">${hanziCategories.map(category => control('category', `${icon(category.icon)}${category.name}`, `data-id="${category.id}" title="${category.description}" aria-pressed="${state.category === category.id && state.view === 'learn'}"`, `hz-category play-mode ${state.category === category.id && state.view === 'learn' ? 'selected' : ''}`)).join('')}</div></nav>
-    <div class="ct-tools" aria-label="学习辅助">${control('reading', state.showPinyin ? '拼音辅助：开' : '拼音辅助：关', `aria-pressed="${state.showPinyin}"`)}<span>新一轮题数：</span>${practiceLengths.map(length => control('length', `${length} 题`, `data-value="${length}" aria-pressed="${state.practiceLength === length}"`, 'hz-chip')).join('')}<small>切换题数用于下一轮，当前题目会保留。</small></div>
+    ${learningTools('hz', state)}
     <div class="hz-layout"><div>${state.view === 'quiz' && state.round ? quizCard(state) : learningCard(state)}</div><aside class="hz-sidebar">
       ${garden}<section class="hz-card"><h2>我的汉字足迹</h2><p>自评认识 <strong>${state.known.length} / ${hanziLessons.length}</strong> 个学习项目</p><progress value="${state.known.length}" max="${hanziLessons.length}" aria-label="汉字自评认识进度"></progress><p>本主题题库 ${hanziQuestions.length} 题<br>当前小节 ${hanziQuestions.filter(item => item.category === state.category).length} 题</p><p>自评认识和练习首次答对分开记录，新一轮优先抽取未练题。</p><div class="hz-sidebar-actions">${control('start', `综合练习 · 最多 ${state.practiceLength} 题`, 'data-id="all"', 'solid-button')}${state.round && !state.round.finished && state.view === 'learn' ? control('resume', '继续上次练习') : ''}</div>${state.round && !state.round.finished ? '<p class="hz-caption">开始新练习会替换未完成的一轮；想保留当前题目，可继续上次练习。</p>' : ''}</section>
       <section class="hz-card hz-note"><h2>按自己的节奏学</h2><p>不用先学完拼音，也不用依次通关。可以随时换一节，回头再看看。</p><p>认识字的同时，也可以读一首古诗、说一句话，或写下今天的小发现。</p><p>学习记录保存在当前浏览器。</p></section>
