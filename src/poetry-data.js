@@ -1,4 +1,5 @@
 import { defineTopic, choice } from './chinese-content.js';
+import { additionalPoems, additionalFables } from './poetry-expansion-data.js';
 
 export const poems = [
   {
@@ -105,6 +106,7 @@ export const poems = [
       ['诗人这次找到要拜访的人了吗？', '没有遇见', ['已经一起采药了', '已经在家中见面了'], '题目“不遇”和“云深不知处”都说明没有遇见。', '松下问童子，言师采药去。只在此山中，云深不知处。'],
     ],
   },
+  ...additionalPoems,
 ];
 
 export const cultureEntries = [
@@ -165,6 +167,7 @@ export const cultureEntries = [
     task: '写一次你和别人一起完成事情的经历。', sample: '布置教室时，我画花朵，同桌剪彩纸，我们一起完成了墙报。',
     questions: [['这句俗语主要强调什么？', '团结合作的力量', ['一个人做所有事', '人多就不需要商量'], '大家共同出力、相互配合，可以更好地完成事情。'], ['哪种做法体现了这句俗语？', '小组商量分工，共同完成墙报', ['把任务全推给一个人', '大家互相争吵不行动'], '合作需要分工和配合，每个人都发挥作用。']],
   },
+  ...additionalFables,
 ];
 
 export const poetryTopic = defineTopic({
@@ -174,7 +177,7 @@ export const poetryTopic = defineTopic({
   lessons: [
     ...poems.map(poem => ({
       id: poem.id, category: poem.category, title: poem.title, body: poem.meaning,
-      poem: { author: poem.author, dynasty: poem.dynasty, lines: poem.lines },
+      poem: { audioId: poem.id, author: poem.author, dynasty: poem.dynasty, lines: poem.lines },
       examples: poem.notes, task: poem.task,
       activity: { type: 'write', sample: poem.sample, checklist: ['读完原诗，想象其中的画面了吗？', '能用自己的话说一说或写一写吗？'] },
     })),

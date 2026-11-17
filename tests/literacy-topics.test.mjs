@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { chineseTopics } from '../src/chinese-topics.js';
 import { similarCharacterGroups, similarCharactersTopic } from '../src/similar-characters-data.js';
 import { homophoneGroups, polyphonicCharacters, characterReadingsTopic } from '../src/character-readings-data.js';
-import { poems, poetryTopic } from '../src/poetry-data.js';
+import { poems, cultureEntries, poetryTopic } from '../src/poetry-data.js';
 import { literacySupplement } from '../src/chinese-literacy.js';
 import { normalizeTopic, topicDefaults, updateTopicActivity } from '../src/chinese-engine.js';
 
@@ -57,7 +57,7 @@ test('多音字不按单字猜读音，覆盖三读音与轻声并保持词句�
 });
 
 test('古诗逐字注音对应汉字，题目区分背诵、词义和理解', () => {
-  assert.equal(poems.length, 8);
+  assert.equal(poems.length, 20);
   assert.equal(poems.find(poem => poem.title === '春晓').author, '孟浩然');
   assert.equal(poems.find(poem => poem.title === '小池').dynasty, '宋');
   for (const poem of poems) {
@@ -76,6 +76,27 @@ test('古诗逐字注音对应汉字，题目区分背诵、词义和理解', ()
   assert.equal((html.match(/<ruby>/g) || []).length, 18);
   assert.ok(html.includes('<rt>qū</rt>'));
   assert.ok(!literacySupplement(lesson, { ...state, showPinyin: false }).includes('<ruby>'));
+});
+
+test('扩充寓言有故事经过、寓意及生活迁移，旧课程标识与进度保留', () => {
+  const fables = cultureEntries.filter(entry => entry.category === 'stories');
+  assert.equal(fables.length, 10);
+  assert.equal(poetryTopic.lessons.length, 36);
+  assert.equal(poetryTopic.questions.length, 92);
+  for (const fable of fables) {
+    assert.ok(fable.body.length > 60, fable.title);
+    assert.ok(fable.examples.length >= 2 && fable.task && fable.sample, fable.title);
+    assert.equal(fable.questions.length, 2);
+  }
+  const original = topicDefaults(poetryTopic);
+  original.lessonId = 'poetry-culture:lesson:goose';
+  original.known = [original.lessonId];
+  updateTopicActivity(poetryTopic, original, 'draft', '以前写下的白鹅。');
+  updateTopicActivity(poetryTopic, original, 'recite');
+  const restored = normalizeTopic(poetryTopic, JSON.parse(JSON.stringify(original)));
+  assert.deepEqual(restored.known, original.known);
+  assert.equal(restored.activities[original.lessonId].text, '以前写下的白鹅。');
+  assert.equal(restored.activities[original.lessonId].hidePoem, true);
 });
 
 test('遮文背诵按诗保存，不改变草稿、自评、错题或成绩；损坏值降级', () => {

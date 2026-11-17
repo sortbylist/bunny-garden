@@ -5,6 +5,7 @@ import { basics, groups, modes, playModes, modeSections, subjects, vocabulary, m
 import { shuffle, studyPool, learningGroups, nextStudyGroup, visitQuestion, nextUnfinishedQuestion, createRound, recordAnswer, roundStats, loadState, defaultState } from './engine.js';
 import { icon, bunny } from './icons.js';
 import { playAudio, stopAudio, onAudioStatus, chime, hasAudio } from './audio.js';
+import { createPoetryAudio } from './poetry-audio.js';
 import { initializeRewards, grantRewards, rewardStats, rewardCatalog, rewardProgress, equipReward, normalizeNickname } from './rewards.js';
 import { rewardArt, rewardStamp } from './reward-art.js';
 import { rewardStages, rewardSections, curriculumProgress, sectionProgress } from './reward-curriculum.js';
@@ -100,7 +101,17 @@ function toast(message) {
   toastTimer = setTimeout(() => element.classList.remove('visible'), 3500);
 }
 
-function halt() { continuousToken++; stopAudio(); phonics.stop(); }
+const poetryAudio = createPoetryAudio((status, message) => {
+  const controls = document.querySelector('.ct-poem-audio');
+  if (!controls) return;
+  const busy = status === 'loading' || status === 'playing';
+  controls.setAttribute('aria-busy', String(status === 'loading'));
+  controls.querySelector('[data-action="ct-poem-stop"]').disabled = !busy;
+  const label = document.querySelector('.ct-poem-audio-status');
+  if (label) label.textContent = message || (status === 'loading' ? '正在准备朗读……' : status === 'playing' ? '正在朗读，可以跟着轻声读。' : '普通话合成语音，点击后播放。');
+});
+
+function halt() { continuousToken++; stopAudio(); phonics.stop(); poetryAudio.stop(); }
 
 function session() {
   const sessionKey = key();
@@ -132,6 +143,7 @@ function currentItem() {
 }
 
 function render() {
+  poetryAudio.stop();
   navigation.capture();
   state.hanzi ||= normalizeHanziState(null);
   for (const topic of learningTopics) state.topics[topic.id] ||= topicDefaults(topic);
@@ -665,6 +677,16 @@ function handleAction(event) {
   if (!target || target.disabled) return;
   const action = target.dataset.action;
   if (action === 'ct-draft') return;
+  if (['ct-poem-play', 'ct-poem-slow', 'ct-poem-stop'].includes(action)) {
+    const topic = activeTopic();
+    const topicState = topic && state.topics[topic.id];
+    const lesson = topic?.lessons.find(item => item.id === topicState.lessonId);
+    halt();
+    if (topicState?.view === 'learn' && lesson?.poem && action !== 'ct-poem-stop') {
+      void poetryAudio.play(lesson.poem.audioId, action === 'ct-poem-slow');
+    }
+    return;
+  }
   if (action.startsWith('ct-')) {
     const topic = activeTopic();
     if (!topic) return;

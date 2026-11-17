@@ -12,6 +12,7 @@
     "test:audio": "node scripts/verify-audio.mjs",
     "test:phonics:audio": "node scripts/verify-audio.mjs --phonics",
     "audio:download": "node scripts/download-audio.mjs",
+    "poetry:audio:generate": "node scripts/generate-poetry-audio.mjs",
     "phonics:audio:generate": "node scripts/generate-phonics-audio.mjs"
   },
   "devDependencies": {

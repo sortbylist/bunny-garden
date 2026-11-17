@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { stored, selectTopic } from './helpers.js';
+import { poems } from '../../src/poetry-data.js';
 
 async function poemText(page) {
   return page.locator('.ct-poem-lines').evaluate(element => {
@@ -88,4 +89,95 @@ test('文化各小节自由进入，古诗草稿和背诵状态随全局清空�
   await selectTopic(page, '古诗与传统文化');
   expect(await poemText(page)).toContain('曲项向天歌');
   await expect(page.locator('#ct-draft')).toHaveValue('');
+});
+
+test('示范朗读支持常速慢速停止，切换内容不串音、不改变学习成绩', async ({ page }) => {
+  await page.addInitScript(() => {
+    const NativeAudio = window.Audio;
+    window.poetryPlayers = [];
+    window.Audio = function (...args) {
+      const audio = new NativeAudio(...args);
+      window.poetryPlayers.push(audio);
+      return audio;
+    };
+  });
+  await page.goto('/');
+  await selectTopic(page, '古诗与传统文化');
+  const before = await stored(page);
+  expect(await page.evaluate(() => window.poetryPlayers.length)).toBe(0);
+  await page.getByRole('button', { name: '听示范朗读', exact: true }).click();
+  await expect(page.locator('.ct-poem-audio-status')).toContainText('正在朗读');
+  expect(await page.evaluate(() => window.poetryPlayers.at(-1).playbackRate)).toBe(1);
+  await page.getByRole('button', { name: '慢速听一听', exact: true }).click();
+  await expect(page.locator('.ct-poem-audio-status')).toContainText('正在朗读');
+  expect(await page.evaluate(() => window.poetryPlayers.at(-1).playbackRate)).toBe(0.8);
+  expect(await page.evaluate(() => window.poetryPlayers[0].paused)).toBe(true);
+  await page.getByRole('button', { name: '停止朗读', exact: true }).click();
+  expect(await page.evaluate(() => window.poetryPlayers.every(audio => audio.paused))).toBe(true);
+  await expect(page.getByRole('button', { name: '停止朗读', exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: '听示范朗读', exact: true }).click();
+  await expect(page.locator('.ct-poem-audio-status')).toContainText('正在朗读');
+  await page.locator('[data-action="ct-next"]').click();
+  expect(await page.evaluate(() => window.poetryPlayers.every(audio => audio.paused))).toBe(true);
+  await page.getByRole('button', { name: '听示范朗读', exact: true }).click();
+  await expect(page.locator('.ct-poem-audio-status')).toContainText('正在朗读');
+  await selectTopic(page, '形近字辨析');
+  expect(await page.evaluate(() => window.poetryPlayers.every(audio => audio.paused))).toBe(true);
+  const after = await stored(page);
+  expect(after.rewards.events).toEqual(before.rewards.events);
+  expect(after.topics['poetry-culture'].known).toEqual(before.topics['poetry-culture'].known);
+  expect(after.topics['poetry-culture'].mistakes).toEqual([]);
+});
+
+test('朗读资源失败有提示，可以重试恢复', async ({ page }) => {
+  await page.route('**/audio/poetry/goose.wav', route => route.fulfill({ status: 404, body: '' }));
+  await page.goto('/');
+  await selectTopic(page, '古诗与传统文化');
+  await page.getByRole('button', { name: '听示范朗读', exact: true }).click();
+  await expect(page.locator('.ct-poem-audio-status')).toContainText('朗读播放失败');
+  await expect(page.getByRole('button', { name: '停止朗读', exact: true })).toBeDisabled();
+  await page.unroute('**/audio/poetry/goose.wav');
+  await page.getByRole('button', { name: '听示范朗读', exact: true }).click();
+  await expect(page.locator('.ct-poem-audio-status')).toContainText('正在朗读');
+  await page.getByRole('button', { name: '停止朗读', exact: true }).click();
+});
+
+test('全部古诗录音可以真实解码且有声音，新增课程可直接选择', async ({ page }) => {
+  await page.goto('/');
+  const results = await page.evaluate(async () => {
+    const manifest = await fetch('/audio/poetry/manifest.json').then(response => response.json());
+    const context = new AudioContext();
+    try {
+      const results = [];
+      for (const [id, entry] of Object.entries(manifest.files)) {
+        const response = await fetch(entry.path);
+        if (!response.ok) throw new Error(`${id}: HTTP ${response.status}`);
+        const decoded = await context.decodeAudioData(await response.arrayBuffer());
+        const samples = decoded.getChannelData(0);
+        let peak = 0;
+        for (const sample of samples) peak = Math.max(peak, Math.abs(sample));
+        results.push({ id, duration: decoded.duration, peak });
+      }
+      return results;
+    } finally { await context.close(); }
+  });
+  expect(results).toHaveLength(poems.length);
+  for (const result of results) {
+    expect(result.duration, result.id).toBeGreaterThan(5);
+    expect(result.duration, result.id).toBeLessThan(60);
+    expect(result.peak, result.id).toBeGreaterThan(0.01);
+  }
+  await selectTopic(page, '古诗与传统文化');
+  await page.locator('[data-action="ct-lesson"][data-id$=":willow"]').click();
+  expect(await poemText(page)).toContain('二月春风似剪刀');
+  await page.screenshot({ path: 'artifacts/poetry-audio-desktop.png', fullPage: true });
+  await page.setViewportSize({ width: 320, height: 900 });
+  await page.locator('[data-action="ct-lesson"][data-id$=":orioles"]').click();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: 'artifacts/poetry-audio-mobile.png', fullPage: true });
+  await page.locator('[data-action="ct-category"][data-id="stories"]').click();
+  await expect(page.locator('.ct-lesson-list [data-action="ct-lesson"]')).toHaveCount(10);
+  await page.locator('[data-action="ct-lesson"][data-id$=":cups-snake"]').click();
+  await expect(page.locator('.ct-lesson')).toContainText('墙上的弓');
+  await expect(page.locator('.ct-poem-audio')).toHaveCount(0);
 });

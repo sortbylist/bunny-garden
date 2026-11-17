@@ -1,0 +1,129 @@
+{
+    "version":  1,
+    "locale":  "zh-CN",
+    "provider":  "Windows System.Speech",
+    "voice":  "Microsoft Huihui Desktop",
+    "synthetic":  true,
+    "files":  {
+                  "goose":  {
+                                "path":  "/audio/poetry/goose.wav",
+                                "status":  "ready",
+                                "text":  "咏鹅。唐，骆宾王。鹅，鹅，鹅，曲项向天歌。白毛浮绿水，红掌拨清波。",
+                                "sha256":  "0115cec52c642e5d071ef1f368aa552838ee4084ca93c26aad8b606a3bff9c00"
+                            },
+                  "spring-morning":  {
+                                         "path":  "/audio/poetry/spring-morning.wav",
+                                         "status":  "ready",
+                                         "text":  "春晓。唐，孟浩然。春眠不觉晓，处处闻啼鸟。夜来风雨声，花落知多少。",
+                                         "sha256":  "3a9475c06058070afe59f2875bf97e85a29e4b695f17f7e5e06e1b961e71c233"
+                                     },
+                  "little-pond":  {
+                                      "path":  "/audio/poetry/little-pond.wav",
+                                      "status":  "ready",
+                                      "text":  "小池。宋，杨万里。泉眼无声惜细流，树阴照水爱晴柔。小荷才露尖尖角，早有蜻蜓立上头。",
+                                      "sha256":  "6b17a1a7e861b586ccfedcae405038eee3a29d91e196355c47d188368e00b5a1"
+                                  },
+                  "river-snow":  {
+                                     "path":  "/audio/poetry/river-snow.wav",
+                                     "status":  "ready",
+                                     "text":  "江雪。唐，柳宗元。千山鸟飞绝，万径人踪灭。孤舟蓑笠翁，独钓寒江雪。",
+                                     "sha256":  "d5f38ac83996e7af3fd81538a8a9552d77675bcb6a367be7c13b51bea71a09b6"
+                                 },
+                  "quiet-night":  {
+                                      "path":  "/audio/poetry/quiet-night.wav",
+                                      "status":  "ready",
+                                      "text":  "静夜思。唐，李白。床前明月光，疑是地上霜。举头望明月，低头思故乡。",
+                                      "sha256":  "3fcc8dd7eb33e67b3cac52fa6dc87ffd092cfe9456152bbb74ada11c3945e800"
+                                  },
+                  "farmers":  {
+                                  "path":  "/audio/poetry/farmers.wav",
+                                  "status":  "ready",
+                                  "text":  "悯农（其二）。唐，李绅。锄禾日当午，汗滴禾下土。谁知盘中餐，粒粒皆辛苦。",
+                                  "sha256":  "18e4008067de255c7f629779179b0723ecb5d9272f1a6d473fb58cf0b951ef3b"
+                              },
+                  "stork-tower":  {
+                                      "path":  "/audio/poetry/stork-tower.wav",
+                                      "status":  "ready",
+                                      "text":  "登鹳雀楼。唐，王之涣。白日依山尽，黄河入海流。欲穷千里目，更上一层楼。",
+                                      "sha256":  "d7b60cf58ec834066e89c5abdbb4713327cd7ac45b79b0e56b2bca5523d3bb9e"
+                                  },
+                  "hermit":  {
+                                 "path":  "/audio/poetry/hermit.wav",
+                                 "status":  "ready",
+                                 "text":  "寻隐者不遇。唐，贾岛。松下问童子，言师采药去。只在此山中，云深不知处。",
+                                 "sha256":  "92a069b26eac5455a6d63d13a9e2f9268cc682006b1abb3a46764377c9cce057"
+                             },
+                  "wind":  {
+                               "path":  "/audio/poetry/wind.wav",
+                               "status":  "ready",
+                               "text":  "风。唐，李峤。解落三秋叶，能开二月花。过江千尺浪，入竹万竿斜。",
+                               "sha256":  "93702430e0dbd2d1ecea0186c0b4a2e9e3a9d7a6fe0f362a4c98ac1379fa08cc"
+                           },
+                  "willow":  {
+                                 "path":  "/audio/poetry/willow.wav",
+                                 "status":  "ready",
+                                 "text":  "咏柳。唐，贺知章。碧玉妆成一树高，万条垂下绿丝绦。不知细叶谁裁出，二月春风似剪刀。",
+                                 "sha256":  "86bbcff87afd0f99635e34cb1dca5fb5b1a31aa788a98ee53c2485f464cbf8c1"
+                             },
+                  "village-spring":  {
+                                         "path":  "/audio/poetry/village-spring.wav",
+                                         "status":  "ready",
+                                         "text":  "村居。清，高鼎。草长莺飞二月天，拂堤杨柳醉春烟。儿童散学归来早，忙趁东风放纸鸢。",
+                                         "sha256":  "beebb92f196632b1d365f361b25ed2851868bb4b628ef9ef45c4112629e6d4b9"
+                                     },
+                  "what-seen":  {
+                                    "path":  "/audio/poetry/what-seen.wav",
+                                    "status":  "ready",
+                                    "text":  "所见。清，袁枚。牧童骑黄牛，歌声振林樾。意欲捕鸣蝉，忽然闭口立。",
+                                    "sha256":  "e553713be36c72a05c6b1dc1744cf7d9f74b23f54d279c340070ff1a18424973"
+                                },
+                  "mountain-walk":  {
+                                        "path":  "/audio/poetry/mountain-walk.wav",
+                                        "status":  "ready",
+                                        "text":  "山行。唐，杜牧。远上寒山石径斜，白云生处有人家。停车坐爱枫林晚，霜叶红于二月花。",
+                                        "sha256":  "53aaa996cf23223b770b862dade60b36941a951c8b5bac813362d8efb72db561"
+                                    },
+                  "waterfall":  {
+                                    "path":  "/audio/poetry/waterfall.wav",
+                                    "status":  "ready",
+                                    "text":  "望庐山瀑布。唐，李白。日照香炉生紫烟，遥看瀑布挂前川。飞流直下三千尺，疑是银河落九天。",
+                                    "sha256":  "ce5b5807de9f3946bbde246c9596e8a57c5bd100d5ced5eaa753c6982291da2e"
+                                },
+                  "orioles":  {
+                                  "path":  "/audio/poetry/orioles.wav",
+                                  "status":  "ready",
+                                  "text":  "绝句（两个黄鹂鸣翠柳）。唐，杜甫。两个黄鹂鸣翠柳，一行白鹭上青天。窗含西岭千秋雪，门泊东吴万里船。",
+                                  "sha256":  "ae5b6463d73f87f704cb78a36871d766daed330b0a5db5a2fa6e2588cf134014"
+                              },
+                  "spring-quatrain":  {
+                                          "path":  "/audio/poetry/spring-quatrain.wav",
+                                          "status":  "ready",
+                                          "text":  "绝句（迟日江山丽）。唐，杜甫。迟日江山丽，春风花草香。泥融飞燕子，沙暖睡鸳鸯。",
+                                          "sha256":  "40e2fa685425a946232f270bcc7f5a753de5d538830f298b39a548f5d24306a0"
+                                      },
+                  "plum-blossom":  {
+                                       "path":  "/audio/poetry/plum-blossom.wav",
+                                       "status":  "ready",
+                                       "text":  "梅花。宋，王安石。墙角数枝梅，凌寒独自开。遥知不是雪，为有暗香来。",
+                                       "sha256":  "d4216c316875563baa754775c04d3e67eba1df618ba21ae471e748413f5347aa"
+                                   },
+                  "wang-lun":  {
+                                   "path":  "/audio/poetry/wang-lun.wav",
+                                   "status":  "ready",
+                                   "text":  "赠汪伦。唐，李白。李白乘舟将欲行，忽闻岸上踏歌声。桃花潭水深千尺，不及汪伦送我情。",
+                                   "sha256":  "58323e1d16d4eb2f4ec0fc63411e70b648f95400743c30a75ff58230320f89b8"
+                               },
+                  "ninth-day":  {
+                                    "path":  "/audio/poetry/ninth-day.wav",
+                                    "status":  "ready",
+                                    "text":  "九月九日忆山东兄弟。唐，王维。独在异乡为异客，每逢佳节倍思亲。遥知兄弟登高处，遍插茱萸少一人。",
+                                    "sha256":  "47d283257b91acbac2624cac04bc2a4c07c9c935a72fc09f4edff2f231fcadaa"
+                                },
+                  "guazhou":  {
+                                  "path":  "/audio/poetry/guazhou.wav",
+                                  "status":  "ready",
+                                  "text":  "泊船瓜洲。宋，王安石。京口瓜洲一水间，钟山只隔数重山。春风又绿江南岸，明月何时照我还？",
+                                  "sha256":  "de8fd990d64e900b1a71502069d23719b89f8f26f418aae45b5ced331c999ad9"
+                              }
+              }
+}
