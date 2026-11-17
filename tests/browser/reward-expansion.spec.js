@@ -19,7 +19,7 @@ const stored = page => page.evaluate(() => JSON.parse(localStorage.getItem('bunn
 test('收藏总则、分类和特例帮助支持摘要、全文、返回焦点与未解锁范围', async ({ page }) => {
   await page.goto('/');
   await page.locator('.garden-links [data-action="reward-collection"]').click();
-  await expect(page.locator('.reward-card')).toHaveCount(89);
+  await expect(page.locator('.reward-card')).toHaveCount(94);
   const general = page.getByRole('button', { name: '查看收藏规则', exact: true });
   await general.hover();
   await expect(page.locator('#reward-help-all')).toBeVisible();

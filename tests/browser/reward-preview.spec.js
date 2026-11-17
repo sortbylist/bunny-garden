@@ -50,8 +50,8 @@ test('成长花园与个人空间的佩戴物品可播放动效，关闭后返�
 test('所有物品正常彩色展示，只有已获得物品盖印，未获得物品也能放大和旋转', async ({ page }) => {
   await seed(page, { obtained: ['hello-bunny'] });
   await openCollection(page);
-  await expect(page.locator('.reward-card')).toHaveCount(89);
-  await expect(page.locator('.reward-preview-trigger')).toHaveCount(89);
+  await expect(page.locator('.reward-card')).toHaveCount(94);
+  await expect(page.locator('.reward-preview-trigger')).toHaveCount(94);
   await expect(page.locator('.reward-obtained-stamp')).toHaveCount(1);
   await expect(page.locator('[data-reward="hello-bunny"] .reward-obtained-stamp')).toContainText('已获得');
   await expect(page.locator('.reward-obtained-stamp path')).toHaveCount(1);

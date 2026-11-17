@@ -20,11 +20,11 @@ function completeSection(rewards, section) {
 }
 
 test('目录包含中间里程碑、三科主题与八套奖牌，标识唯一，摘要不超过100字', () => {
-  assert.equal(new Set(rewardCatalog.map(reward => reward.id)).size, 89);
+  assert.equal(new Set(rewardCatalog.map(reward => reward.id)).size, 94);
   assert.deepEqual(rewardCatalog.filter(reward => reward.id.startsWith('solved-')).map(reward => reward.target), [50, 75, 100, 150, 200, 250, 300]);
   assert.equal(rewardCatalog.filter(reward => reward.type === 'medal').length, 24);
   assert.equal(rewardStages.filter(stage => stage.subject === 'english').length, 4);
-  assert.equal(rewardSections.size, 142);
+  assert.equal(rewardSections.size, 157);
   for (const help of Object.values(rewardHelp)) assert.ok([...help.summary].length <= 100);
 });
 

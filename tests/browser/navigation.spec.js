@@ -159,7 +159,7 @@ test('两级分类带彩色编号，入口文字紧凑且主题图标各有区�
   await expect(modes.locator('summary .nav-group-index')).toHaveAttribute('data-number', '02');
   await selectTopic(page, '近义词与反义词');
   await expect(navigation.locator('summary .nav-group-index')).toHaveAttribute('data-number', '02');
-  for (const topic of ['近义词与反义词', '标点符号']) {
+  for (const topic of ['近义词与反义词', '标点符号', '短文信息查找']) {
     await selectTopic(page, topic);
     const graphics = await navigation.locator('.nav-tabs button > svg').evaluateAll(elements => elements.map(element => element.innerHTML));
     expect(new Set(graphics).size).toBe(graphics.length);

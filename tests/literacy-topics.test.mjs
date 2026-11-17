@@ -7,14 +7,15 @@ import { poems, cultureEntries, poetryTopic } from '../src/poetry-data.js';
 import { literacySupplement } from '../src/chinese-literacy.js';
 import { normalizeTopic, topicDefaults, updateTopicActivity } from '../src/chinese-engine.js';
 
-test('第三阶段三个主题可独立开始，表达活动有参考和检查提示', () => {
+test('第三阶段八个主题按规划排序，原有字词古诗表达活动保持完整', () => {
   const topics = chineseTopics.filter(topic => topic.stage.startsWith('第三阶段'));
-  assert.deepEqual(topics.map(topic => topic.id), ['similar-characters', 'character-readings', 'poetry-culture']);
+  assert.deepEqual(topics.map(topic => topic.id), ['similar-characters', 'character-readings', 'reading-information', 'reading-context', 'reading-paragraphs', 'poetry-culture', 'reading-stories', 'reading-summary']);
   for (const topic of topics) {
     const state = topicDefaults(topic);
     assert.equal(state.lessonId, topic.lessons[0].id);
     assert.deepEqual(state.known, []);
     for (const lesson of topic.lessons) {
+      if (lesson.reading) continue;
       assert.equal(lesson.activity.type, 'write');
       assert.ok(lesson.activity.sample && lesson.activity.checklist.length >= 2);
     }

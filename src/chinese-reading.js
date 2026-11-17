@@ -1,4 +1,8 @@
 export const readingHints = {
+  门槛: 'mén kǎn', 谨慎: 'jǐn shèn', 小心翼翼: 'xiǎo xīn yì yì', 空荡荡: 'kōng dàng dàng',
+  伞柄: 'sǎn bǐng', 核对: 'hé duì', 借阅: 'jiè yuè', 陆续: 'lù xù',
+  骆驼: 'luò tuo', 绿洲: 'lǜ zhōu', 储存: 'chǔ cún', 折痕: 'zhé hén',
+  嫩芽: 'nèn yá', 攥着: 'zuàn zhe', 迷惑: 'mí huo', 乘凉: 'chéng liáng',
   眺望: 'tiào wàng', 倾听: 'qīng tīng', 搀扶: 'chān fú', 浇灌: 'jiāo guàn', 搜集: 'sōu jí',
   燕子: 'yàn zi', 松鼠: 'sōng shǔ', 青蛙: 'qīng wā', 蜜蜂: 'mì fēng', 蝴蝶: 'hú dié',
   蜻蜓: 'qīng tíng', 刺猬: 'cì wei', 乌龟: 'wū guī', 熊猫: 'xióng māo', 蚂蚁: 'mǎ yǐ',

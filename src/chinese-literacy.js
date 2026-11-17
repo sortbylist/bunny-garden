@@ -1,4 +1,5 @@
 import { escapeText, readingText } from './chinese-reading.js';
+import { readingLesson } from './reading-view.js';
 
 function poemLine([text, pinyin], showPinyin) {
   if (!showPinyin) return escapeText(text);
@@ -10,6 +11,7 @@ function poemLine([text, pinyin], showPinyin) {
 }
 
 export function literacySupplement(lesson, state) {
+  if (lesson.reading) return readingLesson(lesson, state);
   if (lesson.comparison) return `<section class="ct-comparison" aria-label="字形与读音对照">${lesson.comparison.map(item => `<article>
     <strong class="ct-compare-character">${state.showPinyin ? `<ruby>${escapeText(item.text)}<rp>（</rp><rt>${escapeText(item.pinyin)}</rt><rp>）</rp></ruby>` : escapeText(item.text)}</strong>
     <h4>${readingText(item.word, state.showPinyin)}</h4><p>${escapeText(item.clue)}</p>

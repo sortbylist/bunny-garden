@@ -88,6 +88,24 @@
 .ct-sentence-topic .mastery-actions { margin: 0; padding: 22px 0; }
 .ct-sentence-topic .card-navigation { margin: 0; border-top: 1px dashed #e5d8df; padding: 18px 0 22px; }
 .ct-lesson-counter { font-size: 12px; color: #a48e9b; }
+.ct-reading-passage { margin: 20px 0; padding: 20px; border: 1px solid #e5d8df; border-radius: 14px; background: #fffcf6; }
+.ct-reading-passage h4 { margin: 0 0 16px; text-align: center; font-size: 20px; color: #805d73; }
+.ct-reading-passage ol { list-style: none; padding: 0; margin: 0; }
+.ct-reading-passage li { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 8px; padding: 10px 8px; border-radius: 8px; }
+.ct-reading-passage li + li { margin-top: 10px; }
+.ct-reading-passage p { margin: 0; font-size: 18px; line-height: 2.2; overflow-wrap: anywhere; color: #66545e; }
+.ct-paragraph-number { padding-top: 6px; color: #8b7482; font-size: 12px; }
+.ct-reading-passage .ct-reading-evidence { background: #edf4e6; outline: 1px solid #b9cfaa; }
+.ct-evidence-label { grid-column: 2; color: #466438; font-size: 12px; }
+.ct-reading-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.ct-reading-guide { padding: 14px; border-left: 3px solid #a9c397; line-height: 2; background: #f2f6ed; color: #506841; }
+.ct-reading-order { display: grid; grid-template-columns: minmax(0, 1fr); }
+.ct-reading-order .hz-chip { white-space: normal; text-align: left; line-height: 1.9; }
+@media (max-width: 440px) {
+  .ct-reading-passage { padding: 14px 8px; }
+  .ct-reading-passage li { grid-template-columns: 18px minmax(0, 1fr); padding: 8px 4px; gap: 5px; }
+  .ct-reading-passage p { font-size: 16px; }
+}
 .ct-sentence-lessons { margin-top: 26px; }
 .ct-sentence-lessons .ct-lesson-list { gap: 10px; max-height: none; overflow: visible; padding: 0; }
 .ct-sentence-lessons .hz-chip { background: #fffdfb; border: 1.5px solid #e3d5de; border-bottom-width: 3px; border-radius: 12px; color: #866c7d; padding: calc(12px + var(--reading-space, 0px)) 16px 12px; }

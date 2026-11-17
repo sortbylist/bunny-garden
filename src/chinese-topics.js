@@ -11,6 +11,11 @@ import { vividExpressionTopic } from './vivid-expression-data.js';
 import { similarCharactersTopic } from './similar-characters-data.js';
 import { characterReadingsTopic } from './character-readings-data.js';
 import { poetryTopic } from './poetry-data.js';
+import { readingInformationTopic } from './reading-information-data.js';
+import { readingContextTopic } from './reading-context-data.js';
+import { readingParagraphsTopic } from './reading-paragraphs-data.js';
+import { readingStoriesTopic } from './reading-stories-data.js';
+import { readingSummaryTopic } from './reading-summary-data.js';
 
-export const chineseTopics = [dictionaryTopic, vocabularyTopic, relationsTopic, collocationTopic, patternsTopic, sentenceBuildingTopic, punctuationTopic, sentencePatternsTopic, sentenceRevisionTopic, vividExpressionTopic, similarCharactersTopic, characterReadingsTopic, poetryTopic];
+export const chineseTopics = [dictionaryTopic, vocabularyTopic, relationsTopic, collocationTopic, patternsTopic, sentenceBuildingTopic, punctuationTopic, sentencePatternsTopic, sentenceRevisionTopic, vividExpressionTopic, similarCharactersTopic, characterReadingsTopic, readingInformationTopic, readingContextTopic, readingParagraphsTopic, poetryTopic, readingStoriesTopic, readingSummaryTopic];
 export const topicById = id => chineseTopics.find(topic => topic.id === id);

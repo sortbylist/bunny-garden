@@ -11,6 +11,7 @@ export function updateTopicActivity(topic, state, action, value) {
   if (state.view !== 'learn' || !lesson?.activity) return;
   const activity = lesson.activity;
   const saved = state.activities[lesson.id] ||= { text: '', order: [], checked: false, showExample: false };
+  if (lesson.reading && action === 'evidence') saved.showEvidence = saved.showEvidence !== true;
   if (lesson.poem) {
     saved.hidePoem = saved.hidePoem === true;
     if (action === 'recite') saved.hidePoem = !saved.hidePoem;
@@ -46,6 +47,7 @@ export function normalizeTopic(topic, saved) {
       order, checked: Boolean(entry.checked && order.length === lesson.activity.tokens?.length),
       showExample: entry.showExample === true,
       ...(lesson.poem ? { hidePoem: entry.hidePoem === true } : {}),
+      ...(lesson.reading ? { showEvidence: entry.showEvidence === true } : {}),
     };
   }
   if (topic.id === 'dictionary') {
