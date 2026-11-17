@@ -1,5 +1,10 @@
 import { practiceLengths } from './chinese-practice.js';
 
+export function learningPosition(index, total, { practice = false } = {}) {
+  if (!total) return '';
+  return `<span class="card-position learning-position" aria-label="当前${practice ? '练习' : '学习'}位置">第 <b>${index + 1}</b> / ${total} ${practice ? '题' : '项'}</span>`;
+}
+
 export function learningTokenClass(value) {
   const text = String(value ?? '').trim();
   if (!text || /[。！？；，：、,.!?;:\n]/u.test(text)) return '';

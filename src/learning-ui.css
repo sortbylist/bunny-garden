@@ -1,3 +1,15 @@
+.card-position.learning-position {
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: 12px;
+  color: #a48e9b;
+  font-variant-numeric: tabular-nums;
+}
+.card-position.learning-position b {
+  font-size: inherit;
+  font-weight: 600;
+  color: inherit;
+}
 .chinese-topic .hz-item-list .learning-token,
 .hanzi-page .hz-item-list .learning-token,
 .hanzi-page .hz-stroke-list .learning-token,

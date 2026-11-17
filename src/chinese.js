@@ -10,7 +10,7 @@ import { practiceLengths } from './chinese-practice.js';
 import { icon, bunny } from './icons.js';
 import { literacySupplement } from './chinese-literacy.js';
 import { readingPassage } from './reading-view.js';
-import { learningTokenClass, learningTools, pinyinToggle } from './learning-ui.js';
+import { learningPosition, learningTokenClass, learningTools, pinyinToggle } from './learning-ui.js';
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 const control = (action, label, attributes = '', style = 'outline-button') => `<button type="button" class="${style}" data-action="ct-${action}" ${attributes}>${label}</button>`;
@@ -53,8 +53,8 @@ function learningCard(topic, state) {
   const category = topic.categories.find(item => item.id === state.category);
   const picker = `<div class="hz-item-list ct-lesson-list" aria-label="选择学习内容">${lessons.map(item => control('lesson', `${read(item.title)}${state.known.includes(item.id) ? ' ✓' : ''}`, `data-id="${item.id}" aria-label="${escape(item.title)}" aria-pressed="${state.lessonId === item.id}"`, `hz-chip${learningTokenClass(item.title)}`)).join('')}</div>`;
   const heading = polished
-    ? `<div class="card-topline"><h2 class="category-badge">${icon(category.icon || 'flower')}${escape(category.name)}</h2><span class="card-position">第 <b>${index + 1}</b> / ${lessons.length} 项</span></div>`
-    : `<div class="hz-card-heading"><h2>${topic.categories.find(item => item.id === state.category).name}</h2><span>第 ${index + 1} / ${lessons.length} 项</span></div>`;
+    ? `<div class="card-topline"><h2 class="category-badge">${icon(category.icon || 'flower')}${escape(category.name)}</h2>${learningPosition(index, lessons.length)}</div>`
+    : `<div class="hz-card-heading"><h2>${topic.categories.find(item => item.id === state.category).name}</h2>${learningPosition(index, lessons.length)}</div>`;
   return `<section class="hz-card ct-lesson ${polished ? 'study-card ct-sentence-card' : ''}" aria-label="${topic.name}学习卡">${heading}
     ${polished ? '' : picker}
     <div class="ct-lesson-intro"><h3 class="${learningTokenClass(lesson.title).trim()}" aria-label="${escape(lesson.title)}">${read(lesson.title)}</h3>${literacySupplement(lesson, state)}<p>${read(lesson.body)}</p></div>
@@ -63,7 +63,7 @@ function learningCard(topic, state) {
     <ul class="ct-examples">${lesson.examples.map(example => `<li>${read(example)}</li>`).join('')}</ul>
     <div class="hz-note ct-activity"><strong class="ct-activity-heading">${polished ? icon('pen') : ''}说一说，试一试</strong><p>${read(lesson.task)}</p>${activityCard(lesson, state)}</div>
     ${polished ? `<div class="hz-actions mastery-actions">${control('known', `${icon('check')}${state.known.includes(lesson.id) ? '已经认识啦 ✓' : '我认识啦'}`, `aria-pressed="${state.known.includes(lesson.id)}"`, 'soft-button mint')}${control('start', `${icon('pen')}练练这一节`, `data-id="${state.category}"`, 'soft-button')}</div>` : ''}
-    <div class="hz-actions hz-card-footer ${polished ? 'card-navigation' : ''}">${control('previous', `${sentence ? icon('chevron') : ''}上一个`, index === 0 ? 'disabled' : '', 'outline-button previous')}${polished ? `<span class="ct-lesson-counter">${index + 1} / ${lessons.length}</span>` : control('known', state.known.includes(lesson.id) ? '已经认识啦 ✓' : '我认识啦', `aria-pressed="${state.known.includes(lesson.id)}"`, 'soft-button mint')}${control('next', `下一个${sentence ? icon('chevron') : ''}`, index === lessons.length - 1 ? 'disabled' : '')}</div>
+    <div class="hz-actions hz-card-footer ${polished ? 'card-navigation' : ''}">${control('previous', `${sentence ? icon('chevron') : ''}上一个`, index === 0 ? 'disabled' : '', 'outline-button previous')}${polished ? '' : control('known', state.known.includes(lesson.id) ? '已经认识啦 ✓' : '我认识啦', `aria-pressed="${state.known.includes(lesson.id)}"`, 'soft-button mint')}${control('next', `下一个${sentence ? icon('chevron') : ''}`, index === lessons.length - 1 ? 'disabled' : '')}</div>
     ${polished ? '' : `<div class="hz-actions">${control('start', '练练这一节', `data-id="${state.category}"`, 'solid-button')}</div>`}</section>
     ${polished ? `<section class="pinyin-map ct-sentence-lessons" aria-label="本节学习卡"><div class="section-title"><h2>${icon('grid')}本节学习卡</h2><span>每一张都可以直接开始</span></div>${picker}</section>` : ''}`;
 }
@@ -77,7 +77,7 @@ function quizCard(topic, state) {
     return `<section class="hz-card ct-result ${polished ? 'result-card ct-sentence-card' : ''}">${polished ? bunny() : ''}<h2>这一轮完成啦！</h2><p>共 ${stats.total} 题，首次答对 ${stats.correct} 题，首次跳过 ${stats.skipped} 题。</p><p>重试不覆盖首次成绩；错题需要在新一轮复习中独立答对才移出。</p><div class="hz-actions">${control('learn', '回到学习')}${control('start', '再练一轮', `data-id="${round.scope}" ${round.scope === 'review' && !state.mistakes.length ? 'disabled' : ''}`, 'solid-button')}</div></section>`;
   }
   const question = round.questions[round.index];
-  return `<section class="hz-card ct-quiz ${polished ? 'quiz-card ct-sentence-card' : ''}" aria-label="${topic.name}练习"><div class="hz-card-heading ${polished ? 'quiz-top' : ''}"><h2 class="${polished ? 'category-badge' : ''}">${polished ? icon('pen') : ''}${round.scope === 'review' ? `${topic.name}错题本` : '动脑小练习'}</h2><span>第 ${round.index + 1} / ${round.questions.length} 题</span></div>
+  return `<section class="hz-card ct-quiz ${polished ? 'quiz-card ct-sentence-card' : ''}" aria-label="${topic.name}练习"><div class="hz-card-heading ${polished ? 'quiz-top' : ''}"><h2 class="${polished ? 'category-badge' : ''}">${polished ? icon('pen') : ''}${round.scope === 'review' ? `${topic.name}错题本` : '动脑小练习'}</h2>${learningPosition(round.index, round.questions.length, { practice: true })}</div>
     ${question.passage ? readingPassage(question.passage, state.showPinyin, round.revealed ? question.evidence : []) : ''}
     ${question.display ? `<p class="ct-context">${read(question.display)}</p>` : ''}<h3 class="ct-prompt">${read(question.prompt)}</h3>
     <div class="hz-options ${polished ? 'answer-grid' : ''}">${question.options.map((option, index) => control('answer', `${polished ? `<span class="option-letter" aria-hidden="true">${'ABCD'[index]}</span><span>` : ''}${read(option)}${polished ? '</span>' : ''}`, `data-value="${escape(option)}" aria-label="${escape(option)}" ${round.revealed ? 'disabled' : ''}`, `hz-option ${polished ? 'answer-option' : ''}${learningTokenClass(option)} ${round.revealed && option === question.answer ? 'is-correct correct-answer' : round.selected === option ? 'is-wrong wrong-answer' : ''}`)).join('')}</div>

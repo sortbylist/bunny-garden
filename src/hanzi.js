@@ -6,7 +6,7 @@ import { grantRewards } from './rewards.js';
 import { readingText } from './chinese-reading.js';
 import { practiceLengths } from './chinese-practice.js';
 import { icon } from './icons.js';
-import { learningTokenClass, learningTools, pinyinToggle } from './learning-ui.js';
+import { learningPosition, learningTokenClass, learningTools, pinyinToggle } from './learning-ui.js';
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 const control = (action, label, attributes = '', className = 'outline-button') => `<button type="button" data-action="hz-${action}" class="${className}" ${attributes}>${label}</button>`;
@@ -50,7 +50,7 @@ function learningCard(state) {
   const items = hanziLessons.filter(item => item.category === state.category);
   const index = items.indexOf(lesson);
   return `<section class="hz-card" aria-label="汉字学习卡">
-    <div class="hz-card-heading"><h2>${hanziCategories.find(item => item.id === state.category).name}</h2><span>第 ${index + 1} / ${items.length} 个</span></div>
+    <div class="hz-card-heading"><h2>${hanziCategories.find(item => item.id === state.category).name}</h2>${learningPosition(index, items.length)}</div>
     <div class="hz-item-list" aria-label="选择学习内容">${items.map(item => control('lesson', `${escape(item.title)}${state.known.includes(item.id) ? ' ✓' : ''}`, `data-id="${item.id}" aria-pressed="${item.id === lesson.id}"`, `hz-chip${learningTokenClass(item.title)}`)).join('')}</div>
     ${lessonContent(state, lesson)}
     <div class="hz-actions hz-card-footer">${control('previous', '上一个', index === 0 ? 'disabled' : '')}${control('known', state.known.includes(lesson.id) ? '已经认识啦 ✓' : '我认识啦', `aria-pressed="${state.known.includes(lesson.id)}"`, 'soft-button mint')}${control('next', '下一个', index === items.length - 1 ? 'disabled' : '')}</div>
@@ -68,7 +68,7 @@ function quizCard(state) {
   const question = round.questions[round.index];
   const response = round.responses[round.index];
   const sample = strokes.find(item => item.id === question.strokeId);
-  return `<section class="hz-card hz-quiz" aria-label="汉字练习"><div class="hz-card-heading"><h2>${round.scope === 'review' ? '汉字错题本' : '汉字小练习'}</h2><span>第 ${round.index + 1} / ${round.questions.length} 题</span></div>
+  return `<section class="hz-card hz-quiz" aria-label="汉字练习"><div class="hz-card-heading"><h2>${round.scope === 'review' ? '汉字错题本' : '汉字小练习'}</h2>${learningPosition(round.index, round.questions.length, { practice: true })}</div>
     <h3 class="question-prompt">${read(question.prompt)}</h3>
     ${sample ? writingGrid([sample], 1, '待辨认的笔画，请观察形状') : `<div class="hz-question-character">${question.display}</div>`}
     <div class="hz-options">${question.options.map(option => control('answer', read(option), `data-value="${escape(option)}" aria-label="${escape(option)}" ${round.revealed ? 'disabled' : ''}`, `hz-option${learningTokenClass(option)} ${round.revealed && option === question.answer ? 'is-correct' : round.selected === option ? 'is-wrong' : ''}`)).join('')}</div>
