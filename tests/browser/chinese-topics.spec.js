@@ -167,7 +167,7 @@ test('各主题题量和拼音设置分别保存，按实际题量刷新续练�
     await page.reload();
     expect((await stored(page)).topics[topic.id].round.questions).toEqual(original);
     await expect(page.locator('[data-action="ct-length"][data-value="20"]')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('[data-action="ct-reading"]')).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.locator('[data-action="ct-reading"]')).toHaveAttribute('aria-checked', 'false');
     await page.locator('[data-action="ct-reading"]').click();
     await answer(page, topic);
     expect((await stored(page)).topics[topic.id].round.responses[0].correct).toBe(true);

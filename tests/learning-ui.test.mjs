@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { learningTokenClass, learningTools } from '../src/learning-ui.js';
+import { learningTokenClass, learningTools, pinyinToggle } from '../src/learning-ui.js';
 import { readingHints } from '../src/chinese-reading.js';
 import { vocabularyEntries } from '../src/vocabulary-data.js';
 
@@ -18,16 +18,27 @@ test('学习和查字页面隐藏题数设置，练习页保留下一轮设置�
   for (const prefix of ['ct', 'hz']) {
     for (const view of ['learn', 'lookup']) {
       const html = learningTools(prefix, { view, showPinyin: true, practiceLength: 20 });
-      assert.ok(!html.includes('新一轮题数'));
-      assert.ok(!html.includes(`${prefix}-length`));
-      assert.ok(html.includes('outline-button reading-toggle'));
+      assert.equal(html, '');
     }
     const quiz = learningTools(prefix, { view: 'quiz', showPinyin: false, practiceLength: 20 });
     assert.ok(quiz.includes('新一轮题数'));
     assert.ok(quiz.includes('data-value="20" aria-pressed="true"'));
-    assert.ok(quiz.includes('拼音辅助：关'));
+    assert.ok(!quiz.includes(`${prefix}-reading`));
   }
   assert.equal(learningTools('ct', { view: 'learn' }, { math: true }), '');
+});
+
+test('标题区拼音开关使用固定名称和可访问的开关状态', () => {
+  for (const prefix of ['ct', 'hz']) {
+    for (const showPinyin of [true, false]) {
+      const html = pinyinToggle(prefix, { showPinyin });
+      assert.ok(html.includes(`data-action="${prefix}-reading"`));
+      assert.ok(html.includes('role="switch" aria-label="拼音辅助"'));
+      assert.ok(html.includes(`aria-checked="${showPinyin}"`));
+      assert.ok(html.includes('<span>拼音</span>'));
+      assert.ok(!html.includes('aria-pressed'));
+    }
+  }
 });
 
 test('新增和已有词卡均有完整词组拼音，避免把多音字拆成固定读音', () => {

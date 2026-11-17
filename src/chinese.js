@@ -10,7 +10,7 @@ import { practiceLengths } from './chinese-practice.js';
 import { icon, bunny } from './icons.js';
 import { literacySupplement } from './chinese-literacy.js';
 import { readingPassage } from './reading-view.js';
-import { learningTokenClass, learningTools } from './learning-ui.js';
+import { learningTokenClass, learningTools, pinyinToggle } from './learning-ui.js';
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 const control = (action, label, attributes = '', style = 'outline-button') => `<button type="button" class="${style}" data-action="ct-${action}" ${attributes}>${label}</button>`;
@@ -103,8 +103,9 @@ export function renderTopic(topic, state, garden) {
   const literacy = isLiteracyTopic(topic);
   const math = isMathTopic(topic);
   const polished = sentence || literacy || math;
-  const tools = learningTools('ct', state, { math, polished });
-  return `<section class="chinese-topic ${polished ? 'ct-sentence-topic' : ''} ${literacy ? 'ct-literacy-topic' : ''} ${math ? 'math-topic' : ''}" data-topic="${topic.id}"><div class="page-heading"><div><div class="eyebrow"><span></span>${escape(topic.stage)}</div><h1>${topic.name}<span class="heading-flower">✿</span></h1><p>${topic.description}</p></div>${polished ? `<div class="heading-sticker">${icon('sprout')}<span>今天也要<br><b>快乐生长</b></span></div>` : ''}</div>
+  const tools = learningTools('ct', state, { polished });
+  const sticker = polished ? `<div class="heading-sticker">${icon('sprout')}<span>今天也要<br><b>快乐生长</b></span></div>` : '';
+  return `<section class="chinese-topic ${polished ? 'ct-sentence-topic' : ''} ${literacy ? 'ct-literacy-topic' : ''} ${math ? 'math-topic' : ''}" data-topic="${topic.id}"><div class="page-heading ${math ? '' : 'learning-heading'}"><div class="${math ? '' : 'learning-heading-copy'}"><div class="eyebrow"><span></span>${escape(topic.stage)}</div><h1>${topic.name}<span class="heading-flower">✿</span></h1><p>${topic.description}</p></div>${math ? sticker : `<div class="learning-heading-actions">${pinyinToggle('ct', state)}${sticker}</div>`}</div>
     <nav class="play-selector" aria-label="${topic.name}小${math ? '分类' : '节'}"><div class="play-mode-buttons">${topic.categories.map(category => control('category', `${icon(category.icon || 'book')}${escape(category.name)}`, `data-id="${category.id}" aria-pressed="${state.view === 'learn' && state.category === category.id}"`, `hz-category play-mode ${state.view === 'learn' && state.category === category.id ? 'selected' : ''}`)).join('')}</div></nav>
     ${polished ? '' : tools}
     <div class="${polished ? 'learning-layout' : 'hz-layout'}"><div class="${polished ? 'learning-main' : ''}">${polished ? tools : ''}${state.view === 'quiz' ? quizCard(topic, state) : state.view === 'lookup' ? lookupCard(state) : learningCard(topic, state)}</div><aside class="${polished ? 'learning-aside' : 'hz-sidebar'}">

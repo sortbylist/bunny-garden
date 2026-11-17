@@ -6,7 +6,7 @@ import { grantRewards } from './rewards.js';
 import { readingText } from './chinese-reading.js';
 import { practiceLengths } from './chinese-practice.js';
 import { icon } from './icons.js';
-import { learningTokenClass, learningTools } from './learning-ui.js';
+import { learningTokenClass, learningTools, pinyinToggle } from './learning-ui.js';
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 const control = (action, label, attributes = '', className = 'outline-button') => `<button type="button" data-action="hz-${action}" class="${className}" ${attributes}>${label}</button>`;
@@ -78,7 +78,7 @@ function quizCard(state) {
 }
 
 export function renderHanzi(state, garden) {
-  return `<section class="hanzi-page"><div class="page-heading"><div><div class="eyebrow"><span></span>字词基础 · 汉字小天地</div><h1>汉字笔画与结构<span class="heading-flower">✿</span></h1><p>认一笔，拆一拆，发现汉字的样子。每个小节都可以直接开始。</p></div></div>
+  return `<section class="hanzi-page"><div class="page-heading learning-heading"><div class="learning-heading-copy"><div class="eyebrow"><span></span>字词基础 · 汉字小天地</div><h1>汉字笔画与结构<span class="heading-flower">✿</span></h1><p>认一笔，拆一拆，发现汉字的样子。每个小节都可以直接开始。</p></div><div class="learning-heading-actions">${pinyinToggle('hz', state)}</div></div>
     <nav class="play-selector" aria-label="汉字学习小节"><div class="play-mode-buttons">${hanziCategories.map(category => control('category', `${icon(category.icon)}${category.name}`, `data-id="${category.id}" title="${category.description}" aria-pressed="${state.category === category.id && state.view === 'learn'}"`, `hz-category play-mode ${state.category === category.id && state.view === 'learn' ? 'selected' : ''}`)).join('')}</div></nav>
     ${learningTools('hz', state)}
     <div class="hz-layout"><div>${state.view === 'quiz' && state.round ? quizCard(state) : learningCard(state)}</div><aside class="hz-sidebar">

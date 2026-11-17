@@ -87,10 +87,10 @@ test('所有语文主题的拼音辅助开关与汉字页样式和开关行为�
     const toggle = page.locator('[data-action="ct-reading"]');
     expect(await toggleStyle(toggle), topic.name).toEqual(reference);
     await toggle.click();
-    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    await expect(toggle).toHaveAttribute('aria-checked', 'false');
     await expect(page.locator('.chinese-topic ruby')).toHaveCount(0);
     await toggle.click();
-    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await expect(toggle).toHaveAttribute('aria-checked', 'true');
   }
 });
 

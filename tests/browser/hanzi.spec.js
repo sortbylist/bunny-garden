@@ -180,7 +180,7 @@ test('新增笔顺、拼音辅助和30题轮次可保存，切换题量不重置
   await page.locator('[data-action="hz-length"][data-value="20"]').click();
   await page.reload();
   expect((await stored(page)).hanzi.round.questions).toEqual(questions);
-  await expect(page.locator('[data-action="hz-reading"]')).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('[data-action="hz-reading"]')).toHaveAttribute('aria-checked', 'false');
   await page.locator('[data-action="hz-reading"]').click();
   await answerCurrent(page);
   expect((await stored(page)).hanzi.round.responses[0].correct).toBe(true);
