@@ -51,7 +51,7 @@ test('头像一致，昵称保存且按文本显示，菜单和成长花园访�
   await page.locator('[data-action="skip"]').click();
   await page.locator('.my-menu-toggle').click();
   await page.locator('.my-menu [data-action="mode"][data-id="mistakes"]').click();
-  await expect(page.locator('.learning-main>.section-title h2')).toContainText('错题本');
+  await expect(page.locator('.learning-main')).toHaveAttribute('aria-label', '错题本');
   await expect(page.locator('.my-menu')).not.toHaveAttribute('open', '');
 });
 

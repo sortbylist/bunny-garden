@@ -24,7 +24,7 @@ test('语文各页都有成长花园，只显示本页错题本和进度', async
   await expect(review).toHaveText('拼音错题本（1）');
   await expect(review).toBeEnabled();
   await review.click();
-  await expect(page.locator('.learning-main>.section-title')).toContainText('错题本');
+  await expect(page.locator('.learning-main')).toHaveAttribute('aria-label', '错题本');
 
   await selectTopic(page, '汉字笔画与结构');
   await expect(garden).toHaveCount(1);
@@ -102,7 +102,7 @@ test('自然拼读的个人入口移入成长花园，错题与语文隔离且�
   await expect(review).toHaveText('错题本（0）');
   await expect(review).toBeDisabled();
   await garden.locator('[data-id="records"]').click();
-  await expect(page.locator('.ph-section-title h2')).toHaveText('学习记录');
+  await expect(page.locator('.ph-main')).toHaveAttribute('aria-label', '学习记录');
   await expect(page.locator('.ph-main [data-id="review"]')).toBeDisabled();
   expect(await page.locator('.ph-main [data-id="review"] svg').innerHTML()).toBe(reviewGraphic);
   await expect(garden).toBeVisible();

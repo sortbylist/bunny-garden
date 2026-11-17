@@ -185,8 +185,8 @@ export function createPhonicsView({ redraw, notify, haltOtherAudio, renderGarden
     persist();
     return `<div class="phonics-page"><section class="ph-hero"><div><div class="eyebrow">ENGLISH GARDEN</div><h1>让字母，变成会读的词<span>✿</span></h1><p>听见声音，发现规律。从一个小词，走进一个小故事。</p><div class="ph-tags"><span>听一听</span><span>拼一拼</span><span>读故事</span></div></div><div class="ph-hero-letters" aria-hidden="true"><span>sh</span><span>ee</span><span>p</span><small>small steps, big discoveries</small></div></section>
       <nav class="ph-modes" aria-label="自然拼读学习方式">${phonicsModes.filter(entry => lessonModes.includes(entry.id)).map(entry => control('mode', `${icon(entry.icon)}${entry.name}`, `data-id="${entry.id}" aria-pressed="${state.mode === entry.id}"`, `ph-mode ${state.mode === entry.id ? 'selected' : ''}`)).join('')}</nav>
-      <div class="ph-layout"><div class="ph-main">
-      <div class="ph-section-title"><div><h2>${mode}</h2>${currentSection ? `<p class="ph-current-section">${escape(currentSection)}</p>` : ''}</div><span>自评会读 ${state.known.length} 个</span></div>
+      <div class="ph-layout"><div class="ph-main" role="region" tabindex="-1" aria-label="${mode}">
+      ${currentSection ? `<p class="ph-current-section">${escape(currentSection)}</p>` : ''}
       ${state.mode !== 'records' ? `<div class="ph-controls">${quizModes.includes(state.mode) && state.mode !== 'diagnostic' ? `<label for="ph-length-select">每轮<select id="ph-length-select" data-ph-setting="length">${[5, 10, 20].map(length => `<option ${length === state.length ? 'selected' : ''}>${length}</option>`).join('')}</select></label>` : ''}${control('restart', `${icon('refresh')}重新开始`, '', 'ph-button compact')}</div>` : ''}
       ${confirmRestart ? `<section class="ph-confirm" role="group" aria-label="确认重新开始"><p>重新开始当前轮次？收藏、错题和以往记录会保留。</p><div class="ph-actions">${control('cancel-restart', '保留当前进度')}${control('confirm-restart', '确认重新开始', '', 'ph-button primary')}</div></section>` : ''}
       ${state.mode === 'learn' ? lessonIntro() : ''}${body}
@@ -291,8 +291,7 @@ export function createPhonicsView({ redraw, notify, haltOtherAudio, renderGarden
     }
     persist(); redraw();
     if (action === 'lesson' || action === 'mode') {
-      const heading = document.querySelector('.ph-section-title h2');
-      if (heading) { heading.tabIndex = -1; heading.focus({ preventScroll: true }); }
+      document.querySelector('.ph-main')?.focus({ preventScroll: true });
     }
     return true;
   }

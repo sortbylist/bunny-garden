@@ -22,6 +22,7 @@ for (const topic of chineseTopics) {
     await page.goto('/');
     await page.locator('[data-action="known"]').click();
     await selectTopic(page, topic.name);
+    await expect(page.locator('.learning-main > .section-title')).toHaveCount(0);
     await expect(page).toHaveTitle(`${topic.name} · 小兔学习乐园`);
     for (const category of topic.categories) {
       await page.locator(`[data-action="ct-category"][data-id="${category.id}"]`).click();

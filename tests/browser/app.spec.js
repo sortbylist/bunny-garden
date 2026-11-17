@@ -33,7 +33,9 @@ test('所有练习方式可进入，随机范围不重复', async ({ page }) => 
   const modes = ['random', 'tones', 'listen', 'audio', 'blend', 'hanzi', 'pinyin', 'confusing', 'rules', 'match', 'challenge', 'favorites'];
   for (const id of modes) {
     await chooseMode(page, id);
-    await expect(page.locator('.learning-main>.section-title h2')).not.toBeEmpty();
+    await expect(page.locator('.learning-main')).toHaveAttribute('aria-label', /.+/);
+    await expect(page.locator('.learning-main>.section-title')).toHaveCount(0);
+    await expect(page.locator('.learning-main > section').first()).toBeVisible();
     await expect(page.locator('dialog')).not.toBeVisible();
   }
   await chooseMode(page, 'random');

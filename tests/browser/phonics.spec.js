@@ -80,7 +80,9 @@ test('全部玩法、共读答案、课次跳转和缺失语音状态可用', as
   await openEnglish(page);
   for (const id of ['random', 'meaning', 'spelling', 'rules', 'listen', 'favorites', 'records']) {
     await mode(page, id);
-    await expect(page.locator('.ph-section-title h2')).not.toBeEmpty();
+    await expect(page.locator('.ph-main')).toHaveAttribute('aria-label', /.+/);
+    await expect(page.locator('.ph-section-title')).toHaveCount(0);
+    await expect(page.locator('.ph-main > section')).not.toHaveCount(0);
   }
   await mode(page, 'listen');
   await expect(page.locator('.garden-links [data-id="review"]')).toBeDisabled();

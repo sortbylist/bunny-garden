@@ -16,7 +16,7 @@ for (const topic of topics) {
     await page.goto('/');
     await selectTopic(page, topic.name);
     const first = topic.lessons[0];
-    await expect(page.locator('.learning-main > .section-title')).toContainText('阅读学习');
+    await expect(page.locator('.learning-main > .section-title')).toHaveCount(0);
     await expect(page.locator('.ct-reading-passage h4')).toHaveText(first.title);
     await expect(page.locator('.ct-reading-passage li')).toHaveCount(first.reading.passage.paragraphs.length);
     await expect(page.locator('.ct-reading-evidence')).toHaveCount(0);

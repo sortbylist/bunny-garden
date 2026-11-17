@@ -35,8 +35,13 @@
 .phonics-page .ph-alphabet-grid b {
   font-size: 28px;
 }
+.pinyin-map .letter-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(76px, 100%), 1fr));
+}
 .letter-grid .letter-tile {
   font-size: 22px;
+  white-space: nowrap;
+  overflow-wrap: normal;
 }
 .match-columns .match-tile {
   font-size: 24px;

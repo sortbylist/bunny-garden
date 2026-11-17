@@ -202,7 +202,7 @@ function learningPage() {
   }
   return `<section class="page-heading"><div><div class="eyebrow"><span></span>语文的第一站 · PINYIN GARDEN</div><h1>和拼音交个朋友吧<span class="heading-flower">✿</span></h1><p>听一听，读一读。每认识一个拼音，都是小小的进步！</p></div><div class="heading-sticker">${icon('sprout')}<span>今天也要<br><b>快乐生长</b></span></div></section>
     ${modePicker()}
-    <div class="learning-layout"><div class="learning-main"><div class="section-title"><h2>${icon(mode.icon)}${mode.name}</h2><span>${studyModes.includes(state.mode) ? '不着急，按自己的节奏来' : mode.group}</span></div>
+    <div class="learning-layout"><div class="learning-main" role="region" aria-label="${mode.name}">
       ${controls()}
       ${studyModes.includes(state.mode) ? studyCard(value) : state.mode === 'tones' && !state.tonePractice ? tonesCard() : state.mode === 'match' ? matchCard(value) : quizCard(value)}
       ${studyModes.includes(state.mode) ? studyGrid(value) : '<div class="gentle-note">' + icon('leaf') + '答错也没关系，再听一次、再试一次，就是进步。</div>'}

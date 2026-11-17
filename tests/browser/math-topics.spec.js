@@ -28,6 +28,7 @@ test('数学复用语文的学习卡、练习选项、布局和成长花园', as
   await subject(page, 'math');
   for (const topic of mathTopics) {
     await selectTopic(page, topic.name, 'math');
+    await expect(page.locator('.learning-main > .section-title')).toHaveCount(0);
     expect(await paint(page.locator('.ct-lesson'))).toEqual(card);
     expect(await paint(page.locator('.play-mode.selected'))).toEqual(mode);
     expect(await paint(page.locator('.growth-card'))).toEqual(garden);

@@ -87,7 +87,7 @@ const paths = {
   pen: '<path d="m4 16 12-12a3 3 0 0 1 4 4L8 20l-5 1 1-5Zm9-9 4 4"/>',
   link: '<path d="m9 15 6-6m-5-3 2-2a5 5 0 0 1 7 7l-3 3m-2 4-2 2a5 5 0 0 1-7-7l3-3"/>',
   flag: '<path d="M5 22V3c5-5 9 5 15 0v10c-6 5-10-5-15 0"/>',
-  refresh: '<path d="M20 7v5h-5M4 17v-5h5"/><path d="M6 6a8 8 0 0 1 14 6M4 12a8 8 0 0 0 14 6"/>',
+  refresh: '<path d="M3 12a9 9 0 1 1 2.64 6.36L3 16m0 0v5m0-5h5"/>',
   grid: '<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>',
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v1"/>',
