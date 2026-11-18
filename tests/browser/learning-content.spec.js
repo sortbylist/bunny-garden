@@ -95,18 +95,18 @@ test('所有语文主题的拼音辅助开关与汉字页样式和开关行为�
 });
 
 for (const width of [1440, 820, 390, 320]) {
-  test(`三科 ${width}px 短词卡片字号足够，长段落字号保持且无横向溢出`, async ({ page }) => {
+  test(`三科 ${width}px 学习字号适度，长段落字号保持且无横向溢出`, async ({ page }) => {
     await page.setViewportSize({ width, height: 1000 });
     await page.goto('/');
-    await expect(page.locator('.letter-tile').first()).toHaveCSS('font-size', '22px');
-    await expect(page.locator('.example-tag')).toHaveCSS('font-size', '22px');
-    const minSize = width <= 600 ? 22 : 24;
+    await expect(page.locator('.letter-tile').first()).toHaveCSS('font-size', '20px');
+    await expect(page.locator('.example-tag')).toHaveCSS('font-size', '20px');
+    const cardSize = width <= 600 ? 16 : 18;
     await selectTopic(page, '词语积累与分类');
     for (const category of ['people', 'animals', 'plants', 'school', 'daily', 'food', 'transport', 'weather', 'places']) {
       await page.locator(`[data-action="ct-category"][data-id="${category}"]`).click();
-      const sizes = await page.locator('.ct-lesson-list .learning-token').evaluateAll(elements => elements.map(element => parseFloat(getComputedStyle(element).fontSize)));
+      const sizes = await page.locator('.ct-lesson-list .hz-chip').evaluateAll(elements => elements.map(element => parseFloat(getComputedStyle(element).fontSize)));
       expect(sizes.length).toBeGreaterThan(0);
-      expect(Math.min(...sizes)).toBeGreaterThanOrEqual(minSize);
+      expect([...new Set(sizes)]).toEqual([cardSize]);
       expect(await overflow(page)).toBe(false);
     }
     await expect(page.locator('.ct-lesson-intro > p')).toHaveCSS('font-size', width <= 600 ? '14px' : '15px');
@@ -117,30 +117,30 @@ for (const width of [1440, 820, 390, 320]) {
     await selectTopic(page, '汉字笔画与结构');
     await page.locator('[data-action="hz-category"][data-id="radicals"]').click();
     await page.locator('[data-action="hz-lesson"][data-id="radical-鱼"]').click();
-    await expect(page.locator('.hz-item-list .learning-glyph').first()).toHaveCSS('font-size', width <= 600 ? '28px' : '30px');
+    await expect(page.locator('.hz-item-list .hz-chip').first()).toHaveCSS('font-size', `${cardSize}px`);
     expect(await overflow(page)).toBe(false);
     if (width === 1440 || width === 320) await page.screenshot({ path: `artifacts/content-expansion/radicals-${width}.png`, fullPage: true });
     await chooseSubject(page, 'math');
     await selectTopic(page, mathTopics[1].name, 'math');
     await page.locator('[data-action="ct-category"][data-id="mental"]').click();
     await page.locator('[data-action="ct-start"][data-id="mental"]').click();
-    const mathSizes = await page.locator('.ct-quiz .learning-token').evaluateAll(elements => elements.map(element => parseFloat(getComputedStyle(element).fontSize)));
+    const mathSizes = await page.locator('.ct-quiz .hz-option').evaluateAll(elements => elements.map(element => parseFloat(getComputedStyle(element).fontSize)));
     expect(mathSizes.length).toBeGreaterThan(0);
-    expect(Math.min(...mathSizes)).toBeGreaterThanOrEqual(minSize);
+    expect([...new Set(mathSizes)]).toEqual([width <= 600 ? 16 : 18]);
     expect(await overflow(page)).toBe(false);
     await chooseSubject(page, 'english');
-    await expect(page.locator('.ph-word-tile').first()).toHaveCSS('font-size', `${minSize}px`);
+    await expect(page.locator('.ph-word-tile').first()).toHaveCSS('font-size', `${cardSize}px`);
     await expect(page.locator('.ph-small').first()).toHaveCSS('font-size', '13px');
     expect(await overflow(page)).toBe(false);
     if (width === 1440 || width === 320) await page.screenshot({ path: `artifacts/content-expansion/english-${width}.png`, fullPage: true });
     await chooseSubject(page, 'chinese');
     await selectTopic(page, '拼音学习');
     await chooseMode(page, 'tones');
-    await expect(page.locator('.tone-character').first()).toHaveCSS('font-size', '22px');
-    await expect(page.locator('.neutral-tone-examples button').first()).toHaveCSS('font-size', '22px');
+    await expect(page.locator('.tone-character').first()).toHaveCSS('font-size', '20px');
+    await expect(page.locator('.neutral-tone-examples button').first()).toHaveCSS('font-size', '20px');
     expect(await overflow(page)).toBe(false);
     await chooseMode(page, 'match');
-    await expect(page.locator('.match-tile.pinyin').first()).toHaveCSS('font-size', `${minSize}px`);
+    await expect(page.locator('.match-tile.pinyin').first()).toHaveCSS('font-size', width <= 600 ? '20px' : '22px');
     expect(await overflow(page)).toBe(false);
   });
 }

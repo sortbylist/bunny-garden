@@ -1,6 +1,7 @@
 import './style.css';
 import './personal.css';
 import './learning-ui.css';
+import { observeReadingRows } from './reading-layout.js';
 import { basics, groups, modes, playModes, modeSections, subjects, vocabulary, marked, confusionSets, toneExamples, neutralToneExamples } from './data.js';
 import { shuffle, studyPool, learningGroups, nextStudyGroup, visitQuestion, nextUnfinishedQuestion, createRound, recordAnswer, roundStats, loadState, defaultState } from './engine.js';
 import { icon, bunny } from './icons.js';
@@ -45,6 +46,7 @@ let activeRewardHelp = null;
 let rewardDetailReturn = null;
 let disposeRewardViewer = () => {};
 let disposeRewardHelp = () => {};
+let disposeReadingRows = () => {};
 initializeRewards(state);
 state.nickname = normalizeNickname(state.nickname) || '小小探索家';
 const allItems = [...basics, ...vocabulary];
@@ -143,6 +145,7 @@ function currentItem() {
 }
 
 function render() {
+  disposeReadingRows();
   poetryAudio.stop();
   navigation.capture();
   state.hanzi ||= normalizeHanziState(null);
@@ -181,6 +184,7 @@ function render() {
       <main id="main-content" tabindex="-1">${topic ? renderTopic(topic, state.topics[topic.id], progressCard()) : isHanzi ? renderHanzi(state.hanzi, progressCard()) : state.subject === 'chinese' ? learningPage() : state.subject === 'english' ? phonics.render() : comingSoon(subject)}</main>
       <footer>用一点好奇心，收获一点新知识。${icon('heart')}<span>小兔陪你慢慢学</span></footer>
     </div>`;
+  disposeReadingRows = observeReadingRows(app);
   if (focusData && !dialog.open) {
     const candidates = [...app.querySelectorAll('[data-action]')];
     const replacement = candidates.find(element => element.dataset.action === focusData.action && element.dataset.id === focusData.id && element.dataset.value === focusData.value && element.dataset.index === focusData.index && !element.disabled && element.getClientRects().length);

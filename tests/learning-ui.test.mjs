@@ -1,10 +1,34 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { learningTokenClass, learningTools, pinyinToggle } from '../src/learning-ui.js';
+import { learningCardFooter, learningTokenClass, learningTools, pinyinToggle } from '../src/learning-ui.js';
 import { readingHints } from '../src/chinese-reading.js';
 import { vocabularyEntries } from '../src/vocabulary-data.js';
 
-test('短词、单字和单词使用学习字号，长句和说明保留原字号', () => {
+test('学习卡复用带图标的轻量操作区，翻页独立且保留边界与认识状态', () => {
+  for (const prefix of ['ct', 'hz']) {
+    for (const known of [true, false]) {
+      const html = learningCardFooter(prefix, { known, category: 'strokes', index: 0, total: 3 });
+      const [actions, navigation] = html.split('<div class="hz-actions hz-card-footer');
+      assert.match(actions, /class="hz-actions mastery-actions"/);
+      assert.ok(actions.includes(`data-action="${prefix}-known" class="soft-button mint" aria-pressed="${known}"`));
+      assert.ok(actions.includes(known ? '已经认识啦 ✓' : '我认识啦'));
+      assert.ok(actions.includes(`data-action="${prefix}-start" data-id="strokes" class="soft-button"`));
+      assert.match(actions, /练练这一节/);
+      assert.equal((actions.match(/<svg/g) || []).length, 2);
+      assert.match(navigation, /card-navigation/);
+      assert.ok(navigation.includes(`data-action="${prefix}-previous" class="outline-button previous" disabled`));
+      assert.ok(navigation.includes(`data-action="${prefix}-next" class="outline-button" >`));
+      assert.equal((navigation.match(/<svg/g) || []).length, 2);
+    }
+    const last = learningCardFooter(prefix, { known: false, category: 'strokes', index: 2, total: 3 });
+    assert.ok(last.includes(`data-action="${prefix}-previous" class="outline-button previous" >`));
+    assert.ok(last.includes(`data-action="${prefix}-next" class="outline-button" disabled`));
+    const only = learningCardFooter(prefix, { known: false, category: 'strokes', index: 0, total: 1 });
+    assert.equal((only.match(/disabled/g) || []).length, 2);
+  }
+});
+
+test('短词、单字和单词保留内容标记，长句和说明不标记', () => {
   for (const text of ['医生', '长颈鹿', '馒头', '图书馆', '12', '24 ÷ 6', 'strawberry', '/ɜː/']) {
     assert.match(learningTokenClass(text), /learning-token/, text);
   }

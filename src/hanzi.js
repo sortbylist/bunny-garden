@@ -6,7 +6,7 @@ import { grantRewards } from './rewards.js';
 import { readingText } from './chinese-reading.js';
 import { practiceLengths } from './chinese-practice.js';
 import { icon } from './icons.js';
-import { learningPosition, learningTokenClass, learningTools, pinyinToggle } from './learning-ui.js';
+import { learningCardFooter, learningPosition, learningTokenClass, learningTools, pinyinToggle } from './learning-ui.js';
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 const control = (action, label, attributes = '', className = 'outline-button') => `<button type="button" data-action="hz-${action}" class="${className}" ${attributes}>${label}</button>`;
@@ -53,8 +53,7 @@ function learningCard(state) {
     <div class="hz-card-heading"><h2>${hanziCategories.find(item => item.id === state.category).name}</h2>${learningPosition(index, items.length)}</div>
     <div class="hz-item-list" aria-label="选择学习内容">${items.map(item => control('lesson', `${escape(item.title)}${state.known.includes(item.id) ? ' ✓' : ''}`, `data-id="${item.id}" aria-pressed="${item.id === lesson.id}"`, `hz-chip${learningTokenClass(item.title)}`)).join('')}</div>
     ${lessonContent(state, lesson)}
-    <div class="hz-actions hz-card-footer">${control('previous', '上一个', index === 0 ? 'disabled' : '')}${control('known', state.known.includes(lesson.id) ? '已经认识啦 ✓' : '我认识啦', `aria-pressed="${state.known.includes(lesson.id)}"`, 'soft-button mint')}${control('next', '下一个', index === items.length - 1 ? 'disabled' : '')}</div>
-    <div class="hz-actions">${control('start', '练练这一节', `data-id="${state.category}"`, 'solid-button')}</div>
+    ${learningCardFooter('hz', { known: state.known.includes(lesson.id), category: state.category, index, total: items.length })}
   </section>`;
 }
 

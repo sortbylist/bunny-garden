@@ -23,7 +23,8 @@
 .hz-actions { justify-content: center; margin: 18px 0; }
 .hz-actions button { min-height: 44px; }
 .hz-stroke-list { justify-content: center; margin: 24px 0 12px; }
-.hz-card-footer { border-top: 1px solid var(--border); padding-top: 20px; margin-top: 24px; justify-content: space-between; }
+.hz-card .mastery-actions { margin: 0; padding: 22px 0; }
+.hz-card .card-navigation { margin: 0; border-top: 1px dashed #e5d8df; padding: 18px 0 22px; justify-content: space-between; }
 .hz-note { background: #f5f7ed; padding: 18px; border-radius: 16px; line-height: 1.9; font-size: 15px; }
 .hz-note p:last-child { margin-bottom: 0; }
 .hz-examples { display: flex; flex-wrap: wrap; justify-content: center; gap: 22px; margin: 24px 0; }

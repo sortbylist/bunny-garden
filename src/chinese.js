@@ -10,7 +10,7 @@ import { practiceLengths } from './chinese-practice.js';
 import { icon, bunny } from './icons.js';
 import { literacySupplement } from './chinese-literacy.js';
 import { readingPassage } from './reading-view.js';
-import { learningPosition, learningTokenClass, learningTools, pinyinToggle } from './learning-ui.js';
+import { learningCardFooter, learningPosition, learningTokenClass, learningTools, pinyinToggle } from './learning-ui.js';
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 const control = (action, label, attributes = '', style = 'outline-button') => `<button type="button" class="${style}" data-action="ct-${action}" ${attributes}>${label}</button>`;
@@ -47,7 +47,6 @@ function learningCard(topic, state) {
   const lessons = topic.lessons.filter(item => item.category === state.category);
   const lesson = lessons.find(item => item.id === state.lessonId);
   const index = lessons.indexOf(lesson);
-  const sentence = isSentenceTopic(topic);
   const literacy = isLiteracyTopic(topic);
   const polished = isPolishedTopic(topic);
   const category = topic.categories.find(item => item.id === state.category);
@@ -62,9 +61,7 @@ function learningCard(topic, state) {
     ${polished && !literacy ? `<div class="section-title ct-example-heading"><h4>${icon('book')}${isMathTopic(topic) ? '看一看算例' : '读一读例句'}</h4><span>${isMathTopic(topic) ? '想清方法，再动笔算' : '读出意思，也读出语气'}</span></div>` : ''}
     <ul class="ct-examples">${lesson.examples.map(example => `<li>${read(example)}</li>`).join('')}</ul>
     <div class="hz-note ct-activity"><strong class="ct-activity-heading">${polished ? icon('pen') : ''}说一说，试一试</strong><p>${read(lesson.task)}</p>${activityCard(lesson, state)}</div>
-    ${polished ? `<div class="hz-actions mastery-actions">${control('known', `${icon('check')}${state.known.includes(lesson.id) ? '已经认识啦 ✓' : '我认识啦'}`, `aria-pressed="${state.known.includes(lesson.id)}"`, 'soft-button mint')}${control('start', `${icon('pen')}练练这一节`, `data-id="${state.category}"`, 'soft-button')}</div>` : ''}
-    <div class="hz-actions hz-card-footer ${polished ? 'card-navigation' : ''}">${control('previous', `${sentence ? icon('chevron') : ''}上一个`, index === 0 ? 'disabled' : '', 'outline-button previous')}${polished ? '' : control('known', state.known.includes(lesson.id) ? '已经认识啦 ✓' : '我认识啦', `aria-pressed="${state.known.includes(lesson.id)}"`, 'soft-button mint')}${control('next', `下一个${sentence ? icon('chevron') : ''}`, index === lessons.length - 1 ? 'disabled' : '')}</div>
-    ${polished ? '' : `<div class="hz-actions">${control('start', '练练这一节', `data-id="${state.category}"`, 'solid-button')}</div>`}</section>
+    ${learningCardFooter('ct', { known: state.known.includes(lesson.id), category: state.category, index, total: lessons.length })}</section>
     ${polished ? `<section class="pinyin-map ct-sentence-lessons" aria-label="本节学习卡"><div class="section-title"><h2>${icon('grid')}本节学习卡</h2><span>每一张都可以直接开始</span></div>${picker}</section>` : ''}`;
 }
 
