@@ -6,6 +6,11 @@ export function learningCardFooter(prefix, { known, category, index, total }) {
     <div class="hz-actions hz-card-footer card-navigation"><button type="button" data-action="${prefix}-previous" class="outline-button previous" ${index === 0 ? 'disabled' : ''}>${icon('chevron')}上一个</button><button type="button" data-action="${prefix}-next" class="outline-button" ${index === total - 1 ? 'disabled' : ''}>下一个${icon('chevron')}</button></div>`;
 }
 
+export function learningAnswerLabel(index, content) {
+  const label = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[index] ?? index + 1;
+  return `<span class="option-letter" aria-hidden="true">${label}</span><span class="option-content">${content}</span>`;
+}
+
 export function learningPosition(index, total, { practice = false } = {}) {
   if (!total) return '';
   return `<span class="card-position learning-position" aria-label="当前${practice ? '练习' : '学习'}位置">第 <b>${index + 1}</b> / ${total} ${practice ? '题' : '项'}</span>`;
@@ -22,8 +27,8 @@ export function pinyinToggle(prefix, state) {
   return `<button type="button" data-action="${prefix}-reading" class="reading-toggle" role="switch" aria-label="拼音辅助" aria-checked="${state.showPinyin}"><span>拼音</span><span class="reading-toggle-track" aria-hidden="true"></span></button>`;
 }
 
-export function learningTools(prefix, state, { polished = false } = {}) {
+export function learningTools(prefix, state) {
   const lengths = state.view === 'quiz' ? `<span>新一轮题数：</span><div class="ct-lengths">${practiceLengths.map(length => `<button type="button" data-action="${prefix}-length" class="hz-chip" data-value="${length}" aria-pressed="${state.practiceLength === length}">${length} 题</button>`).join('')}</div><small>切换题数用于下一轮，当前题目会保留。</small>` : '';
   if (!lengths) return '';
-  return `<div class="ct-tools ${polished ? 'controls' : ''}" aria-label="学习辅助">${lengths}</div>`;
+  return `<div class="ct-tools controls" aria-label="学习辅助">${lengths}</div>`;
 }

@@ -23,6 +23,7 @@ import { renderTopic, handleTopicAction } from './chinese.js';
 import { createPhonicsView } from './phonics.js';
 import { createNavigation, featureGroups } from './navigation.js';
 import { learningPosition, learningTokenClass } from './learning-ui.js';
+import './ui-theme.css';
 
 const app = document.querySelector('#app');
 const dialog = document.querySelector('#dialog');
@@ -79,6 +80,7 @@ const navigation = createNavigation((action, id) => {
   halt();
   state.settings.continuous = false;
   render();
+  window.scrollTo({ top: 0, behavior: 'instant' });
 });
 
 function persist() {
@@ -339,7 +341,7 @@ function quizCard(round) {
       const status = answered && text === question.answer ? 'correct-answer' : round.selected === text && wrong ? 'wrong-answer' : '';
       return typeof option === 'string' ? `<button class="answer-option${learningTokenClass(text)} ${status}" data-action="answer" data-value="${escape(text)}" ${answered ? 'disabled' : ''}><span class="option-letter">${'ABCD'[index]}</span><span>${escape(text)}</span>${status === 'correct-answer' ? icon('check') : ''}</button>` : `<div class="audio-option ${status}">${button('sound', `试听 ${'ABCD'[index]}`, 'sound', 'audio-choice-play', `data-sound="${option.sound}"`)}${button('answer', `选 ${'ABCD'[index]}`, '', 'audio-choice-pick', `data-value="${escape(text)}" ${answered ? 'disabled' : ''}`)}</div>`;
     }).join('')}</div>
-    <div class="answer-feedback ${answered ? 'success' : wrong ? 'retry' : ''}" role="status">${answered ? `${icon(round.selected === null ? 'leaf' : 'check')}<div><strong>${round.selected === null ? '先认识答案，下次再试试' : '答对啦，你做得很棒！'}</strong><p>${escape(question.explanation)}</p></div>` : wrong ? `${icon('refresh')}<div><strong>差一点点，再试一次吧！</strong><p>可以再听一听，或者点“看看答案”。首次作答已经记下啦。</p></div>` : `${icon('leaf')}<span>想一想，再选出你的答案。</span>`}</div>
+    <div class="answer-feedback ${answered ? round.selected === null ? 'warning' : 'success' : wrong ? 'retry warning' : ''}" role="status">${answered ? `${icon(round.selected === null ? 'leaf' : 'check')}<div><strong>${round.selected === null ? '先认识答案，下次再试试' : '答对啦，你做得很棒！'}</strong><p>${escape(question.explanation)}</p></div>` : wrong ? `${icon('refresh')}<div><strong>差一点点，再试一次吧！</strong><p>可以再听一听，或者点“看看答案”。首次作答已经记下啦。</p></div>` : `${icon('leaf')}<span>想一想，再选出你的答案。</span>`}</div>
     ${answered && question.audio?.word && !hasAudio({ word: question.audio.word }) && question.audio.sounds?.length > 1 ? '<p class="small-note">这个词一个字一个字读，跟着一起拼一拼。</p>' : ''}
     <div class="quiz-actions">${button('favorite-question', state.favorites.includes(question.itemId) ? '已收藏' : '收藏知识点', 'heart', 'text-button', question.itemId ? '' : 'hidden')}${answered ? button('play-question', '听正确读音', 'sound', 'text-button') : button('skip', wrong ? '看看答案' : '先跳过', '', 'text-button')}${button('next-question', nextUnfinishedQuestion(round) < 0 ? '看看本轮收获' : '下一题', 'chevron', 'solid-button next', answered ? '' : 'disabled')}</div>
   </section>`;
@@ -754,7 +756,7 @@ function handleAction(event) {
   if (action === 'shuffle-favorites') { halt(); const value = session(); value.ids = shuffle(value.ids); value.index = 0; render(); toast('顺序打乱啦，来看看还认识谁。'); return; }
   if (action === 'subject') {
     if (!subjects.some(subject => subject.id === target.dataset.id)) return;
-    halt(); state.subject = target.dataset.id; mobileMenu = false; state.settings.continuous = false; render(); return;
+    halt(); state.subject = target.dataset.id; mobileMenu = false; state.settings.continuous = false; render(); window.scrollTo({ top: 0, behavior: 'instant' }); return;
   }
   if (action === 'collapse') {
     if (window.matchMedia('(max-width: 760px)').matches) mobileMenu = false;
@@ -762,7 +764,7 @@ function handleAction(event) {
     render(); return;
   }
   if (action === 'mobile-menu') { mobileMenu = !mobileMenu; render(); return; }
-  if (action === 'feature') { state.features[state.subject] = target.dataset.id; halt(); state.settings.continuous = false; render(); return; }
+  if (action === 'feature') { state.features[state.subject] = target.dataset.id; halt(); state.settings.continuous = false; render(); window.scrollTo({ top: 0, behavior: 'instant' }); return; }
   if (action === 'map-group') { if (learningGroups(state.mode).some(group => group.id === target.dataset.id)) changeScope('group', target.dataset.id); return; }
   if (action === 'map-word-scope') { if (availableWordScopes().some(scope => scope.id === target.dataset.id)) changeScope('wordScope', target.dataset.id); return; }
   if (action === 'next-section') {

@@ -1,7 +1,6 @@
 .chinese-topic { max-width: 1360px; margin: 0 auto; }
 .chinese-topic .hz-chip { font-size: 14px; text-align: left; line-height: 1.6; }
 .chinese-topic .hz-card h3 { font-size: 23px; line-height: 1.6; }
-.ct-examples { padding: 18px 18px 18px 38px; background: #fff2e7; border-radius: 16px; line-height: 2; font-size: 17px; }
 .ct-examples li + li { margin-top: 12px; }
 .ct-context { padding: 20px; border-left: 4px solid #b37b9b; background: #fff0f4; border-radius: 12px; }
 .chinese-topic .ct-context { font-size: 21px; line-height: 1.9; }
@@ -32,9 +31,6 @@
 .feature-bar .feature-tabs { min-width: 0; overflow-x: auto; }
 .feature-tab { flex-shrink: 0; }
 .feature-tabs.expanded { flex-wrap: wrap; }
-.ct-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 22px; }
-.ct-tools > span, .ct-tools > small { font-size: 13px; color: #715e6b; line-height: 1.8; }
-.ct-tools button { min-height: 44px; }
 .ct-lengths { display: flex; flex-wrap: wrap; gap: 8px; }
 .ct-lesson-list { max-height: 230px; overflow-y: auto; padding: 5px 2px; scrollbar-width: thin; }
 .chinese-topic ruby, .hanzi-page ruby { ruby-position: over; ruby-align: center; }
@@ -58,23 +54,14 @@
 .ct-sentence-topic .page-heading > div:first-child { min-width: 0; }
 .ct-sentence-topic h1 { overflow-wrap: anywhere; }
 .ct-sentence-topic .heading-sticker { flex-shrink: 0; }
-.ct-sentence-topic .learning-layout > *, .ct-sentence-topic .learning-aside > * { min-width: 0; }
-.ct-sentence-topic .ct-tools { margin-bottom: 18px; gap: 10px; }
-.ct-sentence-topic .ct-tools > small { flex-basis: 100%; font-size: 12px; color: #927b8a; }
-.ct-sentence-topic .ct-tools .hz-chip { min-width: 0; min-height: 40px; padding: 6px 10px; font-size: 12px; }
-.ct-sentence-topic .ct-tools [aria-pressed="true"] { color: #885470; }
-.ct-sentence-topic .ct-tools .hz-chip[aria-pressed="true"] { background: #f4dfeb; border-color: #cda4bc; box-shadow: 0 2px 0 #ddc2d2; }
-.ct-sentence-topic .ct-sentence-card { border: 1.5px solid #d9bfca; border-radius: var(--radius); background: #fffdfb; box-shadow: 0 5px 0 #eadddf; padding: 23px 27px 0; margin-bottom: 24px; }
-.ct-sentence-topic .card-topline h2, .ct-sentence-topic .quiz-top h2 { margin: 0; font-size: 12px; line-height: 1.8; }
-.ct-sentence-topic .card-position { flex-shrink: 0; font-size: 12px; }
 .ct-sentence-topic .ct-lesson-intro { padding: 32px 0 20px; }
 .ct-sentence-topic .ct-lesson-intro h3 { color: #97637f; font-size: 28px; text-align: center; margin-bottom: 18px; }
 .ct-sentence-topic .ct-lesson-intro > p { color: #7f6b78; line-height: 2.2; margin-bottom: 0; }
 .ct-example-heading { margin-bottom: 12px; }
 .ct-example-heading h4 { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #93778b; }
 .ct-example-heading h4 .icon { width: 17px; height: 17px; }
-.ct-sentence-topic .ct-examples { padding: 18px 20px 18px 38px; margin: 0 0 24px; border: 1px solid #eee7d7; background: #f8f5ec; color: #7f6b52; border-radius: 12px; font-size: 18px; line-height: 2.3; }
-.ct-sentence-topic .ct-activity { border: 1px solid #dce5d2; background: #f2f6ed; border-radius: 14px; padding: 20px; }
+.ct-examples { padding: 18px 20px 18px 38px; margin: 0 0 24px; color: #7f6b52; font-size: 18px; line-height: 2.3; }
+.ct-activity { padding: 20px; }
 .ct-activity-heading { display: flex; align-items: center; gap: 8px; color: #647f53; font-size: 15px; }
 .ct-activity-heading .icon { width: 18px; height: 18px; }
 .ct-sentence-topic .ct-draft-label { font-size: 14px; margin: 18px 0 10px; color: #64745b; }
@@ -107,41 +94,19 @@
 .ct-sentence-lessons .ct-lesson-list { gap: 10px; max-height: none; overflow: visible; padding: 0; }
 .ct-sentence-lessons .hz-chip { background: #fffdfb; border: 1.5px solid #e3d5de; border-bottom-width: 3px; border-radius: 12px; color: #866c7d; padding: calc(12px + var(--reading-space, 0px)) 16px 12px; }
 .ct-sentence-lessons .hz-chip[aria-pressed="true"] { background: #f9e7ee; border-color: #d8a9be; color: #93516f; }
-.ct-sentence-topic .learning-aside > .hz-card { padding: 20px; margin: 0; }
-.ct-sentence-topic .learning-aside > .hz-card h2 { font-size: 16px; color: #93778b; }
-.ct-sentence-topic .learning-aside > .hz-card p { font-size: 13px; line-height: 2; color: #897480; }
-.ct-sentence-topic .learning-aside progress { width: 100%; height: 12px; accent-color: #9f7897; }
-.ct-sentence-topic .learning-aside .hz-note { background: #f8f5ec; border: 1px solid #eee7d7; box-shadow: none; }
 .ct-sentence-topic .ct-quiz { padding-bottom: 22px; }
 .ct-sentence-topic .ct-context { margin: 24px 0 20px; border: 1px solid #efd6e0; background: #fff4f7; color: #97637f; border-radius: 14px; font-size: 22px; line-height: 2.2; }
 .ct-sentence-topic .ct-prompt { margin: 20px 0; font-size: 21px; text-align: center; line-height: 1.9; }
-.ct-sentence-topic .answer-option { display: flex; min-height: 72px; font-size: 17px; line-height: 1.9; padding: 14px; border: 1.5px solid #e3d5de; border-bottom-width: 4px; border-radius: 13px; background: #fffafc; }
-.ct-sentence-topic .answer-option.is-correct { background: #e4f0dc; border-color: #6c8a55; color: #3f5e2c; }
-.ct-sentence-topic .answer-option.is-wrong { background: #fff0e1; border-color: #ba8559; }
-.ct-sentence-topic .answer-option > span:last-child { min-width: 0; overflow-wrap: anywhere; }
-.ct-sentence-topic .option-letter { flex-shrink: 0; }
-.ct-sentence-topic .answer-feedback { display: block; padding: 16px; min-height: 64px; background: #f9f4f7; color: #897480; }
-.ct-sentence-topic .answer-feedback p { font-size: 14px; line-height: 2.2; }
-.ct-sentence-topic .answer-feedback.success { background: #eef5e7; color: #647f53; }
 .ct-sentence-topic .quiz-actions { margin-bottom: 0; padding-top: 18px; }
 .ct-sentence-topic .ct-result { padding: 24px; text-align: center; }
-.ct-sentence-topic .ct-result .bunny-scene { width: min(240px, 100%); height: 170px; display: block; margin: 0 auto 16px; }
 .ct-sentence-topic .ct-result h2 { color: #97637f; font-size: 24px; }
-@media (min-width: 1600px) {
-  .ct-sentence-topic .ct-sentence-card { padding-left: 35px; padding-right: 35px; }
-}
 @media (max-width: 760px) {
-  .ct-sentence-topic .ct-sentence-card { padding-left: 20px; padding-right: 20px; }
   .ct-sentence-topic .ct-lesson-intro { padding-top: 26px; }
   .ct-sentence-topic .ct-lesson-intro h3 { font-size: 24px; }
   .ct-sentence-topic .ct-activity { padding: 16px; }
-  .ct-sentence-topic .ct-tools { gap: 8px; }
-  .ct-sentence-topic .ct-tools > span { font-size: 12px; }
-  .ct-sentence-topic .ct-tools > small { font-size: 11px; }
 }
 @media (max-width: 440px) {
   .ct-poem { padding: 20px 8px; }
-  .ct-sentence-topic .ct-sentence-card { padding-left: 16px; padding-right: 16px; }
   .ct-sentence-topic .ct-lesson-intro h3 { font-size: 22px; }
   .ct-sentence-topic .ct-lesson-intro > p { font-size: 14px; }
   .ct-sentence-topic .ct-examples { padding: 14px 14px 14px 30px; font-size: 16px; }
@@ -151,18 +116,15 @@
   .ct-sentence-topic .ct-built { font-size: 18px; }
   .ct-sentence-topic .ct-context { padding: 14px; font-size: 19px; }
   .ct-sentence-topic .ct-prompt { font-size: 18px; }
-  .ct-sentence-topic .answer-option { font-size: 16px; gap: 10px; }
   .ct-sentence-topic .ct-sentence-lessons .hz-chip { width: 100%; }
   .ct-sentence-topic .hz-actions button { white-space: normal; }
 }
 @media (max-width: 600px) {
   .chinese-topic .hz-card h3 { font-size: 20px; }
   .chinese-topic .ct-context { font-size: 18px; }
-  .chinese-topic .hz-options { grid-template-columns: minmax(0, 1fr); }
   .ct-examples { font-size: 16px; }
   .ct-dictionary-demo { flex-direction: column; }
   .ct-dictionary-demo > svg { width: 65px; }
   .ct-dictionary-demo ol { width: 100%; }
-  .ct-tools { gap: 8px; }
   .ct-visual { padding: 12px; }
 }

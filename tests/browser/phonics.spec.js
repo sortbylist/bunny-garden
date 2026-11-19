@@ -10,6 +10,8 @@ async function openEnglish(page) {
 async function englishState(page) { return page.evaluate(() => JSON.parse(localStorage.getItem('bunny-phonics-gb-v1'))); }
 async function mode(page, id) { await page.locator(`${['review', 'favorites', 'records'].includes(id) ? '.garden-links' : '.ph-modes'} [data-id="${id}"]`).click(); }
 async function section(page, id) {
+  const toggle = page.locator('.ph-map-toggle');
+  if (await toggle.isVisible() && await toggle.getAttribute('aria-expanded') === 'false') await toggle.click();
   const button = page.locator(`.ph-map [data-id="${id}"]`);
   const group = button.locator('..');
   if (await group.getAttribute('open') === null) await group.locator('summary').click();
@@ -94,7 +96,8 @@ test('全部玩法、共读答案、课次跳转和缺失语音状态可用', as
   await page.locator('[data-action="ph-story-answer"][data-value="A cat"]').click();
   await expect(page.locator('.ph-feedback')).toContainText('理解正确');
   await section(page, 'lesson-14');
-  await expect(page.locator('.ph-feedback')).toBeEmpty();
+  await expect(page.locator('.ph-feedback')).toHaveText('读一读故事，再选择答案。');
+  await expect(page.locator('.ph-feedback')).not.toHaveClass(/success|warning/);
   await expect(page.locator('.ph-modes [data-id="reading"]')).toHaveAttribute('aria-pressed', 'true');
   await section(page, 'lesson-29');
   await mode(page, 'learn');

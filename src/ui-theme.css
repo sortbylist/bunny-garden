@@ -1,0 +1,436 @@
+:root {
+  --ui-surface: #fffdfb;
+  --ui-card-border: #d9bfca;
+  --ui-card-shadow: 0 5px 0 #eadddf;
+  --ui-card-radius: 22px;
+  --ui-card-padding: 23px;
+  --ui-card-inset: 27px;
+  --ui-sidebar-width: 272px;
+  --ui-layout-gap: 27px;
+  --ui-button-height: 44px;
+  --ui-button-radius: 11px;
+  --ui-button-text: #856077;
+  --ui-soft-background: #faf6f7;
+  --ui-soft-border: #e5dce1;
+  --ui-selected-background: #f4dfeb;
+  --ui-selected-border: #cda4bc;
+  --ui-selected-text: #885470;
+  --ui-example-background: #f8f5ec;
+  --ui-example-border: #eee7d7;
+  --ui-activity-background: #f2f6ed;
+  --ui-activity-border: #dce5d2;
+  --ui-feedback-background: #f9f4f7;
+  --ui-feedback-text: #796573;
+  --ui-success-background: #eef5e7;
+  --ui-success-text: #506b40;
+  --ui-warning-background: #fff1e3;
+  --ui-warning-text: #86612f;
+}
+
+.learning-layout,
+.phonics-page .ph-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--ui-sidebar-width);
+  gap: var(--ui-layout-gap);
+  align-items: start;
+}
+.learning-layout > *,
+.phonics-page .ph-layout > * {
+  min-width: 0;
+}
+.learning-aside,
+.phonics-page .ph-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 21px;
+  margin-top: 0;
+}
+
+.study-card,
+.quiz-card,
+.result-card,
+.chinese-topic .hz-card,
+.hanzi-page .hz-card,
+.phonics-page .ph-card,
+.phonics-page .ph-rule {
+  background: var(--ui-surface);
+  border: 1.5px solid var(--ui-card-border);
+  border-radius: var(--ui-card-radius);
+  box-shadow: var(--ui-card-shadow);
+  padding: var(--ui-card-padding) var(--ui-card-inset);
+  margin-bottom: 24px;
+}
+.chinese-topic .study-card,
+.hanzi-page .study-card,
+.phonics-page .ph-word-card,
+.study-card {
+  padding-bottom: 0;
+}
+.learning-aside > .hz-card {
+  padding: 20px;
+  margin: 0;
+}
+.hz-sidebar > .growth-card {
+  margin-bottom: 0;
+}
+.learning-aside > .hz-card h2 {
+  font-size: 16px;
+  color: #93778b;
+}
+.learning-aside > .hz-card p {
+  font-size: 13px;
+  line-height: 2;
+  color: #897480;
+}
+.learning-aside progress {
+  width: 100%;
+  height: 12px;
+  accent-color: #9f7897;
+}
+.learning-aside > .hz-card.hz-note {
+  background: var(--ui-example-background);
+  border: 1px solid var(--ui-example-border);
+  box-shadow: none;
+}
+.card-topline .category-badge,
+.quiz-top .category-badge,
+.phonics-page .ph-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 5px 10px;
+  border: 1px solid #efd6e0;
+  border-radius: 20px;
+  background: #f9e9ef;
+  color: #94637a;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.8;
+}
+.category-badge .icon {
+  width: 13px;
+  height: 13px;
+}
+.hanzi-page .study-card > .hz-demo {
+  margin-top: 32px;
+}
+.learning-lesson-map .hz-item-list {
+  margin-bottom: 0;
+}
+.result-card > .bunny-scene {
+  display: block;
+  width: min(240px, 100%);
+  height: 170px;
+  margin: 0 auto 16px;
+}
+
+.soft-button,
+.outline-button,
+.solid-button,
+.phonics-page .ph-button {
+  min-height: var(--ui-button-height);
+  border-radius: var(--ui-button-radius);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.phonics-page .ph-button {
+  padding: 10px 17px;
+  border: 1.5px solid #d9c6d2;
+  background: var(--ui-surface);
+  color: var(--ui-button-text);
+  font-weight: 600;
+  box-shadow: none;
+}
+.soft-button {
+  border-color: var(--ui-soft-border);
+  background: var(--ui-soft-background);
+}
+.solid-button,
+.phonics-page .ph-button.primary {
+  background: #936c88;
+  border-color: #805d76;
+  color: #fff;
+  box-shadow: 0 3px 0 #805d76;
+  text-shadow: none;
+}
+.solid-button:hover,
+.phonics-page .ph-button.primary:hover {
+  background: #805d76;
+}
+.phonics-page .ph-button.audio,
+.phonics-page .ph-button.saved {
+  background: var(--ui-soft-background);
+  border-color: var(--ui-soft-border);
+  color: var(--ui-button-text);
+}
+.phonics-page .ph-button > .icon {
+  width: 16px;
+  height: 16px;
+}
+.mastery-actions,
+.hz-card .mastery-actions,
+.phonics-page .ph-mastery {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 22px 0;
+}
+.card-navigation,
+.hz-card .card-navigation,
+.phonics-page .ph-word-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0;
+  padding: 18px 0 22px;
+  border-top: 1px dashed #e5d8df;
+}
+
+.answer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.answer-grid .answer-option {
+  display: flex;
+  justify-content: flex-start;
+  gap: 12px;
+  min-height: 72px;
+  padding: calc(14px + var(--reading-space, 0px)) 14px 14px;
+  background: #fffafc;
+  border: 1.5px solid #e3d5de;
+  border-bottom-width: 4px;
+  border-radius: 13px;
+  font-size: var(--learning-answer-size);
+  line-height: 1.8;
+  text-align: left;
+}
+.answer-option > .option-content {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ph-option > .option-content {
+  display: block;
+  min-width: 0;
+  height: auto;
+  border-radius: 0;
+  background: transparent;
+  font-size: inherit;
+}
+.answer-option > .option-letter {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  background: transparent;
+  border: 1px solid #e0d2dc;
+  border-radius: 8px;
+  color: #967b8d;
+  font-size: 11px;
+}
+.answer-grid .answer-option.correct-answer,
+.hz-options .answer-option.is-correct,
+.ph-options .answer-option.correct {
+  background: var(--ui-success-background);
+  border-color: #a4bd92;
+  color: var(--ui-success-text);
+  opacity: 1;
+}
+.answer-grid .answer-option.wrong-answer,
+.hz-options .answer-option.is-wrong,
+.ph-options .answer-option.incorrect {
+  background: var(--ui-warning-background);
+  border-color: #c59b66;
+  color: var(--ui-warning-text);
+}
+.answer-feedback,
+.phonics-page .answer-feedback {
+  display: block;
+  min-height: 64px;
+  margin-top: 22px;
+  padding: 16px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--ui-feedback-background);
+  color: var(--ui-feedback-text);
+  font-size: 14px;
+  line-height: 1.9;
+}
+.answer-feedback:has(> .icon) {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.answer-feedback strong,
+.answer-feedback p,
+.chinese-topic .answer-feedback p,
+.hanzi-page .answer-feedback p,
+.phonics-page .answer-feedback p {
+  font-size: 14px;
+  line-height: 1.9;
+}
+.answer-feedback p {
+  margin: 6px 0 0;
+}
+.answer-feedback.success,
+.phonics-page .answer-feedback.success {
+  background: var(--ui-success-background);
+  color: var(--ui-success-text);
+}
+.answer-feedback.warning,
+.answer-feedback.retry,
+.phonics-page .answer-feedback.warning {
+  background: var(--ui-warning-background);
+  color: var(--ui-warning-text);
+}
+
+.ct-tools,
+.phonics-page .ph-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 18px;
+}
+.ct-tools > span,
+.ct-tools > small {
+  font-size: 12px;
+  color: #796573;
+}
+.ct-tools > small {
+  flex-basis: 100%;
+}
+.ct-tools .hz-chip {
+  min-width: 0;
+  min-height: var(--ui-button-height);
+  padding: 8px 12px;
+  font-size: 12px;
+}
+.ct-tools .hz-chip[aria-pressed="true"],
+.play-mode.selected {
+  background: var(--ui-selected-background);
+  border-color: var(--ui-selected-border);
+  color: var(--ui-selected-text);
+  box-shadow: 0 2px 0 #ddc2d2;
+}
+.page-heading p,
+.phonics-page .ph-hero p {
+  font-size: 14px;
+  line-height: 1.9;
+}
+.phonics-page .ph-hero h1 {
+  font-size: 30px;
+  letter-spacing: 1px;
+}
+.chinese-topic .ct-examples,
+.memory-tip {
+  background: var(--ui-example-background);
+  border: 1px solid var(--ui-example-border);
+  border-radius: 12px;
+}
+.chinese-topic .ct-activity,
+.hanzi-page .hz-note,
+.phonics-page .ph-rule {
+  background: var(--ui-activity-background);
+  border: 1px solid var(--ui-activity-border);
+  border-radius: 14px;
+}
+.phonics-page .ph-rule {
+  border-radius: var(--ui-card-radius);
+}
+.ph-map-toggle {
+  display: none;
+}
+
+@media (min-width: 1600px) {
+  :root {
+    --ui-sidebar-width: 300px;
+    --ui-layout-gap: 32px;
+    --ui-card-inset: 35px;
+  }
+}
+@media (max-width: 1200px) {
+  :root {
+    --ui-sidebar-width: 242px;
+    --ui-layout-gap: 20px;
+  }
+}
+@media (max-width: 1000px) {
+  .learning-layout,
+  .phonics-page .ph-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .learning-aside {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+  .phonics-page .ph-sidebar {
+    display: contents;
+  }
+  .phonics-page .ph-sidebar > .growth-card {
+    grid-row: 3;
+  }
+  .phonics-page .ph-layout:has(.ph-map-panel) > .ph-main {
+    grid-row: 2;
+  }
+  .ph-map-panel {
+    grid-row: 1;
+  }
+  .ph-map-toggle {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+  }
+  .ph-map-toggle > .icon:last-child {
+    transform: rotate(90deg);
+  }
+  .ph-map-toggle[aria-expanded="true"] > .icon:last-child {
+    transform: rotate(-90deg);
+  }
+  .ph-map-panel:not(.is-open) > .ph-map {
+    display: none;
+  }
+  .ph-map-panel > .ph-map {
+    max-height: 340px;
+    margin-top: 10px;
+  }
+}
+@media (max-width: 760px) {
+  :root {
+    --ui-card-inset: 20px;
+  }
+  .phonics-page .ph-hero h1 {
+    font-size: 27px;
+  }
+}
+@media (max-width: 600px) {
+  :root {
+    --ui-card-padding: 19px;
+    --ui-card-inset: 17px;
+  }
+  .learning-aside {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .answer-grid,
+  .ph-options.answer-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+  .phonics-page .ph-mastery .soft-button {
+    padding: 10px;
+    font-size: 11px;
+  }
+}
+@media (max-width: 440px) {
+  .phonics-page .ph-hero h1 {
+    font-size: 24px;
+  }
+}
