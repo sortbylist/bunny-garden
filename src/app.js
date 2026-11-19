@@ -393,7 +393,8 @@ function openDialog(title, content, className = '') {
 }
 
 function closeDialog(returnFromPreview = true) {
-  if (dialog.open && dialog.querySelector('#nickname-form[data-origin="settings"]')) { returnFromNickname(); return; }
+  if (!dialog.open) return;
+  if (dialog.querySelector('#nickname-form[data-origin="settings"]')) { returnFromNickname(); return; }
   pendingBackup = null;
   backupReadRequest++;
   if (dialog.classList.contains('reward-help-dialog')) { returnFromRewardHelp(); return; }
@@ -712,7 +713,6 @@ function changeMode(id) {
   if (id === 'mistakes' && state.sessions[key()]?.finished) delete state.sessions[key()];
   closeDialog();
   render();
-  if (window.matchMedia('(max-width: 760px)').matches) app.querySelector('.learning-main')?.scrollIntoView({ block: 'start' });
 }
 
 function requestFor(item) {
