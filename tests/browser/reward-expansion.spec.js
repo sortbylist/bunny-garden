@@ -143,7 +143,7 @@ test('英语认读与五题达标接入统一奖励，科目间共享每日星�
   expect((await stored(page)).rewards.events.some(event => event.id.startsWith('learn:english:'))).toBe(true);
   await page.locator('[data-action="section-assessment"]').click();
   for (let index = 0; index < 5; index++) {
-    const english = await page.evaluate(() => JSON.parse(localStorage.getItem('bunny-phonics-gb-v1')));
+    const english = await page.evaluate(() => JSON.parse(localStorage.getItem('bunny-garden-v1')).phonics);
     const round = english.sessions[`assessment:lesson:${english.lessonId}:5`];
     const identifier = round.ids[round.index];
     const question = phonicsQuestionById.get(identifier);

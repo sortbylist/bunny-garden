@@ -103,7 +103,7 @@ export function refreshRewards(rewards, time = Date.now(), retroactive = false) 
   return unlocked;
 }
 
-export function initializeRewards(state, date = new Date(), english = null) {
+export function initializeRewards(state, date = new Date(), english = state.phonics) {
   const existing = state.rewards;
   if (existing?.version === 1 && Array.isArray(existing.events) && existing.unlocks && typeof existing.unlocks === 'object') {
     const seen = new Set();

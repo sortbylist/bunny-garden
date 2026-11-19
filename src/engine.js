@@ -1,4 +1,6 @@
 import { basics, groups, vocabulary, characters, words, marked, spellingRules, blends, confusionSets, tonePracticeSounds } from './data.js';
+import { phonicsDefaults, normalizePhonicsState } from './phonics-engine.js';
+import { appStorageKey } from './storage.js';
 
 export function shuffle(items, random = Math.random) {
   const result = [...items];
@@ -155,12 +157,12 @@ export const defaultState = () => ({
   seen: [], known: [], favorites: [], mistakes: [], history: [], sessions: {},
   settings: { slow: false, effects: true, continuous: false, animations: true },
   nickname: '小小探索家', navigationSelections: {}, rewards: null,
-  tonePractice: false, modeGroups: {}, hanzi: null, topics: {},
+  tonePractice: false, modeGroups: {}, hanzi: null, topics: {}, phonics: phonicsDefaults(),
 });
 
 export function loadState(storage) {
   try {
-    const raw = storage.getItem('bunny-garden-v1');
+    const raw = storage.getItem(appStorageKey);
     if (!raw) return { state: defaultState(), available: true };
     const parsed = JSON.parse(raw);
     if (parsed.version !== 1 || typeof parsed !== 'object' || !parsed.settings || !parsed.sessions || !parsed.features) throw new Error('invalid state');
@@ -168,6 +170,7 @@ export function loadState(storage) {
       if (!Array.isArray(parsed[key])) throw new Error('invalid collection');
     }
     const state = { ...defaultState(), ...parsed, settings: { ...defaultState().settings, ...parsed.settings } };
+    state.phonics = normalizePhonicsState(parsed.phonics);
     state.navigationSelections = Object.fromEntries(Object.entries(parsed.navigationSelections && typeof parsed.navigationSelections === 'object' ? parsed.navigationSelections : {}).filter(([, value]) => typeof value === 'string'));
     if (['initials', 'finals', 'whole'].includes(state.mode)) {
       const legacyGroups = { initials: 'initial', finals: 'all', whole: 'whole' };

@@ -1,0 +1,36 @@
+{
+  "format": "bunny-learning-garden",
+  "version": 1,
+  "exportedAt": "2026-11-18T00:00:00.000Z",
+  "data": {
+    "version": 1,
+    "nickname": "历史小兔",
+    "settings": { "slow": true, "effects": false },
+    "features": { "chinese": "pinyin" },
+    "mode": "sequence",
+    "group": "initial",
+    "seen": [],
+    "known": [],
+    "favorites": [],
+    "mistakes": [],
+    "history": [],
+    "sessions": {},
+    "rewards": {
+      "version": 1,
+      "events": [{ "id": "solve:legacy-1", "kind": "solve", "stars": 1, "time": 1794960000000, "label": "历史答题奖励" }],
+      "unlocks": { "curious-glass": 1794960000000 },
+      "equipped": { "sticker": "curious-glass" }
+    },
+    "phonics": {
+      "version": 1,
+      "locale": "en-GB",
+      "lessonId": "lesson-2",
+      "slow": true,
+      "favorites": [],
+      "known": [],
+      "seen": [],
+      "mistakes": [],
+      "history": []
+    }
+  }
+}

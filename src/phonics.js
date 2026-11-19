@@ -1,6 +1,6 @@
 import './phonics.css';
 import { alphabet, phonicsModules, phonicsLessons, phonicsWords, phonicsStories, phonicsModes, phonicsWordById, phonicsLessonById } from './phonics-data.js';
-import { phonicsStorageKey, phonicsDefaults, readPhonicsState, shufflePhonics, questionPool, createPhonicsRound, answerPhonics, advancePhonicsRound, phonicsStats, phonicsQuestionById } from './phonics-engine.js';
+import { shufflePhonics, questionPool, createPhonicsRound, answerPhonics, advancePhonicsRound, phonicsStats, phonicsQuestionById } from './phonics-engine.js';
 import { createPhonicsAudio } from './phonics-audio.js';
 import { icon } from './icons.js';
 import { learningPosition, learningTokenClass } from './learning-ui.js';
@@ -11,11 +11,7 @@ const quizModes = ['meaning', 'spelling', 'rules', 'listen', 'review', 'alphabet
 const lessonModes = ['learn', 'random', 'meaning', 'spelling', 'rules', 'listen', 'reading'];
 const rangeModes = ['random', 'meaning', 'spelling', 'rules', 'listen'];
 
-export function createPhonicsView({ redraw, notify, haltOtherAudio, renderGarden, rewardAction = () => {} }) {
-  const loaded = readPhonicsState({ getItem: key => localStorage.getItem(key) });
-  let state = loaded.state;
-  let storageAvailable = loaded.available;
-  let storageWarned = false;
+export function createPhonicsView({ state, persist, redraw, notify, haltOtherAudio, renderGarden, rewardAction = () => {} }) {
   let draft = '';
   let playedQuestion = null;
   let confirmRestart = false;
@@ -33,12 +29,6 @@ export function createPhonicsView({ redraw, notify, haltOtherAudio, renderGarden
     audioReady = true;
     if (document.querySelector('.phonics-page')) redraw();
   });
-
-  function persist() {
-    try { localStorage.setItem(phonicsStorageKey, JSON.stringify(state)); }
-    catch { storageAvailable = false; }
-    if (!storageAvailable && !storageWarned) { storageWarned = true; notify('英语学习记录暂时无法保存或恢复，仍可临时练习。'); }
-  }
 
   function sessionKey() { return `${state.mode}:${state.scope}:${state.lessonId}:${state.length}`; }
   function lesson() { return phonicsLessonById.get(state.lessonId); }
@@ -182,7 +172,6 @@ export function createPhonicsView({ redraw, notify, haltOtherAudio, renderGarden
     const mode = phonicsModes.find(entry => entry.id === state.mode)?.name || (state.mode === 'assessment' ? '小节达标练习' : state.mode === 'alphabet' ? '字母大小写' : '文字起点检查');
     const currentSection = lessonModes.includes(state.mode) ? rangeModes.includes(state.mode) && state.scope === 'all' ? '全部课程' : `第 ${lesson().number} 课 · ${lesson().title}` : '';
     const body = quizModes.includes(state.mode) ? quizCard() : state.mode === 'reading' ? readingCard() : state.mode === 'records' ? recordsCard() : learningCard();
-    persist();
     return `<div class="phonics-page"><section class="ph-hero"><div><div class="eyebrow">ENGLISH GARDEN</div><h1>让字母，变成会读的词<span>✿</span></h1><p>听见声音，发现规律。从一个小词，走进一个小故事。</p><div class="ph-tags"><span>听一听</span><span>拼一拼</span><span>读故事</span></div></div><div class="ph-hero-letters" aria-hidden="true"><span>sh</span><span>ee</span><span>p</span><small>small steps, big discoveries</small></div></section>
       <nav class="ph-modes" aria-label="自然拼读学习方式">${phonicsModes.filter(entry => lessonModes.includes(entry.id)).map(entry => control('mode', `${icon(entry.icon)}${entry.name}`, `data-id="${entry.id}" aria-pressed="${state.mode === entry.id}"`, `ph-mode ${state.mode === entry.id ? 'selected' : ''}`)).join('')}</nav>
       <div class="ph-layout"><div class="ph-main" role="region" tabindex="-1" aria-label="${mode}">
@@ -289,7 +278,7 @@ export function createPhonicsView({ redraw, notify, haltOtherAudio, renderGarden
       if (action === 'previous') position.index = Math.max(0, position.index - 1);
       if (action === 'jump') { const index = Number(target.dataset.index); if (Number.isInteger(index) && index >= 0 && index < position.ids.length) { position.index = index; position.finished = false; } }
     }
-    persist(); redraw();
+    redraw();
     if (action === 'lesson' || action === 'mode') {
       document.querySelector('.ph-main')?.focus({ preventScroll: true });
     }
@@ -301,7 +290,7 @@ export function createPhonicsView({ redraw, notify, haltOtherAudio, renderGarden
     if (!field) return false;
     stop(); draft = ''; playedQuestion = null; confirmRestart = false; storyResponse = null; currentStoryHint = false;
     if (field === 'length' && [5, 10, 20].includes(Number(target.value))) state.length = Number(target.value);
-    persist(); redraw(); return true;
+    redraw(); return true;
   }
 
   function submitForm(event) {
@@ -311,7 +300,7 @@ export function createPhonicsView({ redraw, notify, haltOtherAudio, renderGarden
     const value = round();
     value.drafts[value.ids[value.index]] = draft;
     if (!draft) { notify('先点选字母或输入拼写，再检查。'); return; }
-    submit(draft); persist(); redraw();
+    submit(draft); redraw();
   }
 
   function input(target) {
@@ -322,11 +311,11 @@ export function createPhonicsView({ redraw, notify, haltOtherAudio, renderGarden
     persist();
   }
 
-  function reset() { stop(); state = phonicsDefaults(); draft = ''; playedQuestion = null; storyResponse = null; currentStoryHint = false; confirmRestart = false; persist(); }
+  function reset(nextState) { stop(); state = nextState; draft = ''; playedQuestion = null; storyResponse = null; currentStoryHint = false; confirmRestart = false; }
   function assess() {
     stop(); state.mode = 'assessment'; state.scope = 'lesson'; state.length = 5;
     state.sessions[sessionKey()] = createPhonicsRound(assessmentPool(), 5);
-    draft = ''; playedQuestion = null; persist(); redraw();
+    draft = ''; playedQuestion = null; redraw();
   }
-  return { render, handle, change, submitForm, input, stop, reset, assess, getState: () => state, personalButtons, gardenData, knownCount: () => state.known.length };
+  return { render, handle, change, submitForm, input, stop, reset, assess, personalButtons, gardenData, knownCount: () => state.known.length };
 }
