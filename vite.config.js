@@ -1,4 +1,7 @@
 import { defineConfig } from 'vite';
+import { readFileSync } from 'node:fs';
+
+const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
 
 function markdownUtf8(server) {
   server.middlewares.use((req, res, next) => {
@@ -11,6 +14,9 @@ function markdownUtf8(server) {
 }
 
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(version),
+  },
   plugins: [{
     name: 'markdown-utf8',
     configureServer: markdownUtf8,

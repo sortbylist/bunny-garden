@@ -7,7 +7,7 @@ async function openEnglish(page) {
   await expect(page.locator('.phonics-page')).toBeVisible();
 }
 
-async function englishState(page) { return page.evaluate(() => JSON.parse(localStorage.getItem('bunny-phonics-gb-v1'))); }
+async function englishState(page) { return page.evaluate(() => JSON.parse(localStorage.getItem('bunny-garden-v1')).phonics); }
 async function mode(page, id) { await page.locator(`${['review', 'favorites', 'records'].includes(id) ? '.garden-links' : '.ph-modes'} [data-id="${id}"]`).click(); }
 async function section(page, id) {
   const toggle = page.locator('.ph-map-toggle');
@@ -37,8 +37,15 @@ test('自然拼读入口、48 课地图、自评前进、收藏与刷新恢复�
   expect(state.known).toContain('word-map');
   await page.locator('.subjects [data-id="chinese"]').click();
   await expect(page.locator('.pinyin-display')).toHaveText('a');
+  await page.locator('[data-action="favorite"]').click();
   await page.locator('.subjects [data-id="english"]').click();
   await expect(page.locator('.ph-word')).toHaveText('mat');
+  await page.locator('[data-action="ph-favorite"]').click();
+  await page.reload();
+  const root = await page.evaluate(() => JSON.parse(localStorage.getItem('bunny-garden-v1')));
+  expect(root.favorites).toContain('single-a');
+  expect(root.phonics.favorites).toEqual(expect.arrayContaining(['word-map', 'word-mat']));
+  expect(await page.evaluate(() => Object.keys(localStorage))).toEqual(['bunny-garden-v1']);
   expect(errors).toEqual([]);
 });
 

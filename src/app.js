@@ -24,6 +24,8 @@ import { createPhonicsView } from './phonics.js';
 import { createNavigation, featureGroups } from './navigation.js';
 import { learningPosition, learningTokenClass } from './learning-ui.js';
 import './ui-theme.css';
+import { createBackup, parseBackup, restoreBackup, maxBackupBytes } from './backup.js';
+import { saveState } from './storage.js';
 
 const app = document.querySelector('#app');
 const dialog = document.querySelector('#dialog');
@@ -37,6 +39,9 @@ state.topics = Object.fromEntries(learningTopics.map(topic => [topic.id, normali
 let storageAvailable = loaded.available;
 let mobileMenu = false;
 let toastTimer;
+let pendingBackup = null;
+let backupReadRequest = 0;
+let backupCommitted = false;
 let dialogReturnFocus;
 let continuousToken = 0;
 const studyModes = ['sequence', 'random', 'favorites'];
@@ -63,11 +68,11 @@ if (state.group !== 'all' && !groups.some(group => group.id === state.group)) st
 if (!confusionSets[state.confusion]) state.confusion = 'retroflex';
 state.features.english = 'phonics';
 const phonics = createPhonicsView({
+  state: state.phonics, persist,
   redraw: render, notify: toast, renderGarden: progressCard,
   haltOtherAudio: () => { continuousToken++; stopAudio(); },
   rewardAction: action => celebrateReward(grantRewards(state, action)),
 });
-initializeRewards(state, new Date(), phonics.getState());
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 const button = (action, label, symbol, className = '', attributes = '') => `<button type="button" class="${className}" data-action="${action}" ${attributes}>${symbol ? icon(symbol) : ''}${label}</button>`;
@@ -84,7 +89,8 @@ const navigation = createNavigation((action, id) => {
 });
 
 function persist() {
-  try { localStorage.setItem('bunny-garden-v1', JSON.stringify(state)); }
+  if (backupCommitted) return;
+  try { saveState(localStorage, state); }
   catch {
     if (storageAvailable) toast('暂时无法保存进度，你仍然可以继续练习。');
     storageAvailable = false;
@@ -147,6 +153,7 @@ function currentItem() {
 }
 
 function render() {
+  if (backupCommitted) return;
   disposeReadingRows();
   poetryAudio.stop();
   navigation.capture();
@@ -225,7 +232,7 @@ function personalLinks(className = '') {
 
 function sectionRewardPanel() {
   const topic = activeTopic();
-  const sectionId = state.subject === 'english' ? `english/${phonics.getState().lessonId}`
+  const sectionId = state.subject === 'english' ? `english/${state.phonics.lessonId}`
     : topic ? `${topic.id}/${state.topics[topic.id].category}`
     : state.features.chinese === 'hanzi-structure' ? `hanzi-structure/${state.hanzi.category}` : null;
   const section = rewardSections.get(sectionId);
@@ -339,7 +346,7 @@ function quizCard(round) {
     <div class="answer-grid ${question.kind === 'audio' ? 'audio-answers' : ''}" role="group" aria-label="答案选项">${question.options.map((option, index) => {
       const text = typeof option === 'string' ? option : option.value;
       const status = answered && text === question.answer ? 'correct-answer' : round.selected === text && wrong ? 'wrong-answer' : '';
-      return typeof option === 'string' ? `<button class="answer-option${learningTokenClass(text)} ${status}" data-action="answer" data-value="${escape(text)}" ${answered ? 'disabled' : ''}><span class="option-letter">${'ABCD'[index]}</span><span>${escape(text)}</span>${status === 'correct-answer' ? icon('check') : ''}</button>` : `<div class="audio-option ${status}">${button('sound', `试听 ${'ABCD'[index]}`, 'sound', 'audio-choice-play', `data-sound="${option.sound}"`)}${button('answer', `选 ${'ABCD'[index]}`, '', 'audio-choice-pick', `data-value="${escape(text)}" ${answered ? 'disabled' : ''}`)}</div>`;
+      return typeof option === 'string' ? `<button class="answer-option${learningTokenClass(text)} ${status}" data-action="answer" data-value="${escape(text)}" ${answered ? 'disabled' : ''}><span class="option-letter">${'ABCD'[index]}</span><span>${escape(text)}</span>${status === 'correct-answer' ? icon('check') : ''}</button>` : `<div class="audio-option ${status}">${button('sound', `试听 ${'ABCD'[index]}`, 'sound', 'audio-choice-play', `data-sound="${escape(option.sound)}"`)}${button('answer', `选 ${'ABCD'[index]}`, '', 'audio-choice-pick', `data-value="${escape(text)}" ${answered ? 'disabled' : ''}`)}</div>`;
     }).join('')}</div>
     <div class="answer-feedback ${answered ? round.selected === null ? 'warning' : 'success' : wrong ? 'retry warning' : ''}" role="status">${answered ? `${icon(round.selected === null ? 'leaf' : 'check')}<div><strong>${round.selected === null ? '先认识答案，下次再试试' : '答对啦，你做得很棒！'}</strong><p>${escape(question.explanation)}</p></div>` : wrong ? `${icon('refresh')}<div><strong>差一点点，再试一次吧！</strong><p>可以再听一听，或者点“看看答案”。首次作答已经记下啦。</p></div>` : `${icon('leaf')}<span>想一想，再选出你的答案。</span>`}</div>
     ${answered && question.audio?.word && !hasAudio({ word: question.audio.word }) && question.audio.sounds?.length > 1 ? '<p class="small-note">这个词一个字一个字读，跟着一起拼一拼。</p>' : ''}
@@ -366,6 +373,8 @@ function comingSoon(subject) {
 }
 
 function openDialog(title, content, className = '') {
+  pendingBackup = null;
+  backupReadRequest++;
   disposeRewardHelp();
   disposeRewardHelp = () => {};
   disposeRewardViewer();
@@ -383,6 +392,8 @@ function openDialog(title, content, className = '') {
 }
 
 function closeDialog(returnFromPreview = true) {
+  pendingBackup = null;
+  backupReadRequest++;
   if (dialog.classList.contains('reward-help-dialog')) { returnFromRewardHelp(); return; }
   if (returnFromPreview && dialog.classList.contains('reward-detail-dialog')) { returnFromRewardDetail(); return; }
   disposeRewardHelp();
@@ -403,6 +414,62 @@ function restoreDialogFocus() {
 
 function showSettings() {
   openDialog('让学习更合心意', `<p class="dialog-intro">选择适合自己的节奏，小兔一直在这里。</p><label class="setting-row"><span><b>慢速读音</b><small>放慢一点听，保持声音的音高</small></span><input type="checkbox" data-setting="slow" ${state.settings.slow ? 'checked' : ''}></label><label class="setting-row"><span><b>答对时的小音效</b><small>关闭以后，拼音点读仍可使用</small></span><input type="checkbox" data-setting="effects" ${state.settings.effects ? 'checked' : ''}></label><label class="setting-row"><span><b>奖励庆祝动效</b><small>关闭后仍会显示奖励文字；也支持系统减少动态效果</small></span><input type="checkbox" data-setting="animations" ${state.settings.animations ? 'checked' : ''}></label><div class="setting-info">${icon('info')}学习记录、昵称和奖励保存在当前浏览器。清理浏览器数据会丢失记录，不会在其他设备同步。</div>${!storageAvailable ? '<p class="storage-warning">当前浏览器无法读取或保存记录，暂以临时模式学习。</p>' : ''}${button('edit-nickname', '设置我的昵称', 'pen', 'outline-button')}${button('reset-confirm', '清空本机学习记录', 'refresh', 'danger-button')}`);
+  dialog.insertAdjacentHTML('beforeend', `<section class="backup-settings" aria-labelledby="backup-heading"><h3 id="backup-heading">本机数据备份</h3><p>一次备份全部配置、昵称、三科学习记录、错题、收藏、草稿和奖励（含星星、展示选择及待领取奖励）。文件仅在本机处理，不会上传。</p><p>旧备份缺少的新设置会自动补默认值。导入会完整替换当前记录，不会合并；建议先导出当前数据。</p><div class="backup-actions">${button('export-backup', '导出全部数据', 'book', 'outline-button')}${button('choose-backup', '导入备份文件', 'refresh', 'outline-button')}</div><input id="backup-file" type="file" accept=".json,application/json" hidden><p id="backup-error" class="storage-warning" role="alert"></p></section>`);
+}
+
+function exportBackup() {
+  let downloadUrl;
+  try {
+    const date = new Date();
+    const text = createBackup(state, date);
+    downloadUrl = URL.createObjectURL(new Blob([text], { type: 'application/json;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = `小兔学习乐园-完整备份-${date.toISOString().replace(/[:.]/g, '-')}.json`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    toast('完整备份已生成，请妥善保管下载的 JSON 文件。');
+  } catch (error) { showBackupError(error.message); }
+  finally { if (downloadUrl) setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000); }
+}
+
+function showBackupError(message) {
+  const element = dialog.querySelector('#backup-error');
+  if (element) element.textContent = message;
+  else toast(message);
+}
+
+async function readBackupFile(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  const request = ++backupReadRequest;
+  input.value = '';
+  try {
+    if (file.size > maxBackupBytes) throw new Error('备份文件过大，请选择不超过 20 MB 的 JSON 备份。');
+    const text = await file.text();
+    if (request !== backupReadRequest || !input.isConnected || !dialog.open) return;
+    const backup = parseBackup(text);
+    openDialog('导入并替换本机数据？', `<p class="dialog-intro">将导入语文、数学、英语的全部学习记录、配置、昵称和奖励，并替换当前数据，不会合并。建议先取消并导出当前数据，保留恢复机会。</p><p>备份昵称：<b>${escape(backup.data.nickname)}</b></p><div class="dialog-actions">${button('settings', '取消，返回设置', '', 'outline-button')}${button('confirm-import', '确认导入并替换', '', 'danger-button')}</div><p id="backup-error" class="storage-warning" role="alert"></p>`);
+    pendingBackup = backup;
+  } catch (error) {
+    if (request === backupReadRequest) showBackupError(error.message || '无法读取备份文件，请重新选择。');
+  }
+}
+
+function importBackup() {
+  if (!pendingBackup) return;
+  try {
+    halt();
+    restoreBackup(localStorage, pendingBackup);
+  } catch (error) {
+    showBackupError(error.message || '导入失败，无法访问浏览器存储，本机记录未修改。');
+    return;
+  }
+  backupCommitted = true;
+  pendingBackup = null;
+  celebrations.reset();
+  window.location.reload();
 }
 
 function showProfile() {
@@ -720,6 +787,9 @@ function handleAction(event) {
   if (action.startsWith('ph-') && state.subject === 'english') { if (dialog.open) closeDialog(); phonics.handle(target); return; }
   if (action === 'close-dialog') { closeDialog(); return; }
   if (action === 'settings') { showSettings(); return; }
+  if (action === 'export-backup') { exportBackup(); return; }
+  if (action === 'choose-backup') { dialog.querySelector('#backup-file')?.click(); return; }
+  if (action === 'confirm-import') { importBackup(); return; }
   if (action === 'about') { showAbout(); return; }
   if (action === 'records') { if (state.subject === 'english') { closeDialog(); phonics.handle({ dataset: { action: 'ph-mode', id: 'records' } }); } else showRecords(); return; }
   if (action === 'profile') { showProfile(); return; }
@@ -778,7 +848,7 @@ function handleAction(event) {
   if (action === 'restart') { openDialog('重新开始这一轮？', `<p>当前这一轮的进度会重置，收藏、错题和以前的学习记录都会保留。</p><div class="dialog-actions">${button('close-dialog', '继续当前练习', '', 'outline-button')}${button('restart-now', '重新开始', 'refresh', 'solid-button')}</div>`); return; }
   if (action === 'restart-now') { restart(); return; }
   if (action === 'reset-confirm') { openDialog('确定清空本机记录吗？', `<p>这会清空学习进度、错题、收藏、昵称、星星、贴纸、徽章、奖牌、花园摆件和设置，清空后无法恢复。</p><div class="dialog-actions">${button('close-dialog', '保留我的记录', '', 'outline-button')}${button('reset-all', '确认清空', '', 'danger-button')}</div>`); return; }
-  if (action === 'reset-all') { halt(); celebrations.reset(); phonics.reset(); state = defaultState(); state.features.english = 'phonics'; initializeRewards(state); closeDialog(); render(); toast('记录已清空，可以重新出发啦。'); return; }
+  if (action === 'reset-all') { halt(); celebrations.reset(); state = defaultState(); phonics.reset(state.phonics); state.features.english = 'phonics'; initializeRewards(state); closeDialog(); render(); toast('记录已清空，可以重新出发啦。'); return; }
   if (action === 'sound') { continuousToken++; playAudio({ sound: target.dataset.sound }, state.settings.slow); return; }
   if (action === 'word-sound') { continuousToken++; const item = vocabulary.find(entry => entry.text === target.dataset.word); playAudio({ word: target.dataset.word, sounds: item?.sounds }, state.settings.slow); return; }
   if (studyModes.includes(state.mode)) {
@@ -881,6 +951,7 @@ document.addEventListener('input', event => {
 });
 
 document.addEventListener('change', event => {
+  if (event.target.id === 'backup-file') { void readBackupFile(event.target); return; }
   if (state.subject === 'english' && phonics.change(event.target)) return;
   const field = event.target.dataset.setting;
   if (!field) return;

@@ -2,7 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { alphabet, phonicsModules, phonicsLessons, phonicsWords, phonicsStories, phonicsSentences } from '../src/phonics-data.js';
-import { phonicsDefaults, phonicsQuestions, questionPool, createPhonicsRound, answerPhonics, advancePhonicsRound, phonicsStats, readPhonicsState, availablePhonicsAudio, shufflePhonics } from '../src/phonics-engine.js';
+import { phonicsDefaults, phonicsQuestions, questionPool, createPhonicsRound, answerPhonics, advancePhonicsRound, phonicsStats, normalizePhonicsState, availablePhonicsAudio, shufflePhonics } from '../src/phonics-engine.js';
+import { defaultState, loadState } from '../src/engine.js';
+import { appStorageKey, saveState } from '../src/storage.js';
 
 test('拼读课程覆盖 12 模块、48 课、600 以上去重词形、36 篇共读与 120 以上短句', () => {
   assert.equal(phonicsModules.length, 12);
@@ -102,7 +104,7 @@ test('只使用已就绪的英式 gTTS 本地 MP3，不依赖人工审核字段�
   assert.ok(questionPool(state, () => true).every(question => question.wordId !== 'word-sea' && question.wordId !== 'word-see'));
 });
 
-test('本机记录恢复并过滤异常内容，不读取或覆盖语文存储', () => {
+test('英语从统一根数据恢复并过滤异常内容，不影响其他学科', () => {
   const state = { ...phonicsDefaults(), mode: 'spelling' };
   state.favorites = ['word-cat', 'bad'];
   const round = createPhonicsRound(phonicsQuestions.filter(question => question.kind === 'spelling').slice(0, 2), 2);
@@ -110,15 +112,36 @@ test('本机记录恢复并过滤异常内容，不读取或覆盖语文存储',
   state.sessions.test = round;
   state.sessions.invalid = { ids: ['missing'], responses: {} };
   state.history = [{ name: 'bad', total: -1, time: 1, correct: 4 }];
+  const root = defaultState();
+  root.nickname = '统一存储小兔';
+  root.known = ['initial-b'];
+  root.phonics = state;
   const calls = [];
-  const loaded = readPhonicsState({ getItem: key => { calls.push(key); return JSON.stringify(state); } });
-  assert.deepEqual(calls, ['bunny-phonics-gb-v1']);
+  const loaded = loadState({ getItem: storageKey => { calls.push(storageKey); return JSON.stringify(root); } });
+  assert.deepEqual(calls, [appStorageKey]);
   assert.equal(loaded.available, true);
-  assert.deepEqual(loaded.state.favorites, ['word-cat']);
-  assert.deepEqual(loaded.state.sessions.test.ids, round.ids);
-  assert.equal(loaded.state.sessions.test.drafts[round.ids[0]], 'ma');
-  assert.equal(loaded.state.sessions.invalid, undefined);
-  assert.deepEqual(loaded.state.history, []);
-  assert.equal(readPhonicsState({ getItem: () => '{' }).available, false);
-  assert.equal(readPhonicsState({ getItem: () => { throw new Error('blocked'); } }).available, false);
+  assert.equal(loaded.state.nickname, root.nickname);
+  assert.deepEqual(loaded.state.known, root.known);
+  assert.deepEqual(loaded.state.phonics.favorites, ['word-cat']);
+  assert.deepEqual(loaded.state.phonics.sessions.test.ids, round.ids);
+  assert.equal(loaded.state.phonics.sessions.test.drafts[round.ids[0]], 'ma');
+  assert.equal(loaded.state.phonics.sessions.invalid, undefined);
+  assert.deepEqual(loaded.state.phonics.history, []);
+  const writes = [];
+  saveState({ setItem: (storageKey, value) => writes.push([storageKey, JSON.parse(value)]) }, loaded.state);
+  assert.equal(writes.length, 1);
+  assert.equal(writes[0][0], appStorageKey);
+  assert.equal(writes[0][1].nickname, root.nickname);
+  assert.deepEqual(writes[0][1].phonics.favorites, ['word-cat']);
+});
+
+test('损坏英语字段局部降级，统一存储中的其他学科记录仍可用', () => {
+  for (const phonics of ['{broken', { version: 999 }, null]) {
+    const root = { ...defaultState(), nickname: '保留昵称', phonics };
+    const loaded = loadState({ getItem: () => JSON.stringify(root) });
+    assert.equal(loaded.available, true);
+    assert.equal(loaded.state.nickname, root.nickname);
+    assert.deepEqual(loaded.state.phonics, phonicsDefaults());
+  }
+  assert.deepEqual(normalizePhonicsState(undefined), phonicsDefaults());
 });

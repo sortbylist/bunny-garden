@@ -1,6 +1,5 @@
 import { alphabet, phonicsLessons, phonicsWords, phonicsStories, phonicsModes, phonicsWordById, phonicsLessonById } from './phonics-data.js';
 
-export const phonicsStorageKey = 'bunny-phonics-gb-v1';
 export const phonicsDefaults = () => ({
   version: 1, locale: 'en-GB', lessonId: 'lesson-1', mode: 'learn', scope: 'lesson', length: 10,
   slow: false, positions: {}, sessions: {}, favorites: [], known: [], seen: [], mistakes: [], history: [], reviews: {},
@@ -107,12 +106,10 @@ export function advancePhonicsRound(state, round, name, now = Date.now()) {
   return true;
 }
 
-export function readPhonicsState(storage) {
+export function normalizePhonicsState(saved) {
   const state = phonicsDefaults();
   try {
-    const raw = storage.getItem(phonicsStorageKey);
-    if (!raw) return { state, available: true };
-    const saved = JSON.parse(raw);
+    if (saved == null) return state;
     if (!saved || saved.version !== 1 || saved.locale !== 'en-GB') throw new Error('Invalid phonics state');
     if (phonicsLessonById.has(saved.lessonId)) state.lessonId = saved.lessonId;
     if ([...phonicsModes.map(mode => mode.id), 'alphabet', 'diagnostic', 'assessment'].includes(saved.mode)) state.mode = saved.mode;
@@ -156,6 +153,6 @@ export function readPhonicsState(storage) {
     if (saved.reviews && typeof saved.reviews === 'object') {
       state.reviews = Object.fromEntries(Object.entries(saved.reviews).filter(([id, review]) => phonicsQuestionById.has(id) && Number.isInteger(review?.success) && review.success >= 0 && review.success <= 3 && Number.isFinite(review.due)));
     }
-    return { state, available: true };
-  } catch { return { state, available: false }; }
+    return state;
+  } catch { return state; }
 }
