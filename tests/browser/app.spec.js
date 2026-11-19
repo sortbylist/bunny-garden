@@ -124,6 +124,57 @@ test('设置弹窗、清空确认与键盘关闭', async ({ page }) => {
   expect((await stored(page)).known).toHaveLength(0);
 });
 
+test('取消清空、右上角关闭和 Esc 都返回学习设置原位', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 620 });
+  await page.goto('/');
+  await page.locator('.my-menu-toggle').click();
+  await page.locator('.my-menu').getByRole('button', { name: '学习设置' }).click();
+  const settings = page.getByRole('dialog', { name: '学习设置' });
+  await settings.locator('input[data-setting="slow"]').check();
+  const before = await stored(page);
+  const clear = settings.getByRole('button', { name: '清空本机学习记录' });
+  const confirmation = page.getByRole('dialog', { name: '确定清空本机记录吗？' });
+  const cancel = confirmation.getByRole('button', { name: '取消', exact: true });
+  const dismissals = [
+    () => cancel.click(),
+    () => confirmation.getByRole('button', { name: '关闭弹窗' }).click(),
+    () => page.keyboard.press('Escape'),
+  ];
+
+  for (const dismiss of dismissals) {
+    await clear.scrollIntoViewIfNeeded();
+    const scrollTop = await settings.evaluate(element => element.scrollTop);
+    expect(scrollTop).toBeGreaterThan(0);
+    await clear.click();
+    await expect(cancel).toBeFocused();
+    await dismiss();
+    await expect(clear).toBeFocused();
+    expect(await settings.evaluate(element => element.scrollTop)).toBe(scrollTop);
+    expect(await stored(page)).toEqual(before);
+  }
+
+  await settings.getByRole('button', { name: '关闭弹窗' }).click();
+  await expect(settings).not.toBeVisible();
+});
+
+test('学习设置的开关行与操作行沿用下拉菜单悬停样式', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('.my-menu-toggle').click();
+  const menuSettings = page.locator('.my-menu').getByRole('button', { name: '学习设置' });
+  await menuSettings.hover();
+  const hoverStyle = element => {
+    const css = getComputedStyle(element);
+    return [css.backgroundColor, css.borderRadius];
+  };
+  const expected = await menuSettings.evaluate(hoverStyle);
+  await menuSettings.click();
+  const settings = page.getByRole('dialog', { name: '学习设置' });
+  for (const row of [settings.locator('label.setting-row').first(), settings.getByRole('button', { name: '清空本机学习记录' })]) {
+    await row.hover();
+    expect(await row.evaluate(hoverStyle)).toEqual(expected);
+  }
+});
+
 test('桌面、平板和手机没有横向溢出，生成预览截图', async ({ page }) => {
   await mkdir('artifacts', { recursive: true });
   for (const viewport of [{ width: 1440, height: 1100, name: 'desktop' }, { width: 820, height: 1180, name: 'tablet' }, { width: 390, height: 844, name: 'mobile' }]) {

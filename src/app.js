@@ -43,6 +43,7 @@ let pendingBackup = null;
 let backupReadRequest = 0;
 let backupCommitted = false;
 let dialogReturnFocus;
+let settingsScrollBeforeReset = 0;
 let continuousToken = 0;
 const studyModes = ['sequence', 'random', 'favorites'];
 let rewardFilter = 'all';
@@ -187,7 +188,7 @@ function render() {
       <header class="topbar">
         ${button('mobile-menu', '', 'menu', 'icon-button mobile-toggle', 'aria-label="切换学科导航"')}
         <div class="breadcrumb">学习乐园 ${icon('chevron')} <span>${subject.name}</span></div>
-        <div class="topbar-right"><button class="star-counter" data-action="reward-rules" aria-label="查看星星收获与获取规则">${icon('star')}<b>${rewardStats(state.rewards).stars}</b><span>颗成长星</span>${icon('info')}</button><details class="my-menu"><summary class="my-menu-toggle" aria-label="打开我的菜单"><img src="/bunny.svg" alt="" width="38" height="38"><span>${escape(state.nickname)}<small>我的 ${icon('down')}</small></span></summary><div class="my-menu-content"><strong>你好，${escape(state.nickname)}</strong>${button('profile', '我的成长空间', 'sprout')}${personalButtons('menu')}${button('reward-collection', '奖励收藏册', 'star')}${button('edit-nickname', '设置昵称', 'pen')}</div></details></div>
+        <div class="topbar-right"><button class="star-counter" data-action="reward-rules" aria-label="查看星星收获与获取规则">${icon('star')}<b>${rewardStats(state.rewards).stars}</b><span>颗成长星</span>${icon('info')}</button><details class="my-menu"><summary class="my-menu-toggle" aria-label="打开我的菜单"><img src="/bunny.svg" alt="" width="38" height="38"><span>${escape(state.nickname)}<small>我的 ${icon('down')}</small></span></summary><div class="my-menu-content"><strong>你好，${escape(state.nickname)}</strong>${button('profile', '我的成长空间', 'sprout')}${personalButtons('menu')}${button('reward-collection', '奖励收藏册', 'star')}${button('menu-settings', '学习设置', 'settings')}</div></details></div>
       </header>
       ${navigation.render({ id: `features-${subject.id}`, label: `${subject.name}主题`, groups: featureGroups(subject), selected: state.features[subject.id], memories: state.navigationSelections, action: 'feature', className: 'feature-navigation' })}
       <main id="main-content" tabindex="-1">${topic ? renderTopic(topic, state.topics[topic.id], progressCard()) : isHanzi ? renderHanzi(state.hanzi, progressCard()) : state.subject === 'chinese' ? learningPage() : state.subject === 'english' ? phonics.render() : comingSoon(subject)}</main>
@@ -392,6 +393,7 @@ function openDialog(title, content, className = '') {
 }
 
 function closeDialog(returnFromPreview = true) {
+  if (dialog.open && dialog.querySelector('#nickname-form[data-origin="settings"]')) { returnFromNickname(); return; }
   pendingBackup = null;
   backupReadRequest++;
   if (dialog.classList.contains('reward-help-dialog')) { returnFromRewardHelp(); return; }
@@ -407,14 +409,52 @@ function closeDialog(returnFromPreview = true) {
   celebrations.resume();
 }
 
+function dismissDialog() {
+  if (!dialog.classList.contains('reset-confirm-dialog')) { closeDialog(); return; }
+  showSettings();
+  dialog.scrollTop = settingsScrollBeforeReset;
+  dialog.querySelector('[data-action="reset-confirm"]').focus({ preventScroll: true });
+}
+
 function restoreDialogFocus() {
   if (dialogReturnFocus?.isConnected && dialogReturnFocus.checkVisibility()) dialogReturnFocus.focus();
   else app.querySelector('.my-menu-toggle')?.focus();
 }
 
+function settingsToggle(field, label, description) {
+  return `<label class="setting-row"><span><b>${label}</b><small>${description}</small></span><input type="checkbox" role="switch" data-setting="${field}" ${state.settings[field] ? 'checked' : ''}></label>`;
+}
+
+function settingsAction(action, label, detail = '') {
+  return button(action, `<b>${label}</b><span class="setting-value">${detail}${icon('chevron')}</span>`, '', 'setting-row');
+}
+
 function showSettings() {
-  openDialog('让学习更合心意', `<p class="dialog-intro">选择适合自己的节奏，小兔一直在这里。</p><label class="setting-row"><span><b>慢速读音</b><small>放慢一点听，保持声音的音高</small></span><input type="checkbox" data-setting="slow" ${state.settings.slow ? 'checked' : ''}></label><label class="setting-row"><span><b>答对时的小音效</b><small>关闭以后，拼音点读仍可使用</small></span><input type="checkbox" data-setting="effects" ${state.settings.effects ? 'checked' : ''}></label><label class="setting-row"><span><b>奖励庆祝动效</b><small>关闭后仍会显示奖励文字；也支持系统减少动态效果</small></span><input type="checkbox" data-setting="animations" ${state.settings.animations ? 'checked' : ''}></label><div class="setting-info">${icon('info')}学习记录、昵称和奖励保存在当前浏览器。清理浏览器数据会丢失记录，不会在其他设备同步。</div>${!storageAvailable ? '<p class="storage-warning">当前浏览器无法读取或保存记录，暂以临时模式学习。</p>' : ''}${button('edit-nickname', '设置我的昵称', 'pen', 'outline-button')}${button('reset-confirm', '清空本机学习记录', 'refresh', 'danger-button')}`);
-  dialog.insertAdjacentHTML('beforeend', `<section class="backup-settings" aria-labelledby="backup-heading"><h3 id="backup-heading">本机数据备份</h3><p>一次备份全部配置、昵称、三科学习记录、错题、收藏、草稿和奖励（含星星、展示选择及待领取奖励）。文件仅在本机处理，不会上传。</p><p>旧备份缺少的新设置会自动补默认值。导入会完整替换当前记录，不会合并；建议先导出当前数据。</p><div class="backup-actions">${button('export-backup', '导出全部数据', 'book', 'outline-button')}${button('choose-backup', '导入备份文件', 'refresh', 'outline-button')}</div><input id="backup-file" type="file" accept=".json,application/json" hidden><p id="backup-error" class="storage-warning" role="alert"></p></section>`);
+  openDialog('学习设置', `<section class="settings-group" aria-labelledby="profile-heading"><h3 id="profile-heading">个人资料</h3>
+    ${settingsAction('edit-nickname', '昵称', escape(state.nickname))}
+  </section>
+  <section class="settings-group" aria-labelledby="preferences-heading"><h3 id="preferences-heading">学习偏好</h3>
+    ${settingsToggle('slow', '慢速读音', '放慢一点听，保持声音的音高')}
+    ${settingsToggle('effects', '答对时的小音效', '关闭后仍可点读拼音')}
+    ${settingsToggle('animations', '奖励庆祝动效', '关闭后仍显示奖励文字，也支持系统减少动态效果')}
+  </section>
+  <section class="settings-group" aria-labelledby="backup-heading"><h3 id="backup-heading">数据备份</h3>
+    <p>备份包含全部配置、昵称、各科学习记录、错题、收藏、草稿和奖励。文件仅在本机处理，不会上传。</p>
+    ${settingsAction('export-backup', '导出全部数据')}
+    ${settingsAction('choose-backup', '导入备份文件')}
+    <input id="backup-file" type="file" accept=".json,application/json" hidden><p id="backup-error" class="storage-warning" role="alert"></p>
+    <p>导入会替换当前数据，不会合并。建议先导出一份；旧备份缺少的新设置会使用默认值。</p>
+  </section>
+  <section class="settings-group" aria-labelledby="cleanup-heading"><h3 id="cleanup-heading">数据清理</h3>
+    <p>学习记录仅保存在当前浏览器，不会跨设备同步。清空后无法恢复。</p>
+    ${settingsAction('reset-confirm', '清空本机学习记录')}
+  </section>${!storageAvailable ? '<p class="storage-warning">当前浏览器无法读取或保存记录，暂以临时模式学习。</p>' : ''}`, 'settings-dialog');
+}
+
+function showResetConfirmation() {
+  settingsScrollBeforeReset = dialog.scrollTop;
+  openDialog('确定清空本机记录吗？', `<p>这会清空学习进度、错题、收藏、昵称、星星、贴纸、徽章、奖牌、花园摆件和设置，清空后无法恢复。</p><div class="dialog-actions">${button('close-dialog', '取消', '', 'outline-button')}${button('reset-all', '确认清空', '', 'danger-button')}</div>`, 'reset-confirm-dialog');
+  dialog.querySelector('.dialog-actions [data-action="close-dialog"]').focus();
 }
 
 function exportBackup() {
@@ -479,10 +519,17 @@ function showProfile() {
 }
 
 function showNickname() {
-  openDialog('让小兔认识你', `<p class="dialog-intro">取一个喜欢的昵称吧，1–12 个字符。它只保存在这台设备，不需要填写真实姓名。</p><form id="nickname-form"><label class="nickname-label" for="nickname">我的昵称</label><input id="nickname" name="nickname" value="${escape(state.nickname)}" autocomplete="off" aria-describedby="nickname-error" required><p id="nickname-error" class="nickname-error" role="alert"></p><div class="dialog-actions">${button('profile', '返回我的', '', 'outline-button')}<button type="submit" class="solid-button">保存昵称</button></div></form>`);
+  const fromSettings = dialog.classList.contains('settings-dialog');
+  openDialog('修改昵称', `<p class="dialog-intro">取一个喜欢的昵称吧，1–12 个字符。它只保存在这台设备，不需要填写真实姓名。</p><form id="nickname-form" data-origin="${fromSettings ? 'settings' : 'profile'}"><label class="nickname-label" for="nickname">我的昵称</label><input id="nickname" name="nickname" value="${escape(state.nickname)}" autocomplete="off" aria-describedby="nickname-error" required><p id="nickname-error" class="nickname-error" role="alert"></p><div class="dialog-actions">${button('nickname-back', fromSettings ? '返回学习设置' : '返回我的', '', 'outline-button')}<button type="submit" class="solid-button">保存昵称</button></div></form>`);
   const input = dialog.querySelector('#nickname');
   input.focus();
   input.select();
+}
+
+function returnFromNickname() {
+  if (dialog.querySelector('#nickname-form').dataset.origin === 'settings') showSettings();
+  else showProfile();
+  dialog.querySelector('[data-action="edit-nickname"]').focus();
 }
 
 function showRewardRules() {
@@ -785,8 +832,8 @@ function handleAction(event) {
     return;
   }
   if (action.startsWith('ph-') && state.subject === 'english') { if (dialog.open) closeDialog(); phonics.handle(target); return; }
-  if (action === 'close-dialog') { closeDialog(); return; }
-  if (action === 'settings') { showSettings(); return; }
+  if (action === 'close-dialog') { dismissDialog(); return; }
+  if (action === 'settings' || action === 'menu-settings') { showSettings(); return; }
   if (action === 'export-backup') { exportBackup(); return; }
   if (action === 'choose-backup') { dialog.querySelector('#backup-file')?.click(); return; }
   if (action === 'confirm-import') { importBackup(); return; }
@@ -794,6 +841,7 @@ function handleAction(event) {
   if (action === 'records') { if (state.subject === 'english') { closeDialog(); phonics.handle({ dataset: { action: 'ph-mode', id: 'records' } }); } else showRecords(); return; }
   if (action === 'profile') { showProfile(); return; }
   if (action === 'edit-nickname') { showNickname(); return; }
+  if (action === 'nickname-back') { returnFromNickname(); return; }
   if (action === 'reward-rules') { showRewardRules(); return; }
   if (action === 'reward-collection') { showRewardCollection(); return; }
   if (action === 'reward-filter') { if (['all', 'sticker', 'badge', 'medal', 'decoration'].includes(target.dataset.id)) rewardFilter = target.dataset.id; showRewardCollection(); return; }
@@ -847,7 +895,7 @@ function handleAction(event) {
   if (action === 'slow') { halt(); state.settings.slow = !state.settings.slow; state.settings.continuous = false; render(); return; }
   if (action === 'restart') { openDialog('重新开始这一轮？', `<p>当前这一轮的进度会重置，收藏、错题和以前的学习记录都会保留。</p><div class="dialog-actions">${button('close-dialog', '继续当前练习', '', 'outline-button')}${button('restart-now', '重新开始', 'refresh', 'solid-button')}</div>`); return; }
   if (action === 'restart-now') { restart(); return; }
-  if (action === 'reset-confirm') { openDialog('确定清空本机记录吗？', `<p>这会清空学习进度、错题、收藏、昵称、星星、贴纸、徽章、奖牌、花园摆件和设置，清空后无法恢复。</p><div class="dialog-actions">${button('close-dialog', '保留我的记录', '', 'outline-button')}${button('reset-all', '确认清空', '', 'danger-button')}</div>`); return; }
+  if (action === 'reset-confirm') { showResetConfirmation(); return; }
   if (action === 'reset-all') { halt(); celebrations.reset(); state = defaultState(); phonics.reset(state.phonics); state.features.english = 'phonics'; initializeRewards(state); closeDialog(); render(); toast('记录已清空，可以重新出发啦。'); return; }
   if (action === 'sound') { continuousToken++; playAudio({ sound: target.dataset.sound }, state.settings.slow); return; }
   if (action === 'word-sound') { continuousToken++; const item = vocabulary.find(entry => entry.text === target.dataset.word); playAudio({ word: target.dataset.word, sounds: item?.sounds }, state.settings.slow); return; }
@@ -977,7 +1025,7 @@ document.addEventListener('submit', event => {
   }
   state.nickname = nickname;
   render();
-  showProfile();
+  returnFromNickname();
   toast('记住你的新昵称啦！');
 });
 
@@ -986,7 +1034,7 @@ document.addEventListener('input', event => { if (state.subject === 'english') p
 document.addEventListener('keydown', event => {
   if (navigation.keydown(event)) return;
   if (event.key === 'Escape' && app.querySelector('.my-menu[open]')) { app.querySelector('.my-menu').removeAttribute('open'); app.querySelector('.my-menu-toggle').focus(); return; }
-  if (event.key === 'Escape' && mobileMenu) { mobileMenu = false; render(); }
+  if (event.key === 'Escape' && mobileMenu && !dialog.open) { mobileMenu = false; render(); }
   const tab = event.target.closest('[role="tab"]');
   if (tab && ['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
     event.preventDefault();
@@ -1008,9 +1056,14 @@ document.addEventListener('keydown', event => {
 dialog.addEventListener('click', event => {
   if (event.target !== dialog) return;
   const bounds = dialog.getBoundingClientRect();
-  if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) closeDialog();
+  if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) dismissDialog();
 });
-dialog.addEventListener('cancel', event => { event.preventDefault(); closeDialog(); });
+dialog.addEventListener('cancel', event => {
+  if (event.target.id === 'backup-file') dialog.querySelector('[data-action="choose-backup"]').focus({ preventScroll: true });
+  if (event.target !== dialog) return;
+  event.preventDefault();
+  dismissDialog();
+});
 document.addEventListener('visibilitychange', () => { if (document.hidden) { halt(); clearRewardNotice(); state.settings.continuous = false; persist(); } else { if (!dialog.open) render(); celebrations.resume(); } });
 onAudioStatus((status, message) => {
   document.querySelectorAll('.primary-audio').forEach(element => { element.classList.toggle('playing', status === 'playing'); element.setAttribute('aria-busy', String(status === 'loading')); });

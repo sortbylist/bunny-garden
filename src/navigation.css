@@ -78,3 +78,5 @@
   .mode-navigation .nav-panel { width: min(380px, calc(100vw - 46px)); }
   .feature-navigation > .nav-rail:only-child { display: flex; }
 }
+
+.mobile-open .sidebar { overflow-y: auto; overscroll-behavior: contain; }

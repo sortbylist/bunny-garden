@@ -128,12 +128,38 @@ test('存储空间不足时单次写入失败，不刷新页面或丢失原记�
   expect(await saved(page)).toEqual(before);
 });
 
-test('手机端设置可找到备份入口，弹窗无横向溢出', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+for (const viewport of [{ width: 1280, height: 720 }, { width: 390, height: 844 }, { width: 320, height: 568 }]) {
+  test(`学习设置按组展示，滚动可见备份操作（${viewport.width}×${viewport.height}）`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    if (viewport.width < 600) await page.locator('[data-action="mobile-menu"]').click();
+    await openSettings(page);
+    const dialog = page.getByRole('dialog', { name: '学习设置' });
+    await expect(dialog.getByRole('heading', { level: 3 })).toHaveText(['个人资料', '学习偏好', '数据备份', '数据清理']);
+    for (const name of ['导出全部数据', '导入备份文件']) {
+      const action = dialog.getByRole('region', { name: '数据备份' }).getByRole('button', { name, exact: true });
+      await action.scrollIntoViewIfNeeded();
+      await expect(action).toBeInViewport({ ratio: 1 });
+    }
+    expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+  });
+}
+
+test('取消文件选择保留设置、焦点和滚动位置，再按 Esc 才关闭设置', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto('/');
-  await page.locator('[data-action="mobile-menu"]').click();
   await openSettings(page);
-  await expect(page.locator('[data-action="export-backup"]')).toBeVisible();
-  await expect(page.locator('[data-action="choose-backup"]')).toBeVisible();
-  expect(await page.locator('#dialog').evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+  const dialog = page.getByRole('dialog');
+  const choose = dialog.getByRole('button', { name: '导入备份文件' });
+  const before = await saved(page);
+  await Promise.all([page.waitForEvent('filechooser'), choose.click()]);
+  const scroll = await dialog.evaluate(element => element.scrollTop);
+  await page.locator('#backup-file').dispatchEvent('cancel', { bubbles: true });
+  await expect(dialog).toBeVisible();
+  await expect(choose).toBeFocused();
+  expect(await dialog.evaluate(element => element.scrollTop)).toBe(scroll);
+  await expect(dialog.locator('#backup-error')).toBeEmpty();
+  expect(await saved(page)).toEqual(before);
+  await page.keyboard.press('Escape');
+  await expect(dialog).not.toBeVisible();
 });
