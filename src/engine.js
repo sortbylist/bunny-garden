@@ -155,10 +155,17 @@ export const defaultState = () => ({
   version: 1, subject: 'chinese', collapsed: false, features: { chinese: 'pinyin' }, mode: 'sequence',
   group: 'all', wordScope: 'all', confusion: 'retroflex', length: 10,
   seen: [], known: [], favorites: [], mistakes: [], history: [], sessions: {},
-  settings: { slow: false, effects: true, continuous: false, animations: true },
+  settings: { slow: false, showPinyin: true, effects: true, continuous: false, animations: true },
   nickname: '小小探索家', navigationSelections: {}, rewards: null,
   tonePractice: false, modeGroups: {}, hanzi: null, topics: {}, phonics: phonicsDefaults(),
 });
+
+export function learningPreferences(saved) {
+  if (typeof saved.settings?.showPinyin === 'boolean') return { slow: saved.settings.slow === true, showPinyin: saved.settings.showPinyin };
+  const topic = saved.topics?.[saved.features?.chinese];
+  const reading = topic?.showPinyin ?? saved.hanzi?.showPinyin;
+  return { slow: (saved.subject === 'english' ? saved.phonics?.slow ?? saved.settings?.slow : saved.settings?.slow) === true, showPinyin: reading !== false };
+}
 
 export function loadState(storage) {
   try {
@@ -169,7 +176,7 @@ export function loadState(storage) {
     for (const key of ['seen', 'known', 'favorites', 'mistakes', 'history']) {
       if (!Array.isArray(parsed[key])) throw new Error('invalid collection');
     }
-    const state = { ...defaultState(), ...parsed, settings: { ...defaultState().settings, ...parsed.settings } };
+    const state = { ...defaultState(), ...parsed, settings: { ...defaultState().settings, ...parsed.settings, ...learningPreferences(parsed) } };
     state.phonics = normalizePhonicsState(parsed.phonics);
     state.navigationSelections = Object.fromEntries(Object.entries(parsed.navigationSelections && typeof parsed.navigationSelections === 'object' ? parsed.navigationSelections : {}).filter(([, value]) => typeof value === 'string'));
     if (['initials', 'finals', 'whole'].includes(state.mode)) {

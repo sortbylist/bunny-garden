@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { stored, selectTopic } from './helpers.js';
+import { stored, selectTopic, setLearningPreference, setRoundLength } from './helpers.js';
 
 async function openHanzi(page) {
   await page.goto('/');
@@ -165,23 +165,23 @@ test('新增笔顺、拼音辅助和30题轮次可保存，切换题量不重置
   await openHanzi(page);
   await page.locator('[data-action="hz-lesson"][data-id="stroke-horizontal-left"]').click();
   await expect(page.locator('.hz-demo ruby rt').first()).toHaveText('héng piě');
-  await page.locator('[data-action="hz-reading"]').click();
+  await setLearningPreference(page, 'showPinyin', false);
   await expect(page.locator('.hanzi-page ruby')).toHaveCount(0);
   await page.locator('[data-action="hz-category"][data-id="order"]').click();
   await page.locator('[data-action="hz-lesson"][data-id="order-山"]').click();
   await page.locator('[data-action="hz-stroke-jump"][data-index="2"]').click();
   await expect(page.locator('.hz-step-status')).toHaveText('第 2 / 3 笔：竖折');
-  await expect(page.locator('[data-action="hz-length"]')).toHaveCount(0);
+  await expect(page.locator('.round-settings')).toHaveCount(0);
   await page.locator('[data-action="hz-start"][data-id="all"]').click();
-  await page.locator('[data-action="hz-length"][data-value="30"]').click();
+  await setRoundLength(page, 30);
   await page.locator('[data-action="hz-start"][data-id="all"]').click();
   const questions = (await stored(page)).hanzi.round.questions;
   expect(questions).toHaveLength(30);
-  await page.locator('[data-action="hz-length"][data-value="20"]').click();
+  await setRoundLength(page, 20);
   await page.reload();
   expect((await stored(page)).hanzi.round.questions).toEqual(questions);
-  await expect(page.locator('[data-action="hz-reading"]')).toHaveAttribute('aria-checked', 'false');
-  await page.locator('[data-action="hz-reading"]').click();
+  expect((await stored(page)).settings.showPinyin).toBe(false);
+  await setLearningPreference(page, 'showPinyin', true);
   await answerCurrent(page);
   expect((await stored(page)).hanzi.round.responses[0].correct).toBe(true);
   await page.locator('[data-action="hz-start"][data-id="all"]').click();

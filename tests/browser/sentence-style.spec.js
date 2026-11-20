@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { chineseTopics } from '../../src/chinese-topics.js';
-import { chooseMode, selectTopic, stored } from './helpers.js';
+import { chooseMode, selectTopic, stored, setRoundLength } from './helpers.js';
 
 const topics = chineseTopics.filter(topic => topic.stage.startsWith('第二阶段'));
 const paint = locator => locator.evaluate(element => {
@@ -74,10 +74,10 @@ for (const width of [1440, 820, 320]) {
       await page.locator(`[data-action="ct-category"][data-id="${firstWrite.category}"]`).click();
       await page.locator(`[data-action="ct-lesson"][data-id="${firstWrite.id}"]`).click();
       await page.locator('#ct-draft').fill('我认真读完了这句话。');
-      await expect(page.locator('[data-action="ct-length"]')).toHaveCount(0);
+      await expect(page.locator('.round-settings')).toHaveCount(0);
       await expect(page.locator('#ct-draft')).toHaveValue('我认真读完了这句话。');
       await page.locator('[data-action="ct-start"][data-id="all"]').click();
-      await page.locator('[data-action="ct-length"][data-value="30"]').click();
+      await setRoundLength(page, 30);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await page.locator('[data-action="ct-skip"]').focus();
       await page.keyboard.press('Enter');

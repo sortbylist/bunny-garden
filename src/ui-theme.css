@@ -291,29 +291,42 @@
   color: var(--ui-warning-text);
 }
 
-.ct-tools,
-.phonics-page .ph-controls {
+.round-settings label {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
-  margin: 0 0 18px;
+  margin: 10px 0 4px;
 }
-.ct-tools > span,
-.ct-tools > small {
-  font-size: 12px;
-  color: #796573;
+.round-settings select {
+  min-height: 44px;
+  padding: 6px 10px;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-soft-border);
+  border-radius: 10px;
+  color: inherit;
+  font: inherit;
 }
-.ct-tools > small {
-  flex-basis: 100%;
+.round-settings summary {
+  min-height: 44px;
+  color: var(--ui-button-text);
 }
-.ct-tools .hz-chip {
-  min-width: 0;
-  min-height: var(--ui-button-height);
-  padding: 8px 12px;
-  font-size: 12px;
+.learning-favorite {
+  flex-shrink: 0;
+  margin-inline-start: auto;
+  white-space: nowrap;
 }
-.ct-tools .hz-chip[aria-pressed="true"],
+.card-topline:has(.learning-favorite),
+.quiz-top:has(.learning-favorite),
+.ph-card-top:has(.learning-favorite) {
+  flex-wrap: wrap;
+}
+.learning-favorite[aria-pressed="true"] {
+  color: #904c6c;
+  background: #f8e4ed;
+}
+.learning-favorite[aria-pressed="true"] .icon {
+  fill: currentColor;
+}
 .play-mode.selected {
   background: var(--ui-selected-background);
   border-color: var(--ui-selected-border);

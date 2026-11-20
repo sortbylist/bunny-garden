@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { chineseTopics } from '../../src/chinese-topics.js';
 import { paragraphEntries } from '../../src/reading-paragraphs-data.js';
-import { stored, selectTopic } from './helpers.js';
+import { stored, selectTopic, setLearningPreference } from './helpers.js';
 
 const topics = chineseTopics.filter(topic => topic.id.startsWith('reading-'));
 
@@ -104,7 +104,7 @@ for (const width of [320, 820, 1440]) {
     await page.goto('/');
     for (const topic of topics) {
       await selectTopic(page, topic.name);
-      await page.locator('[data-action="ct-reading"]').click();
+      await setLearningPreference(page, 'showPinyin', false);
       await expect(page.locator('.ct-reading-passage ruby')).toHaveCount(0);
       for (const text of topic.lessons[0].reading.passage.paragraphs) await expect(page.locator('.ct-reading-passage')).toContainText(text);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -112,7 +112,7 @@ for (const width of [320, 820, 1440]) {
       await page.screenshot({ path: `artifacts/${topic.id}-${width}.png`, fullPage: true });
       await page.locator('[data-action="ct-start"][data-id="all"]').click();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-      await page.locator('[data-action="ct-reading"]').click();
+      await setLearningPreference(page, 'showPinyin', true);
       await expect(page.locator('.ct-reading-passage')).toBeVisible();
     }
   });

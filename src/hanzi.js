@@ -4,9 +4,8 @@ import { startHanziRound, answerHanzi, advanceHanziRound } from './hanzi-engine.
 import { roundStats } from './engine.js';
 import { grantRewards } from './rewards.js';
 import { readingText } from './chinese-reading.js';
-import { practiceLengths } from './chinese-practice.js';
 import { icon, bunny } from './icons.js';
-import { learningAnswerLabel, learningCardFooter, learningPosition, learningTokenClass, learningTools, pinyinToggle } from './learning-ui.js';
+import { learningAnswerLabel, learningCardFooter, learningPosition, learningTokenClass, learningTools } from './learning-ui.js';
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 const control = (action, label, attributes = '', className = 'outline-button') => `<button type="button" data-action="hz-${action}" class="${className}" ${attributes}>${label}</button>`;
@@ -77,9 +76,9 @@ function quizCard(state) {
 }
 
 export function renderHanzi(state, garden) {
-  return `<section class="hanzi-page"><div class="page-heading learning-heading"><div class="learning-heading-copy"><div class="eyebrow"><span></span>字词基础 · 汉字小天地</div><h1>汉字笔画与结构<span class="heading-flower">✿</span></h1><p>认一笔，拆一拆，发现汉字的样子。每个小节都可以直接开始。</p></div><div class="learning-heading-actions">${pinyinToggle('hz', state)}</div></div>
+  return `<section class="hanzi-page"><div class="page-heading"><div><div class="eyebrow"><span></span>字词基础 · 汉字小天地</div><h1>汉字笔画与结构<span class="heading-flower">✿</span></h1><p>认一笔，拆一拆，发现汉字的样子。每个小节都可以直接开始。</p></div></div>
     <nav class="play-selector" aria-label="汉字学习小节"><div class="play-mode-buttons">${hanziCategories.map(category => control('category', `${icon(category.icon)}${category.name}`, `data-id="${category.id}" title="${category.description}" aria-pressed="${state.category === category.id && state.view === 'learn'}"`, `hz-category play-mode ${state.category === category.id && state.view === 'learn' ? 'selected' : ''}`)).join('')}</div></nav>
-    <div class="hz-layout learning-layout"><div class="learning-main">${learningTools('hz', state)}${state.view === 'quiz' && state.round ? quizCard(state) : learningCard(state)}</div><aside class="hz-sidebar learning-aside">
+    <div class="hz-layout learning-layout"><div class="learning-main">${state.view === 'quiz' && state.round ? quizCard(state) : learningCard(state)}${learningTools('hz', state)}</div><aside class="hz-sidebar learning-aside">
       ${garden}<section class="hz-card"><h2>我的汉字足迹</h2><p>自评认识 <strong>${state.known.length} / ${hanziLessons.length}</strong> 个学习项目</p><progress value="${state.known.length}" max="${hanziLessons.length}" aria-label="汉字自评认识进度"></progress><p>本主题题库 ${hanziQuestions.length} 题<br>当前小节 ${hanziQuestions.filter(item => item.category === state.category).length} 题</p><p>自评认识和练习首次答对分开记录，新一轮优先抽取未练题。</p><div class="hz-sidebar-actions">${control('start', `综合练习 · 最多 ${state.practiceLength} 题`, 'data-id="all"', 'solid-button')}${state.round && !state.round.finished && state.view === 'learn' ? control('resume', '继续上次练习') : ''}</div>${state.round && !state.round.finished ? '<p class="hz-caption">开始新练习会替换未完成的一轮；想保留当前题目，可继续上次练习。</p>' : ''}</section>
       <section class="hz-card hz-note"><h2>按自己的节奏学</h2><p>不用先学完拼音，也不用依次通关。可以随时换一节，回头再看看。</p><p>认识字的同时，也可以读一首古诗、说一句话，或写下今天的小发现。</p><p>学习记录保存在当前浏览器。</p></section>
     </aside></div></section>`;
@@ -89,8 +88,6 @@ export function handleHanziAction(root, action, data) {
   const state = root.hanzi;
   const lesson = currentLesson(state);
   const outcome = {};
-  if (action === 'hz-reading') state.showPinyin = !state.showPinyin;
-  if (action === 'hz-length' && practiceLengths.includes(Number(data.value))) state.practiceLength = Number(data.value);
   if (action === 'hz-category' && hanziCategories.some(item => item.id === data.id)) {
     state.category = data.id;
     state.lessonId = hanziLessons.find(item => item.category === data.id).id;

@@ -23,12 +23,15 @@ export function learningTokenClass(value) {
   return [...text].length === 1 ? ' learning-token learning-glyph' : ' learning-token';
 }
 
-export function pinyinToggle(prefix, state) {
-  return `<button type="button" data-action="${prefix}-reading" class="reading-toggle" role="switch" aria-label="拼音辅助" aria-checked="${state.showPinyin}"><span>拼音</span><span class="reading-toggle-track" aria-hidden="true"></span></button>`;
+export function favoriteButton(action, saved) {
+  return `<button type="button" data-action="${action}" class="soft-button learning-favorite" aria-label="收藏" aria-pressed="${saved}">${icon('heart')}${saved ? '已收藏' : '收藏'}</button>`;
+}
+
+export function roundSettings(field, length, choices, nextRound = false) {
+  const hint = nextRound ? '题数用于下一轮，当前题目会保留。' : '切换题数会切换到对应题量的练习。';
+  return `<details class="lesson-details round-settings"><summary>练习设置</summary><label>每轮题数<select data-round-length="${field}">${choices.map(value => `<option value="${value}" ${value === length ? 'selected' : ''}>${value} 题</option>`).join('')}</select></label><small>${hint}</small></details>`;
 }
 
 export function learningTools(prefix, state) {
-  const lengths = state.view === 'quiz' ? `<span>新一轮题数：</span><div class="ct-lengths">${practiceLengths.map(length => `<button type="button" data-action="${prefix}-length" class="hz-chip" data-value="${length}" aria-pressed="${state.practiceLength === length}">${length} 题</button>`).join('')}</div><small>切换题数用于下一轮，当前题目会保留。</small>` : '';
-  if (!lengths) return '';
-  return `<div class="ct-tools controls" aria-label="学习辅助">${lengths}</div>`;
+  return state.view === 'quiz' ? roundSettings(prefix, state.practiceLength, practiceLengths, true) : '';
 }

@@ -1,4 +1,4 @@
-import { defaultState, loadState } from './engine.js';
+import { defaultState, learningPreferences, loadState } from './engine.js';
 import { phonicsDefaults } from './phonics-engine.js';
 import { emptyRewards } from './rewards.js';
 import { basics, vocabulary } from './data.js';
@@ -51,6 +51,7 @@ function migrateGarden(saved) {
   if (!isRecord(saved)) invalid();
   if (saved.version !== 1) throw new Error('不支持此学习数据版本，请使用兼容的新版本应用导入。');
   const state = withDefaults(saved, defaultState());
+  Object.assign(state.settings, learningPreferences(saved));
   state.phonics = migratePhonics(state.phonics);
   checkStringArrays(state, ['seen', 'known', 'favorites']);
   if (state.hanzi !== null && !isRecord(state.hanzi)) invalid();

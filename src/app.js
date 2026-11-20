@@ -22,7 +22,8 @@ import { normalizeTopic, topicDefaults, startTopicRound, updateTopicActivity } f
 import { renderTopic, handleTopicAction } from './chinese.js';
 import { createPhonicsView } from './phonics.js';
 import { createNavigation, featureGroups } from './navigation.js';
-import { learningPosition, learningTokenClass } from './learning-ui.js';
+import { favoriteButton, learningPosition, learningTokenClass, roundSettings } from './learning-ui.js';
+import { practiceLengths } from './chinese-practice.js';
 import './ui-theme.css';
 import { createBackup, parseBackup, restoreBackup, maxBackupBytes } from './backup.js';
 import { saveState } from './storage.js';
@@ -69,7 +70,7 @@ if (state.group !== 'all' && !groups.some(group => group.id === state.group)) st
 if (!confusionSets[state.confusion]) state.confusion = 'retroflex';
 state.features.english = 'phonics';
 const phonics = createPhonicsView({
-  state: state.phonics, persist,
+  state: state.phonics, persist, slowPlayback: () => state.settings.slow,
   redraw: render, notify: toast, renderGarden: progressCard,
   haltOtherAudio: () => { continuousToken++; stopAudio(); },
   rewardAction: action => celebrateReward(grantRewards(state, action)),
@@ -191,7 +192,7 @@ function render() {
         <div class="topbar-right"><button class="star-counter" data-action="reward-rules" aria-label="查看星星收获与获取规则">${icon('star')}<b>${rewardStats(state.rewards).stars}</b><span>颗成长星</span>${icon('info')}</button><details class="my-menu"><summary class="my-menu-toggle" aria-label="打开我的菜单"><img src="/bunny.svg" alt="" width="38" height="38"><span>${escape(state.nickname)}<small>我的 ${icon('down')}</small></span></summary><div class="my-menu-content"><strong>你好，${escape(state.nickname)}</strong>${button('profile', '我的成长空间', 'sprout')}${personalButtons('menu')}${button('reward-collection', '奖励收藏册', 'star')}${button('menu-settings', '学习设置', 'settings')}</div></details></div>
       </header>
       ${navigation.render({ id: `features-${subject.id}`, label: `${subject.name}主题`, groups: featureGroups(subject), selected: state.features[subject.id], memories: state.navigationSelections, action: 'feature', className: 'feature-navigation' })}
-      <main id="main-content" tabindex="-1">${topic ? renderTopic(topic, state.topics[topic.id], progressCard()) : isHanzi ? renderHanzi(state.hanzi, progressCard()) : state.subject === 'chinese' ? learningPage() : state.subject === 'english' ? phonics.render() : comingSoon(subject)}</main>
+      <main id="main-content" tabindex="-1">${topic ? renderTopic(topic, { ...state.topics[topic.id], showPinyin: topic.subject !== 'math' && state.settings.showPinyin }, progressCard()) : isHanzi ? renderHanzi({ ...state.hanzi, showPinyin: state.settings.showPinyin }, progressCard()) : state.subject === 'chinese' ? learningPage() : state.subject === 'english' ? phonics.render() : comingSoon(subject)}</main>
       <footer>用一点好奇心，收获一点新知识。${icon('heart')}<span>小兔陪你慢慢学</span></footer>
     </div>`;
   disposeReadingRows = observeReadingRows(app);
@@ -219,6 +220,7 @@ function learningPage() {
     <div class="learning-layout"><div class="learning-main" role="region" aria-label="${mode.name}">
       ${controls()}
       ${studyModes.includes(state.mode) ? studyCard(value) : state.mode === 'tones' && !state.tonePractice ? tonesCard() : state.mode === 'match' ? matchCard(value) : quizCard(value)}
+      ${value?.questions ? roundSettings('pinyin', state.length, [5, 10, 20]) : ''}
       ${studyModes.includes(state.mode) ? studyGrid(value) : '<div class="gentle-note">' + icon('leaf') + '答错也没关系，再听一次、再试一次，就是进步。</div>'}
     </div><aside class="learning-aside">${progressCard()}${mapCard()}<div class="help-note">${icon('headphones')}<div><strong>小耳朵，准备好了吗？</strong><p>点击 ${icon('sound')} 就能听读音<br>听完以后，也试着读一读吧。</p></div></div></aside></div>`;
 }
@@ -266,13 +268,12 @@ function equippedRewards() {
 function controls() {
   const supportsGroup = ['sequence', 'random', 'listen', 'audio', 'challenge'].includes(state.mode);
   const availableGroups = learningGroups(state.mode);
-  return `<div class="controls">${supportsGroup ? `<label>${state.mode === 'challenge' ? '听辨范围' : '学习范围'} <select id="group-select" data-setting="group"><option value="all">全部拼音</option>${availableGroups.map(group => `<option value="${group.id}" ${state.group === group.id ? 'selected' : ''}>${group.name}</option>`).join('')}</select></label>` : ''}
+  const fields = `${supportsGroup ? `<label>${state.mode === 'challenge' ? '听辨范围' : '学习范围'} <select id="group-select" data-setting="group"><option value="all">全部拼音</option>${availableGroups.map(group => `<option value="${group.id}" ${state.group === group.id ? 'selected' : ''}>${group.name}</option>`).join('')}</select></label>` : ''}
     ${availableWordScopes().length ? `<label>字词范围 <select data-setting="wordScope">${availableWordScopes().map(scope => `<option value="${scope.id}" ${state.wordScope === scope.id ? 'selected' : ''}>${scope.name}</option>`).join('')}</select></label>` : ''}
     ${state.mode === 'confusing' ? `<label>专项 <select data-setting="confusion">${Object.entries(confusionSets).map(([id, item]) => `<option value="${id}" ${state.confusion === id ? 'selected' : ''}>${item.name}</option>`).join('')}</select></label>` : ''}
-    ${!studyModes.includes(state.mode) && state.mode !== 'match' && (state.mode !== 'tones' || state.tonePractice) ? `<label>每组 <select data-setting="length">${[5, 10, 20].map(length => `<option value="${length}" ${state.length === length ? 'selected' : ''}>${length} 题</option>`).join('')}</select></label>` : ''}
     ${state.mode === 'tones' ? button('toggle-tones', state.tonePractice ? '回到声调学习' : '听音选声调', state.tonePractice ? 'book' : 'headphones', 'text-button') : ''}
-    ${state.mode === 'favorites' ? button('shuffle-favorites', '打乱顺序复习', 'shuffle', 'text-button') : ''}
-    <div class="control-right">${button('slow', state.settings.slow ? '慢速播放' : '标准语速', 'wave', `text-button ${state.settings.slow ? 'on' : ''}`, `aria-pressed="${state.settings.slow}"`)}${button('restart', '', 'refresh', 'icon-button small', 'aria-label="重新开始本轮" title="重新开始本轮"')}</div></div>`;
+    ${state.mode === 'favorites' ? button('shuffle-favorites', '打乱顺序复习', 'shuffle', 'text-button') : ''}`.trim();
+  return fields ? `<div class="controls">${fields}</div>` : '';
 }
 
 function audioNote(item) {
@@ -289,7 +290,7 @@ function studyCard(value) {
   const favorite = state.favorites.includes(item.id);
   const known = state.known.includes(item.id);
   const isLast = value.index === value.ids.length - 1;
-  return `<section class="study-card ${item.type === 'word' ? 'word-card' : ''}"><div class="card-topline"><span class="category-badge">${icon('flower')}${item.type === 'word' ? '常见字词' : groupName(item.group)}</span>${learningPosition(value.index, value.ids.length)}${button('favorite', '', 'heart', `favorite-button ${favorite ? 'favorited' : ''}`, `aria-label="${favorite ? '取消收藏' : '收藏当前拼音'}" aria-pressed="${favorite}"`)}</div>
+  return `<section class="study-card ${item.type === 'word' ? 'word-card' : ''}"><div class="card-topline"><span class="category-badge">${icon('flower')}${item.type === 'word' ? '常见字词' : groupName(item.group)}</span>${learningPosition(value.index, value.ids.length)}${favoriteButton('favorite', favorite)}</div>
     <div class="pinyin-stage"><span class="stage-spark spark-one">✦</span><span class="stage-spark spark-two">✧</span><div class="writing-lines"></div><button class="pinyin-display ${item.text.length > 4 ? 'long' : ''}" data-action="play-current" aria-label="听 ${escape(item.text)} 的读音">${escape(item.type === 'word' ? item.pinyin : item.text)}</button>${item.type === 'word' ? `<div class="word-under">${item.text}</div>` : ''}</div>
     <div class="sound-row">${button('play-current', '<span>听一听</span>', 'sound', 'sound-button primary-audio')}${button('continuous', state.settings.continuous ? '停止连播' : '连续听读', state.settings.continuous ? 'pause' : 'play', 'continuous-button', `aria-pressed="${state.settings.continuous}"`)}</div>
     <p class="audio-hint">${audioNote(item)}</p>
@@ -340,7 +341,7 @@ function quizCard(round) {
   const question = round.questions[round.index];
   const wrong = round.selected !== null && round.selected !== question.answer;
   const answered = round.revealed;
-  return `<section class="quiz-card"><div class="quiz-top"><span class="category-badge">${icon('flag')}一点点小挑战</span>${learningPosition(round.index, round.questions.length, { practice: true })}</div><div class="quiz-progress">${round.questions.map((item, index) => `<i class="${round.responses[index]?.correct ? 'correct' : round.responses[index] ? 'miss' : ''} ${index === round.index ? 'current' : ''}"></i>`).join('')}</div>${round.available < state.length ? `<p class="small-note">这个范围共有 ${round.available} 题，这轮全部练一遍。</p>` : ''}<h3 class="question-prompt">${escape(question.prompt)}</h3>
+  return `<section class="quiz-card"><div class="quiz-top"><span class="category-badge">${icon('flag')}一点点小挑战</span>${learningPosition(round.index, round.questions.length, { practice: true })}${question.itemId ? favoriteButton('favorite-question', state.favorites.includes(question.itemId)) : ''}</div><div class="quiz-progress">${round.questions.map((item, index) => `<i class="${round.responses[index]?.correct ? 'correct' : round.responses[index] ? 'miss' : ''} ${index === round.index ? 'current' : ''}"></i>`).join('')}</div>${round.available < state.length ? `<p class="small-note">这个范围共有 ${round.available} 题，这轮全部练一遍。</p>` : ''}<h3 class="question-prompt">${escape(question.prompt)}</h3>
     ${question.display ? `<div class="question-display ${question.kind === 'hanzi' ? 'hanzi' : ''}">${escape(question.display)}</div>` : ''}
     ${question.kind === 'listen' ? button('play-question', '再听一遍', 'sound', 'sound-button question-audio primary-audio') : ''}
     ${question.kind === 'blend' ? `<div class="blend-controls">${button('play-parts', '听分解', 'sound', 'soft-button')}${answered ? button('play-question', '听完整拼读', 'sound', 'soft-button') : ''}</div>` : ''}
@@ -351,7 +352,7 @@ function quizCard(round) {
     }).join('')}</div>
     <div class="answer-feedback ${answered ? round.selected === null ? 'warning' : 'success' : wrong ? 'retry warning' : ''}" role="status">${answered ? `${icon(round.selected === null ? 'leaf' : 'check')}<div><strong>${round.selected === null ? '先认识答案，下次再试试' : '答对啦，你做得很棒！'}</strong><p>${escape(question.explanation)}</p></div>` : wrong ? `${icon('refresh')}<div><strong>差一点点，再试一次吧！</strong><p>可以再听一听，或者点“看看答案”。首次作答已经记下啦。</p></div>` : `${icon('leaf')}<span>想一想，再选出你的答案。</span>`}</div>
     ${answered && question.audio?.word && !hasAudio({ word: question.audio.word }) && question.audio.sounds?.length > 1 ? '<p class="small-note">这个词一个字一个字读，跟着一起拼一拼。</p>' : ''}
-    <div class="quiz-actions">${button('favorite-question', state.favorites.includes(question.itemId) ? '已收藏' : '收藏知识点', 'heart', 'text-button', question.itemId ? '' : 'hidden')}${answered ? button('play-question', '听正确读音', 'sound', 'text-button') : button('skip', wrong ? '看看答案' : '先跳过', '', 'text-button')}${button('next-question', nextUnfinishedQuestion(round) < 0 ? '看看本轮收获' : '下一题', 'chevron', 'solid-button next', answered ? '' : 'disabled')}</div>
+    <div class="quiz-actions">${answered ? button('play-question', '听正确读音', 'sound', 'text-button') : button('skip', wrong ? '看看答案' : '先跳过', '', 'text-button')}${button('next-question', nextUnfinishedQuestion(round) < 0 ? '看看本轮收获' : '下一题', 'chevron', 'solid-button next', answered ? '' : 'disabled')}</div>
   </section>`;
 }
 
@@ -435,7 +436,8 @@ function showSettings() {
     ${settingsAction('edit-nickname', '昵称', escape(state.nickname))}
   </section>
   <section class="settings-group" aria-labelledby="preferences-heading"><h3 id="preferences-heading">学习偏好</h3>
-    ${settingsToggle('slow', '慢速读音', '放慢一点听，保持声音的音高')}
+    ${settingsToggle('slow', '慢速读音', '关闭为标准语速，开启为 0.8 倍速。适用于拼音、古诗朗读和英语点读、听题。')}
+    ${settingsToggle('showPinyin', '拼音辅助', '在有注音的语文学习卡和练习中显示辅助拼音，不改变题目本身。')}
     ${settingsToggle('effects', '答对时的小音效', '关闭后仍可点读拼音')}
     ${settingsToggle('animations', '奖励庆祝动效', '关闭后仍显示奖励文字，也支持系统减少动态效果')}
   </section>
@@ -797,13 +799,13 @@ function handleAction(event) {
   if (!target || target.disabled) return;
   const action = target.dataset.action;
   if (action === 'ct-draft') return;
-  if (['ct-poem-play', 'ct-poem-slow', 'ct-poem-stop'].includes(action)) {
+  if (['ct-poem-play', 'ct-poem-stop'].includes(action)) {
     const topic = activeTopic();
     const topicState = topic && state.topics[topic.id];
     const lesson = topic?.lessons.find(item => item.id === topicState.lessonId);
     halt();
     if (topicState?.view === 'learn' && lesson?.poem && action !== 'ct-poem-stop') {
-      void poetryAudio.play(lesson.poem.audioId, action === 'ct-poem-slow');
+      void poetryAudio.play(lesson.poem.audioId, state.settings.slow);
     }
     return;
   }
@@ -892,8 +894,6 @@ function handleAction(event) {
     delete state.sessions[key()];
     closeDialog(); render(); return;
   }
-  if (action === 'slow') { halt(); state.settings.slow = !state.settings.slow; state.settings.continuous = false; render(); return; }
-  if (action === 'restart') { openDialog('重新开始这一轮？', `<p>当前这一轮的进度会重置，收藏、错题和以前的学习记录都会保留。</p><div class="dialog-actions">${button('close-dialog', '继续当前练习', '', 'outline-button')}${button('restart-now', '重新开始', 'refresh', 'solid-button')}</div>`); return; }
   if (action === 'restart-now') { restart(); return; }
   if (action === 'reset-confirm') { showResetConfirmation(); return; }
   if (action === 'reset-all') { halt(); celebrations.reset(); state = defaultState(); phonics.reset(state.phonics); state.features.english = 'phonics'; initializeRewards(state); closeDialog(); render(); toast('记录已清空，可以重新出发啦。'); return; }
@@ -966,7 +966,7 @@ function handleAction(event) {
       }
       return;
     }
-    if (action === 'favorite-question') { if (question.itemId && !state.favorites.includes(question.itemId)) state.favorites.push(question.itemId); render(); return; }
+    if (action === 'favorite-question' && question.itemId) { state.favorites = state.favorites.includes(question.itemId) ? state.favorites.filter(id => id !== question.itemId) : [...state.favorites, question.itemId]; render(); return; }
     if (action === 'next-question' && round.revealed) {
       halt();
       const nextIndex = nextUnfinishedQuestion(round);
@@ -1000,13 +1000,26 @@ document.addEventListener('input', event => {
 
 document.addEventListener('change', event => {
   if (event.target.id === 'backup-file') { void readBackupFile(event.target); return; }
-  if (state.subject === 'english' && phonics.change(event.target)) return;
+  const lengthScope = event.target.dataset.roundLength;
+  if (lengthScope) {
+    const length = Number(event.target.value);
+    if (lengthScope === 'pinyin' && [5, 10, 20].includes(length)) { halt(); state.length = length; }
+    else if (lengthScope === 'ct' && activeTopic() && practiceLengths.includes(length)) state.topics[activeTopic().id].practiceLength = length;
+    else if (lengthScope === 'hz' && practiceLengths.includes(length)) state.hanzi.practiceLength = length;
+    else if (lengthScope !== 'phonics' || state.subject !== 'english' || !phonics.change(event.target)) return;
+    if (lengthScope !== 'phonics') render();
+    const replacement = app.querySelector(`[data-round-length="${lengthScope}"]`);
+    if (replacement) {
+      replacement.closest('details').open = true;
+      replacement.focus({ preventScroll: true });
+    }
+    return;
+  }
   const field = event.target.dataset.setting;
   if (!field) return;
   halt();
   state.settings.continuous = false;
-  if (['slow', 'effects', 'animations'].includes(field)) state.settings[field] = event.target.checked;
-  else if (field === 'length') state.length = Number(event.target.value);
+  if (['slow', 'showPinyin', 'effects', 'animations'].includes(field)) state.settings[field] = event.target.checked;
   else if (['group', 'wordScope', 'confusion'].includes(field)) state[field] = event.target.value;
   render();
 });

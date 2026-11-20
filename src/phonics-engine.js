@@ -2,7 +2,7 @@ import { alphabet, phonicsLessons, phonicsWords, phonicsStories, phonicsModes, p
 
 export const phonicsDefaults = () => ({
   version: 1, locale: 'en-GB', lessonId: 'lesson-1', mode: 'learn', scope: 'lesson', length: 10,
-  slow: false, positions: {}, sessions: {}, favorites: [], known: [], seen: [], mistakes: [], history: [], reviews: {},
+  positions: {}, sessions: {}, favorites: [], known: [], seen: [], mistakes: [], history: [], reviews: {},
 });
 
 export function shufflePhonics(items, random = Math.random) {
@@ -115,7 +115,6 @@ export function normalizePhonicsState(saved) {
     if ([...phonicsModes.map(mode => mode.id), 'alphabet', 'diagnostic', 'assessment'].includes(saved.mode)) state.mode = saved.mode;
     if (saved.scope === 'all') state.scope = 'all';
     if ([5, 10, 20].includes(saved.length)) state.length = saved.length;
-    state.slow = saved.slow === true;
     for (const field of ['favorites', 'known', 'seen']) {
       state[field] = Array.isArray(saved[field]) ? [...new Set(saved[field].filter(id => phonicsWordById.has(id)))] : [];
     }

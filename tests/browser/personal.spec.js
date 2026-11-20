@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { chooseMode, stored } from './helpers.js';
+import { chooseMode, stored, setRoundLength } from './helpers.js';
 
 async function stars(page) { return page.locator('.topbar .star-counter b').textContent(); }
 
@@ -98,7 +98,7 @@ test('认读星星去重、规则流水可查、贴纸展示与庆祝重播不�
 test('答错重试可收获新题星，完成有效练习每日加星，错题独立改正再奖励', async ({ page }) => {
   await page.goto('/');
   await chooseMode(page, 'rules');
-  await page.locator('[data-setting="length"]').selectOption('5');
+  await setRoundLength(page, 5);
   const sessionKey = 'rules:all:all:retroflex:5';
   const questions = (await stored(page)).sessions[sessionKey].questions;
   for (let index = 0; index < 5; index++) {

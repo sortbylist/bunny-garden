@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { learningCardFooter, learningTokenClass, learningTools, pinyinToggle } from '../src/learning-ui.js';
+import { favoriteButton, learningCardFooter, learningTokenClass, learningTools, roundSettings } from '../src/learning-ui.js';
 import { readingHints } from '../src/chinese-reading.js';
 import { vocabularyEntries } from '../src/vocabulary-data.js';
 
@@ -45,23 +45,24 @@ test('学习和查字页面隐藏题数设置，练习页保留下一轮设置�
       assert.equal(html, '');
     }
     const quiz = learningTools(prefix, { view: 'quiz', showPinyin: false, practiceLength: 20 });
-    assert.ok(quiz.includes('新一轮题数'));
-    assert.ok(quiz.includes('data-value="20" aria-pressed="true"'));
-    assert.ok(!quiz.includes(`${prefix}-reading`));
+    assert.match(quiz, /<details class="lesson-details round-settings">/);
+    assert.match(quiz, /每轮题数/);
+    assert.match(quiz, /value="20" selected/);
+    assert.match(quiz, /题数用于下一轮/);
   }
   assert.equal(learningTools('ct', { view: 'learn' }, { math: true }), '');
 });
 
-test('标题区拼音开关使用固定名称和可访问的开关状态', () => {
-  for (const prefix of ['ct', 'hz']) {
-    for (const showPinyin of [true, false]) {
-      const html = pinyinToggle(prefix, { showPinyin });
-      assert.ok(html.includes(`data-action="${prefix}-reading"`));
-      assert.ok(html.includes('role="switch" aria-label="拼音辅助"'));
-      assert.ok(html.includes(`aria-checked="${showPinyin}"`));
-      assert.ok(html.includes('<span>拼音</span>'));
-      assert.ok(!html.includes('aria-pressed'));
-    }
+test('各练习共用设置外观，收藏组件同步图标和选中状态', () => {
+  for (const scope of ['phonics', 'pinyin']) {
+    const html = roundSettings(scope, 5, [5, 10, 20]);
+    assert.match(html, /<details class="lesson-details round-settings">/);
+    assert.match(html, /value="5" selected/);
+    assert.match(html, /切换到对应题量的练习/);
+  }
+  for (const action of ['favorite', 'favorite-question', 'ph-favorite']) {
+    assert.match(favoriteButton(action, false), /aria-label="收藏" aria-pressed="false".*收藏<\/button>/);
+    assert.match(favoriteButton(action, true), /aria-label="收藏" aria-pressed="true".*已收藏<\/button>/);
   }
 });
 

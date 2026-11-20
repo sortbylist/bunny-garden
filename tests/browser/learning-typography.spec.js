@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { chineseTopics } from '../../src/chinese-topics.js';
 import { mathTopics } from '../../src/math-topics.js';
 import { hanziCategories } from '../../src/hanzi-data.js';
-import { selectTopic } from './helpers.js';
+import { selectTopic, setLearningPreference } from './helpers.js';
 
 const fontSizes = locator => locator.evaluateAll(elements => [...new Set(elements.map(element => getComputedStyle(element).fontSize))]);
 
@@ -18,7 +18,7 @@ test('语境分类的长短标题使用相同且适度缩小的字号', async ({
   await page.locator('[data-action="ct-category"][data-id="context"]').click();
   await page.locator('.ct-lesson-list').screenshot({ path: testInfo.outputPath('context-cards.png') });
   expect(await fontSizes(page.locator('[data-action="ct-lesson"]'))).toEqual(['18px']);
-  await page.locator('[data-action="ct-reading"]').click();
+  await setLearningPreference(page, 'showPinyin', false);
   expect(await fontSizes(page.locator('[data-action="ct-lesson"]'))).toEqual(['18px']);
 });
 

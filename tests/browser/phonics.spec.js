@@ -222,11 +222,11 @@ test('顶部玩法与小节地图分层，切换小节保留玩法、范围和�
   for (const id of ['random', 'meaning', 'spelling', 'rules', 'listen']) {
     await mode(page, id);
     await page.locator('.ph-map [data-action="ph-scope"]').click();
-    await expect(page.locator('.ph-current-section')).toHaveText('全部课程');
+    await expect(page.locator('.ph-map [data-action="ph-scope"]')).toHaveAttribute('aria-current', 'true');
     await expect(page.locator('.ph-map [data-action="ph-lesson"][aria-current]')).toHaveCount(0);
     await section(page, 'lesson-4');
     await expect(page.locator('.ph-modes [data-id="' + id + '"]')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('.ph-current-section')).toContainText('第 4 课');
+    await expect(page.locator('.ph-map [aria-current="step"]')).toHaveAttribute('data-id', 'lesson-4');
     expect((await englishState(page)).scope).toBe('lesson');
   }
   await mode(page, 'reading');
@@ -239,6 +239,21 @@ test('顶部玩法与小节地图分层，切换小节保留玩法、范围和�
     await mode(page, id);
     await expect(page.locator('.ph-map')).toHaveCount(0);
     await expect(page.locator('.ph-current-section')).toHaveCount(0);
+  }
+});
+
+test('英语各玩法不设顶部工具栏，可调题量的练习在卡片下方提供设置', async ({ page }) => {
+  await openEnglish(page);
+  for (const id of ['learn', 'random', 'meaning', 'spelling', 'rules', 'listen', 'reading', 'favorites', 'records']) {
+    await mode(page, id);
+    await expect(page.locator('.ph-main > .ph-controls, .ph-current-section')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: '重新开始', exact: true })).toHaveCount(0);
+    if (['meaning', 'spelling', 'rules', 'listen'].includes(id)) {
+      const settings = page.locator('.ph-card + .round-settings');
+      await expect(settings.locator('select')).toBeHidden();
+      await settings.locator('summary').click();
+      await expect(settings.getByLabel('每轮题数')).toBeVisible();
+    } else await expect(page.locator('.round-settings')).toHaveCount(0);
   }
 });
 

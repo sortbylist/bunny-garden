@@ -87,7 +87,8 @@ test('固定 v1 备份补齐新增字段，恢复统一根数据且不重复发�
   assert.deepEqual(state.topics, {});
   assert.deepEqual(english.reviews, {});
   assert.equal(english.lessonId, 'lesson-2');
-  assert.equal(english.slow, true);
+  assert.equal(state.settings.showPinyin, true);
+  assert.equal(english.slow, undefined);
   assert.equal(state.rewards.equipped.sticker, 'curious-glass');
   assert.deepEqual(state.rewards.mastery, {});
   initializeRewards(state);

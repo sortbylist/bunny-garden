@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { selectTopic } from './helpers.js';
+import { selectTopic, setLearningPreference } from './helpers.js';
 
 async function cardMetrics(cards) {
   return cards.evaluateAll(elements => elements.map(element => {
@@ -67,13 +67,13 @@ test('词语搭配卡片仅在当前行有拼音时统一留高，换行和开�
     expect(enabled.some(card => !card.reserved)).toBe(true);
     await cards.filter({ has: page.locator('ruby') }).first().scrollIntoViewIfNeeded();
     await page.locator('.ct-lesson-list').screenshot({ path: testInfo.outputPath(`reading-${width}.png`) });
-    await page.getByRole('switch', { name: '拼音辅助' }).click();
+    await setLearningPreference(page, 'showPinyin', false);
     const disabled = await expectReadingRows(cards);
     for (const [index, card] of disabled.entries()) {
       expect(card.ruby).toBe(false);
       expect(enabled[index].height - card.height, card.text).toBeCloseTo(enabled[index].reserved ? 12 : 0, 0);
     }
-    await page.getByRole('switch', { name: '拼音辅助' }).click();
+    await setLearningPreference(page, 'showPinyin', true);
     await expectReadingRows(cards);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   }
@@ -93,7 +93,7 @@ for (const width of [390, 1440]) {
       const cards = page.locator('.hz-item-list .hz-chip');
       const enabled = await expectReadingRows(cards);
       expect(enabled.every(card => !card.ruby && !card.reserved)).toBe(true);
-      await page.getByRole('switch', { name: '拼音辅助' }).click();
+      await setLearningPreference(page, 'showPinyin', false);
       const disabled = await expectReadingRows(cards);
       expect(disabled.map(card => card.height)).toEqual(enabled.map(card => card.height));
     });

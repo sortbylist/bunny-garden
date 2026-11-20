@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { stored, selectTopic } from './helpers.js';
+import { stored, selectTopic, setLearningPreference } from './helpers.js';
 import { poems } from '../../src/poetry-data.js';
 
 async function poemText(page) {
@@ -24,7 +24,7 @@ test('形近字和多音字对照可读，关闭拼音仍保留辨析所需的�
   await page.locator('[data-action="ct-category"][data-id="polyphones"]').click();
   await page.locator('[data-action="ct-lesson"][data-id$=":de"]').click();
   for (const reading of ['dé', 'děi', 'de']) await expect(page.locator('.ct-comparison')).toContainText(reading);
-  await page.locator('[data-action="ct-reading"]').click();
+  await setLearningPreference(page, 'showPinyin', false);
   await expect(page.locator('.ct-comparison ruby')).toHaveCount(0);
   await expect(page.locator('.ct-comparison')).toContainText('在“得到”中读 dé');
   await page.locator('[data-action="ct-start"][data-id="polyphones"]').click();
@@ -59,7 +59,7 @@ test('古诗原文、拼音、遮文背诵与草稿独立保存，手机七言�
     new Set([...element.querySelectorAll('ruby')].map(ruby => Math.round(ruby.getBoundingClientRect().top))).size));
   await page.screenshot({ path: 'artifacts/literacy-poetry-mobile.png', fullPage: true });
   expect(rows).toEqual([1, 1, 1, 1]);
-  await page.locator('[data-action="ct-reading"]').click();
+  await setLearningPreference(page, 'showPinyin', false);
   await expect(page.locator('.ct-poem-lines ruby')).toHaveCount(0);
   await expect(page.locator('.ct-poem-lines')).toContainText('早有蜻蜓立上头');
   await page.locator('[data-action="ct-lesson"][data-id$=":goose"]').click();
@@ -108,7 +108,8 @@ test('示范朗读支持常速慢速停止，切换内容不串音、不改变�
   await page.getByRole('button', { name: '听示范朗读', exact: true }).click();
   await expect(page.locator('.ct-poem-audio-status')).toContainText('正在朗读');
   expect(await page.evaluate(() => window.poetryPlayers.at(-1).playbackRate)).toBe(1);
-  await page.getByRole('button', { name: '慢速听一听', exact: true }).click();
+  await setLearningPreference(page, 'slow', true);
+  await page.getByRole('button', { name: '听示范朗读', exact: true }).click();
   await expect(page.locator('.ct-poem-audio-status')).toContainText('正在朗读');
   expect(await page.evaluate(() => window.poetryPlayers.at(-1).playbackRate)).toBe(0.8);
   expect(await page.evaluate(() => window.poetryPlayers[0].paused)).toBe(true);

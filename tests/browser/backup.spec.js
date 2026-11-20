@@ -84,7 +84,7 @@ test('v1 备份在当前页面导入，补新字段并保留奖励和学习选�
   const main = await saved(page);
   expect(main.mode).toBe('sequence');
   expect(main.group).toBe('initial');
-  expect(main.settings).toEqual({ slow: true, effects: false, continuous: false, animations: true });
+  expect(main.settings).toEqual({ slow: true, showPinyin: true, effects: false, continuous: false, animations: true });
   expect(main.rewards.equipped.sticker).toBe('curious-glass');
   await openSettings(page);
   const exported = JSON.parse(await exportFile(page));

@@ -22,7 +22,6 @@ export function literacySupplement(lesson, state) {
     <p class="ct-poem-author">${escapeText(lesson.poem.dynasty)} · ${escapeText(lesson.poem.author)}</p>
     <div class="hz-actions ct-poem-audio" aria-label="古诗示范朗读">
       <button type="button" class="solid-button" data-action="ct-poem-play">听示范朗读</button>
-      <button type="button" class="outline-button" data-action="ct-poem-slow">慢速听一听</button>
       <button type="button" class="outline-button" data-action="ct-poem-stop" disabled>停止朗读</button>
     </div>
     <p class="hz-caption ct-poem-audio-status" role="status" aria-live="polite">普通话合成语音，点击后播放。</p>

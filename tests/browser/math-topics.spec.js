@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { mathTopics } from '../../src/math-topics.js';
-import { selectTopic, stored } from './helpers.js';
+import { selectTopic, stored, setRoundLength } from './helpers.js';
 
 async function subject(page, id) {
   const button = page.locator(`.subjects [data-action="subject"][data-id="${id}"]`);
@@ -34,7 +34,7 @@ test('数学复用语文的学习卡、练习选项、布局和成长花园', as
     expect(await paint(page.locator('.growth-card'))).toEqual(garden);
     expect(await page.locator('.learning-layout').evaluate(element => getComputedStyle(element).gridTemplateColumns)).toEqual(layout);
     await expect(page.locator('.eyebrow')).toContainText('第一阶段 · 数与运算');
-    await expect(page.locator('[data-action="ct-reading"]')).toHaveCount(0);
+    await expect(page.getByRole('switch', { name: '拼音辅助' })).toHaveCount(0);
     await page.locator('[data-action="ct-start"][data-id="all"]').click();
     expect(await paint(page.locator('.answer-option').first())).toEqual(option);
     await page.locator('[data-action="ct-learn"]').click();
@@ -47,9 +47,9 @@ for (const topic of mathTopics) {
     await page.goto('/');
     await subject(page, 'math');
     await selectTopic(page, topic.name, 'math');
-    await expect(page.locator('[data-action="ct-length"]')).toHaveCount(0);
+    await expect(page.locator('.round-settings')).toHaveCount(0);
     await page.locator('[data-action="ct-start"][data-id="all"]').click();
-    await page.locator('[data-action="ct-length"][data-value="20"]').click();
+    await setRoundLength(page, 20);
     await page.locator('[data-action="ct-learn"]').click();
     for (const category of topic.categories) {
       await page.locator(`[data-action="ct-category"][data-id="${category.id}"]`).click();
@@ -92,9 +92,9 @@ test('数学自评、首次成绩、刷新、错题复习和学习记录完整�
   expect((await stored(page)).topics[topic.id].round.responses[0].correct).toBe(false);
   await page.locator('[data-action="ct-learn"]').click();
   await expect(page.locator('.ct-sample')).toBeVisible();
-  await expect(page.locator('[data-action="ct-length"]')).toHaveCount(0);
+  await expect(page.locator('.round-settings')).toHaveCount(0);
   await page.locator('[data-action="ct-resume"]').click();
-  await page.locator('[data-action="ct-length"][data-value="30"]').click();
+  await setRoundLength(page, 30);
   expect((await stored(page)).topics[topic.id].round.questions).toHaveLength(10);
   for (let index = 0; index < 10; index++) {
     if (index) {

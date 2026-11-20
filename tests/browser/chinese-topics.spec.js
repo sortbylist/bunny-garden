@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { chineseTopics } from '../../src/chinese-topics.js';
-import { stored, selectTopic } from './helpers.js';
+import { stored, selectTopic, setLearningPreference, setRoundLength } from './helpers.js';
 
 async function openTopic(page, topic) {
   await page.goto('/');
@@ -154,21 +154,21 @@ test('各主题题量和拼音设置分别保存，按实际题量刷新续练�
   await page.goto('/');
   for (const topic of chineseTopics) {
     await selectTopic(page, topic.name);
-    await expect(page.locator('[data-action="ct-length"]')).toHaveCount(0);
+    await expect(page.locator('.round-settings')).toHaveCount(0);
     await page.locator('[data-action="ct-start"][data-id="all"]').click();
-    await page.locator('[data-action="ct-length"][data-value="30"]').click();
+    await setRoundLength(page, 30);
     await page.locator('[data-action="ct-start"][data-id="all"]').click();
     await expect(page.locator('.ct-quiz .hz-card-heading')).toContainText(`第 1 / ${Math.min(30, topic.questions.length)} 题`);
     await expect(page.locator('.ct-quiz .ct-visual')).toHaveCount(0);
     const original = (await stored(page)).topics[topic.id].round.questions;
-    await page.locator('[data-action="ct-length"][data-value="20"]').click();
-    await page.locator('[data-action="ct-reading"]').click();
+    await setRoundLength(page, 20);
+    await setLearningPreference(page, 'showPinyin', false);
     await expect(page.locator('.chinese-topic ruby')).toHaveCount(0);
     await page.reload();
     expect((await stored(page)).topics[topic.id].round.questions).toEqual(original);
-    await expect(page.locator('[data-action="ct-length"][data-value="20"]')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('[data-action="ct-reading"]')).toHaveAttribute('aria-checked', 'false');
-    await page.locator('[data-action="ct-reading"]').click();
+    await expect(page.locator('[data-round-length="ct"]')).toHaveValue('20');
+    expect((await stored(page)).settings.showPinyin).toBe(false);
+    await setLearningPreference(page, 'showPinyin', true);
     await answer(page, topic);
     expect((await stored(page)).topics[topic.id].round.responses[0].correct).toBe(true);
     await page.locator('[data-action="ct-start"][data-id="all"]').click();

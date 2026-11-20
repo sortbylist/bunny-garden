@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { chineseTopics } from '../../src/chinese-topics.js';
 import { mathTopics } from '../../src/math-topics.js';
-import { selectTopic, chooseMode, stored } from './helpers.js';
+import { selectTopic, chooseMode, stored, setRoundLength } from './helpers.js';
 
 const overflow = page => page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
 async function chooseSubject(page, id) {
@@ -11,11 +11,6 @@ async function chooseSubject(page, id) {
   }
   await page.locator(`.subjects [data-id="${id}"]`).click();
 }
-
-const toggleStyle = locator => locator.evaluate(element => {
-  const style = getComputedStyle(element);
-  return Object.fromEntries(['fontSize', 'lineHeight', 'backgroundColor', 'color', 'border', 'borderRadius', 'padding', 'minHeight'].map(name => [name, style[name]]));
-});
 
 test('词语分类新增六类，扩充词卡可学习、自评并恢复进度', async ({ page }) => {
   await page.goto('/');
@@ -58,39 +53,24 @@ test('所有语文和数学主题学习页隐藏题数，进入练习才显示�
   await page.goto('/');
   for (const topic of chineseTopics) {
     await selectTopic(page, topic.name);
-    await expect(page.locator('[data-action="ct-length"]')).toHaveCount(0);
+    await expect(page.locator('.round-settings')).toHaveCount(0);
     await page.locator('[data-action="ct-start"][data-id="all"]').click();
-    await expect(page.locator('[data-action="ct-length"]')).toHaveCount(3);
+    await expect(page.locator('.quiz-card + .round-settings')).toBeVisible();
+    await expect(page.getByLabel('每轮题数')).toBeHidden();
     const before = (await stored(page)).topics[topic.id].round.questions;
-    await page.locator('[data-action="ct-length"][data-value="20"]').click();
+    await setRoundLength(page, 20);
     expect((await stored(page)).topics[topic.id].round.questions).toEqual(before);
     await page.locator('[data-action="ct-learn"]').click();
-    await expect(page.locator('[data-action="ct-length"]')).toHaveCount(0);
+    await expect(page.locator('.round-settings')).toHaveCount(0);
   }
   await page.locator('.subjects [data-id="math"]').click();
   for (const topic of mathTopics) {
     await selectTopic(page, topic.name, 'math');
-    await expect(page.locator('[data-action="ct-length"]')).toHaveCount(0);
-    await expect(page.locator('.ct-tools')).toHaveCount(0);
+    await expect(page.locator('.round-settings')).toHaveCount(0);
     await page.locator('[data-action="ct-start"][data-id="all"]').click();
-    await expect(page.locator('[data-action="ct-length"]')).toHaveCount(3);
+    await expect(page.locator('.quiz-card + .round-settings')).toBeVisible();
+    await expect(page.getByLabel('每轮题数')).toBeHidden();
     await page.locator('[data-action="ct-learn"]').click();
-  }
-});
-
-test('所有语文主题的拼音辅助开关与汉字页样式和开关行为一致', async ({ page }) => {
-  await page.goto('/');
-  await selectTopic(page, '汉字笔画与结构');
-  const reference = await toggleStyle(page.locator('[data-action="hz-reading"]'));
-  for (const topic of chineseTopics) {
-    await selectTopic(page, topic.name);
-    const toggle = page.locator('[data-action="ct-reading"]');
-    expect(await toggleStyle(toggle), topic.name).toEqual(reference);
-    await toggle.click();
-    await expect(toggle).toHaveAttribute('aria-checked', 'false');
-    await expect(page.locator('.chinese-topic ruby')).toHaveCount(0);
-    await toggle.click();
-    await expect(toggle).toHaveAttribute('aria-checked', 'true');
   }
 });
 

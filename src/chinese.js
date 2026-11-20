@@ -6,11 +6,10 @@ import { grantRewards } from './rewards.js';
 import { readingText } from './chinese-reading.js';
 import { lessonVisual, dictionaryDiagram } from './chinese-visuals.js';
 import { mathVisual } from './math-visuals.js';
-import { practiceLengths } from './chinese-practice.js';
 import { icon, bunny } from './icons.js';
 import { literacySupplement } from './chinese-literacy.js';
 import { readingPassage } from './reading-view.js';
-import { learningAnswerLabel, learningCardFooter, learningPosition, learningTokenClass, learningTools, pinyinToggle } from './learning-ui.js';
+import { learningAnswerLabel, learningCardFooter, learningPosition, learningTokenClass, learningTools } from './learning-ui.js';
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 const control = (action, label, attributes = '', style = 'outline-button') => `<button type="button" class="${style}" data-action="ct-${action}" ${attributes}>${label}</button>`;
@@ -93,9 +92,9 @@ export function renderTopic(topic, state, garden) {
   const math = isMathTopic(topic);
   const tools = learningTools('ct', state);
   const sticker = `<div class="heading-sticker">${icon('sprout')}<span>今天也要<br><b>快乐生长</b></span></div>`;
-  return `<section class="chinese-topic ct-sentence-topic ${literacy ? 'ct-literacy-topic' : ''} ${math ? 'math-topic' : ''}" data-topic="${topic.id}"><div class="page-heading ${math ? '' : 'learning-heading'}"><div class="${math ? '' : 'learning-heading-copy'}"><div class="eyebrow"><span></span>${escape(topic.stage)}</div><h1>${topic.name}<span class="heading-flower">✿</span></h1><p>${topic.description}</p></div>${math ? sticker : `<div class="learning-heading-actions">${pinyinToggle('ct', state)}${sticker}</div>`}</div>
+  return `<section class="chinese-topic ct-sentence-topic ${literacy ? 'ct-literacy-topic' : ''} ${math ? 'math-topic' : ''}" data-topic="${topic.id}"><div class="page-heading ${math ? '' : 'learning-heading'}"><div class="${math ? '' : 'learning-heading-copy'}"><div class="eyebrow"><span></span>${escape(topic.stage)}</div><h1>${topic.name}<span class="heading-flower">✿</span></h1><p>${topic.description}</p></div>${math ? sticker : `<div class="learning-heading-actions">${sticker}</div>`}</div>
     <nav class="play-selector" aria-label="${topic.name}小${math ? '分类' : '节'}"><div class="play-mode-buttons">${topic.categories.map(category => control('category', `${icon(category.icon || 'book')}${escape(category.name)}`, `data-id="${category.id}" aria-pressed="${state.view === 'learn' && state.category === category.id}"`, `hz-category play-mode ${state.view === 'learn' && state.category === category.id ? 'selected' : ''}`)).join('')}</div></nav>
-    <div class="learning-layout"><div class="learning-main">${tools}${state.view === 'quiz' ? quizCard(topic, state) : state.view === 'lookup' ? lookupCard(state) : learningCard(topic, state)}</div><aside class="learning-aside">
+    <div class="learning-layout"><div class="learning-main">${state.view === 'quiz' ? quizCard(topic, state) : state.view === 'lookup' ? lookupCard(state) : learningCard(topic, state)}${tools}</div><aside class="learning-aside">
     ${garden}<section class="hz-card"><h2>我的学习足迹</h2><p>自评认识 ${state.known.length} / ${topic.lessons.length} 项</p><progress value="${state.known.length}" max="${topic.lessons.length}" aria-label="自评认识进度"></progress><p>本主题题库 ${topic.questions.length} 题<br>当前小节 ${topic.questions.filter(item => item.category === state.category).length} 题</p><p>自评认识与首次答对分开记录，开始新一轮时优先抽取未练题。</p><div class="hz-sidebar-actions">
       ${topic.id === 'dictionary' ? control('lookup', '查字小实验', '', 'solid-button') : ''}${control('start', `综合练习 · 最多 ${state.practiceLength} 题`, 'data-id="all"', 'solid-button')}${state.round && !state.round.finished && state.view !== 'quiz' ? control('resume', '继续上次练习') : ''}</div>
       ${state.round && !state.round.finished ? '<p class="hz-caption">开始新练习会替换未完成的一轮；想保留当前题目，可继续上次练习。</p>' : ''}</section>
@@ -107,8 +106,6 @@ export function handleTopicAction(root, topic, action, data) {
   const outcome = {};
   const lesson = topic.lessons.find(item => item.id === state.lessonId);
   if (action.startsWith('ct-activity-')) updateTopicActivity(topic, state, action.slice('ct-activity-'.length), data.value);
-  if (action === 'ct-reading') state.showPinyin = !state.showPinyin;
-  if (action === 'ct-length' && practiceLengths.includes(Number(data.value))) state.practiceLength = Number(data.value);
   if (action === 'ct-category' && topic.categories.some(item => item.id === data.id)) { state.category = data.id; state.lessonId = topic.lessons.find(item => item.category === data.id).id; state.view = 'learn'; }
   if (action === 'ct-lesson' && topic.lessons.some(item => item.id === data.id && item.category === state.category)) state.lessonId = data.id;
   if (['ct-previous', 'ct-next'].includes(action)) {

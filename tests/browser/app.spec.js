@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
-import { chooseMode, stored, selectTopic } from './helpers.js';
+import { chooseMode, stored, selectTopic, setRoundLength } from './helpers.js';
 
 test('顺序学习、点读、收藏、进度恢复与学科切换', async ({ page }) => {
   const errors = [];
@@ -52,7 +52,7 @@ test('所有练习方式可进入，随机范围不重复', async ({ page }) => 
 test('答错后重试，查看答案，完成一轮和错题复习', async ({ page }) => {
   await page.goto('/');
   await chooseMode(page, 'rules');
-  await page.locator('[data-setting="length"]').selectOption('5');
+  await setRoundLength(page, 5);
   let state = await stored(page);
   const sessionKey = `rules:all:all:retroflex:5`;
   const question = state.sessions[sessionKey].questions[0];

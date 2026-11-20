@@ -67,7 +67,8 @@ test('学习辅助、选择题和反馈状态跨模块统一，首次成绩及�
     await page.locator(`.mastery-actions [data-action="${prefix}-start"]`).click();
     const option = page.locator(`[data-action="${prefix}-answer"]`).first();
     const feedback = page.locator('.answer-feedback');
-    const tools = page.locator('.ct-lengths button').first();
+    await page.locator('.round-settings summary').click();
+    const tools = page.getByLabel('每轮题数');
     await expect(option.locator('.option-letter')).toHaveText('A');
     if (!referenceOption) {
       referenceOption = await frame(option);
