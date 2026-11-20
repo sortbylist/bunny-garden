@@ -23,6 +23,28 @@ async function openCollection(page) {
 
 const savedRewards = page => page.evaluate(() => JSON.parse(localStorage.getItem('bunny-garden-v1')).rewards);
 
+test('悬停成长花园和收藏册的贴纸时提示可以查看动效', async ({ page }) => {
+  await seed(page, { obtained: ['hello-bunny'], equipped: { sticker: 'hello-bunny' } });
+  await page.goto('/');
+  const gardenSticker = page.locator('.garden-display .equipped-item.sticker');
+  const gardenHint = gardenSticker.locator('.reward-motion-hint');
+  await expect(gardenHint).toBeHidden();
+  await gardenSticker.hover();
+  await expect(gardenHint).toBeVisible();
+  await expect(gardenHint).toHaveText('点一下，看它动起来！');
+  await page.locator('.garden-links [data-action="reward-collection"]').click();
+  const collectionSticker = page.locator('[data-reward="hello-bunny"] .reward-preview-trigger');
+  const collectionHint = collectionSticker.locator('.reward-motion-hint');
+  await expect(collectionHint).toBeHidden();
+  await collectionSticker.hover();
+  await expect(collectionHint).toBeVisible();
+  await expect(collectionHint).toHaveText('点一下，看它动起来！');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(collectionHint).toBeHidden();
+  await collectionSticker.click();
+  await expect(page.locator('.reward-detail-dialog')).toBeVisible();
+});
+
 test('成长花园与个人空间的佩戴物品可播放动效，关闭后返回原入口且不重复发奖', async ({ page }) => {
   await seed(page, { obtained: ['hello-bunny'], equipped: { sticker: 'hello-bunny' } });
   await page.goto('/');

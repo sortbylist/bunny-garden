@@ -17,6 +17,14 @@ function effectFor(reward) {
   return 'explore';
 }
 
+function rewardCharacter(reward) {
+  return `<div class="reward-viewer-character">${rewardArt(reward.art, '', reward.icon)}</div>`;
+}
+
+export function rewardMotionArt(reward, { animated, className = '' }) {
+  return `<div class="reward-motion-art ${className}${animated ? ' viewer-motion' : ''}" data-effect="${effectFor(reward)}" aria-hidden="true">${rewardCharacter(reward)}</div>`;
+}
+
 export function rewardViewer(reward) {
   const effect = effectFor(reward);
   return `<div class="reward-viewer" data-effect="${effect}">
@@ -25,7 +33,7 @@ export function rewardViewer(reward) {
       <div class="reward-viewer-sparkles" aria-hidden="true">${Array.from({ length: 8 }, (_, index) => `<i style="--i:${index}">✦</i>`).join('')}</div>
       <div class="reward-viewer-shadow" aria-hidden="true"></div>
       <div class="reward-viewer-stage" tabindex="0" role="slider" aria-label="旋转${reward.name}" aria-valuemin="-180" aria-valuemax="180" aria-valuenow="0" aria-valuetext="正面展示" aria-describedby="reward-viewer-hint">
-        <div class="reward-viewer-orbit"><div class="reward-viewer-character">${rewardArt(reward.art, '', reward.icon)}</div></div>
+        <div class="reward-viewer-orbit">${rewardCharacter(reward)}</div>
       </div>
     </div>
     <p id="reward-viewer-hint" class="reward-viewer-hint">拖动转一转，也可用左右方向键</p>
@@ -39,7 +47,7 @@ export function rewardViewer(reward) {
   </div>`;
 }
 
-export function mountRewardViewer(container, { animations }) {
+export function mountRewardViewer(container, { animations, once = false, autoplay = true }) {
   const viewer = container.querySelector('.reward-viewer');
   if (!viewer) return () => {};
   const controller = new AbortController();
@@ -49,9 +57,11 @@ export function mountRewardViewer(container, { animations }) {
   const motionButton = viewer.querySelector('[data-viewer-action="motion"]');
   const note = viewer.querySelector('.reward-viewer-motion-note');
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  viewer.classList.toggle('viewer-once', once);
   let rotation = 0;
   let tilt = 0;
-  let playing = true;
+  let playing = autoplay;
+  let finished = once && !autoplay;
   let drag = null;
   let touchControl = null;
 
@@ -66,13 +76,24 @@ export function mountRewardViewer(container, { animations }) {
 
   function updateMotion() {
     const allowed = animations && !reducedMotion.matches;
-    viewer.classList.toggle('viewer-motion', allowed);
+    const active = allowed && !finished;
+    const starting = active && !viewer.classList.contains('viewer-motion');
+    viewer.classList.toggle('viewer-motion', active);
     viewer.classList.toggle('viewer-paused', !playing || document.hidden);
     motionButton.disabled = !allowed;
     motionButton.setAttribute('aria-pressed', String(allowed && playing));
     motionButton.textContent = allowed ? playing ? '暂停动效' : '播放动效' : '动效已关闭';
     note.hidden = allowed;
     note.textContent = reducedMotion.matches ? '已跟随系统减少动态效果' : '可在学习设置中开启奖励动效';
+    if (once && starting) {
+      const cycles = viewer.getAnimations({ subtree: true }).filter(animation => animation instanceof CSSAnimation);
+      Promise.all(cycles.map(animation => animation.finished)).then(() => {
+        if (controller.signal.aborted) return;
+        finished = true;
+        playing = false;
+        updateMotion();
+      }, () => {});
+    }
   }
 
   function activateControl(control) {
@@ -81,7 +102,11 @@ export function mountRewardViewer(container, { animations }) {
     if (action === 'left') updateRotation(rotation - 30);
     if (action === 'right') updateRotation(rotation + 30);
     if (action === 'reset') updateRotation(0, 0);
-    if (action === 'motion') { playing = !playing; updateMotion(); }
+    if (action === 'motion') {
+      playing = !playing;
+      if (playing) finished = false;
+      updateMotion();
+    }
   }
 
   controls.addEventListener('click', event => {

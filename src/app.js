@@ -263,10 +263,18 @@ function personalButtons(context = 'garden') {
   return `${button('mode', `拼音错题本（${state.mistakes.length}）`, 'notebook', 'outline-button', `data-id="mistakes" ${state.mistakes.length ? '' : 'disabled'}`)}${collection}${button('records', '学习记录', 'book', 'outline-button')}`;
 }
 
-function equippedRewards() {
+function stickerMotionHint(reward) {
+  return reward.type === 'sticker' && state.settings.animations
+    ? '<span class="reward-motion-hint" aria-hidden="true">点一下，看它动起来！</span>'
+    : '';
+}
+
+function equippedRewards({ inGarden = false } = {}) {
   return Object.entries(state.rewards.equipped).map(([type, id]) => {
     const reward = rewardCatalog.find(item => item.id === id);
-    return reward ? button('equipped-reward-preview', `${rewardArt(reward.art, '', reward.icon)}<span>${reward.name}</span>`, '', `equipped-item ${type}`, `data-id="${reward.id}" aria-label="查看${reward.name}动效"`) : '';
+    if (!reward) return '';
+    const hint = inGarden ? stickerMotionHint(reward) : '';
+    return button('equipped-reward-preview', `${rewardArt(reward.art, '', reward.icon)}<span>${reward.name}</span>${hint}`, '', `equipped-item ${type}`, `data-id="${reward.id}" aria-label="查看${reward.name}动效"`);
   }).join('');
 }
 
@@ -329,7 +337,8 @@ function progressCard() {
     : topic ? { learned: state.topics[topic.id].known.length, total: topic.lessons.length, label: '项学习内容自评认识' }
     : state.features.chinese === 'hanzi-structure' ? { learned: state.hanzi.known.length, total: hanziLessons.length, label: '项汉字内容自评认识' }
     : { learned: state.known.filter(id => basics.some(item => item.id === id)).length, total: basics.length, label: '个拼音自评认识', seen: state.seen.filter(id => basics.some(item => item.id === id)).length };
-  return `<section class="growth-card"><div class="growth-top">${icon('sprout')}我的成长花园<span>慢慢来，也很棒</span></div>${bunny()}<h3>${escape(state.nickname)}，又长大一点</h3><p>每一次认真尝试，都值得被看见。</p>${equippedRewards() ? `<div class="garden-display">${equippedRewards()}</div>` : ''}<div class="growth-stat"><strong>${progress.learned}<small> / ${progress.total}</small></strong><span>${progress.label}</span></div><div class="progress-track" role="progressbar" aria-label="${progress.label}" aria-valuenow="${progress.learned}" aria-valuemin="0" aria-valuemax="${progress.total}"><span style="width:${progress.learned / progress.total * 100}%"></span></div><div class="growth-bottom">${progress.seen !== undefined ? `<span>已浏览 ${progress.seen} 个</span>` : ''}${button('profile', '我的成长空间', 'chevron', 'text-button')}</div>${personalLinks('garden-links')}</section>`;
+  const displayedRewards = equippedRewards({ inGarden: true });
+  return `<section class="growth-card"><div class="growth-top">${icon('sprout')}我的成长花园<span>慢慢来，也很棒</span></div>${bunny()}<h3>${escape(state.nickname)}，又长大一点</h3><p>每一次认真尝试，都值得被看见。</p>${displayedRewards ? `<div class="garden-display">${displayedRewards}</div>` : ''}<div class="growth-stat"><strong>${progress.learned}<small> / ${progress.total}</small></strong><span>${progress.label}</span></div><div class="progress-track" role="progressbar" aria-label="${progress.label}" aria-valuenow="${progress.learned}" aria-valuemin="0" aria-valuemax="${progress.total}"><span style="width:${progress.learned / progress.total * 100}%"></span></div><div class="growth-bottom">${progress.seen !== undefined ? `<span>已浏览 ${progress.seen} 个</span>` : ''}${button('profile', '我的成长空间', 'chevron', 'text-button')}</div>${personalLinks('garden-links')}</section>`;
 }
 
 function mapCard() {
@@ -581,14 +590,17 @@ function showRewardCollection() {
     const unlocked = Boolean(state.rewards.unlocks[reward.id]);
     const equipped = state.rewards.equipped[reward.type] === reward.id;
     const condition = rewardProgress(state.rewards, reward, progress, stats);
-    return `<article class="reward-card ${unlocked ? 'unlocked' : 'locked'} ${equipped ? 'equipped' : ''}" data-reward="${reward.id}">${unlocked ? rewardStamp() : ''}<span class="reward-kind">${names[reward.type]}${equipped ? ' · 展示中' : ''}</span>${button('reward-detail', rewardArt(reward.art, '', reward.icon), '', 'reward-preview-trigger', `data-id="${reward.id}" aria-label="放大查看${reward.name}"`)}<h3><span>${reward.name}</span>${reward.help ? rewardHelpButton(reward.help, reward.id) : ''}</h3><p>${reward.rule}</p>${unlocked ? `<span class="unlock-date">${new Date(state.rewards.unlocks[reward.id]).toLocaleDateString('zh-CN')} 获得${state.rewards.unlockDetails[reward.id]?.retroactive ? ' · 历史补发' : ''}</span><div class="reward-card-actions">${button('equip-reward', equipped ? '取消展示' : reward.type === 'badge' ? '佩戴徽章' : reward.type === 'medal' ? '展示奖牌' : reward.type === 'decoration' ? '摆进花园' : '展示贴纸', equipped ? 'check' : '', 'reward-equip', `data-id="${reward.id}" aria-pressed="${equipped}"`)}</div>` : `<span class="reward-progress-text">${Math.min(condition.value, condition.target)} / ${condition.target}</span><progress value="${Math.min(condition.value, condition.target)}" max="${condition.target}" aria-label="${reward.name}解锁进度"></progress>`}</article>`;
+    const art = `${rewardArt(reward.art, '', reward.icon)}${stickerMotionHint(reward)}`;
+    return `<article class="reward-card ${unlocked ? 'unlocked' : 'locked'} ${equipped ? 'equipped' : ''}" data-reward="${reward.id}">${unlocked ? rewardStamp() : ''}<span class="reward-kind">${names[reward.type]}${equipped ? ' · 展示中' : ''}</span>${button('reward-detail', art, '', 'reward-preview-trigger', `data-id="${reward.id}" aria-label="放大查看${reward.name}"`)}<h3><span>${reward.name}</span>${reward.help ? rewardHelpButton(reward.help, reward.id) : ''}</h3><p>${reward.rule}</p>${unlocked ? `<span class="unlock-date">${new Date(state.rewards.unlocks[reward.id]).toLocaleDateString('zh-CN')} 获得${state.rewards.unlockDetails[reward.id]?.retroactive ? ' · 历史补发' : ''}</span><div class="reward-card-actions">${button('equip-reward', equipped ? '取消展示' : reward.type === 'badge' ? '佩戴徽章' : reward.type === 'medal' ? '展示奖牌' : reward.type === 'decoration' ? '摆进花园' : '展示贴纸', equipped ? 'check' : '', 'reward-equip', `data-id="${reward.id}" aria-pressed="${equipped}"`)}</div>` : `<span class="reward-progress-text">${Math.min(condition.value, condition.target)} / ${condition.target}</span><progress value="${Math.min(condition.value, condition.target)}" max="${condition.target}" aria-label="${reward.name}解锁进度"></progress>`}</article>`;
   }).join('')}</div><p class="personal-footnote">已获得的奖励一直属于你。星星只累计，不消费；更换展示不花星星。</p>`, 'collection-dialog');
 }
 
-function showRewardDetail(id) {
+function showRewardDetail(id, { fromNotice = false } = {}) {
   const reward = rewardCatalog.find(item => item.id === id);
   if (!reward) return;
-  if (!dialog.open || !dialog.classList.contains('reward-help-dialog')) {
+  const returningFromHelp = dialog.open && dialog.classList.contains('reward-help-dialog');
+  if (fromNotice) rewardDetailReturn = { origin: 'notice', scroll: 0, id };
+  else if (!returningFromHelp) {
     const origin = dialog.open && dialog.classList.contains('collection-dialog') ? 'collection' : dialog.open && dialog.classList.contains('profile-dialog') ? 'profile' : 'page';
     rewardDetailReturn = { origin, scroll: dialog.scrollTop, id };
   }
@@ -596,7 +608,8 @@ function showRewardDetail(id) {
   const condition = rewardProgress(state.rewards, reward, curriculumProgress(state.rewards), rewardStats(state.rewards));
   openDialog(`<span id="reward-detail-name">${reward.name}</span>${reward.help ? rewardHelpButton(reward.help, reward.id) : ''}`, `<div class="reward-detail">${rewardViewer(reward)}<span class="reward-preview-status ${unlocked ? 'obtained' : ''}">${unlocked ? `已获得 · ${new Date(state.rewards.unlocks[id]).toLocaleDateString('zh-CN')}` : '尚未获得 · 可以先看看它的样子'}</span><h3>${reward.description}</h3><p>${reward.rule}</p>${unlocked ? '' : `<span class="reward-detail-progress">当前进度 ${Math.min(condition.value, condition.target)} / ${condition.target}</span>`}${unlocked ? `<div class="dialog-actions">${button('replay-reward', '再庆祝一下', 'star', 'outline-button', `data-id="${id}"`)}</div>` : ''}</div>`, 'reward-detail-dialog');
   dialog.setAttribute('aria-labelledby', 'reward-detail-name');
-  disposeRewardViewer = mountRewardViewer(dialog, { animations: state.settings.animations });
+  const once = rewardDetailReturn?.origin === 'notice';
+  disposeRewardViewer = mountRewardViewer(dialog, { animations: state.settings.animations, once, autoplay: !once || !returningFromHelp });
   dialog.scrollTop = 0;
   dialog.querySelector('.reward-viewer-stage').focus({ preventScroll: true });
 }
@@ -604,7 +617,10 @@ function showRewardDetail(id) {
 function returnFromRewardDetail() {
   const previous = rewardDetailReturn;
   rewardDetailReturn = null;
-  if (previous?.origin === 'page') { closeDialog(false); return; }
+  if (previous?.origin === 'page' || previous?.origin === 'notice') {
+    closeDialog(false);
+    return;
+  }
   if (previous?.origin === 'profile') showProfile();
   else showRewardCollection();
   dialog.scrollTop = previous?.scroll || 0;
@@ -894,6 +910,12 @@ function handleAction(event) {
   if (action === 'nickname-back') { returnFromNickname(); return; }
   if (action === 'reward-rules') { showRewardRules(); return; }
   if (action === 'reward-collection') { showRewardCollection(); return; }
+  if (action === 'reward-notice-view') {
+    celebrations.dismiss();
+    if (target.dataset.id) showRewardDetail(target.dataset.id, { fromNotice: true });
+    else showRewardRules();
+    return;
+  }
   if (action === 'reward-filter') { if (['all', 'sticker', 'badge', 'medal', 'decoration'].includes(target.dataset.id)) rewardFilter = target.dataset.id; showRewardCollection(); return; }
   if (action === 'reward-help') { showRewardHelp(target.dataset.id, target.dataset.rewardId); return; }
   if (action === 'reward-help-back') { returnFromRewardHelp(); return; }

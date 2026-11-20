@@ -57,35 +57,98 @@ test('收藏总则、分类和特例帮助支持摘要、全文、返回焦点�
   await expect(specific).toBeFocused();
 });
 
-test('多件奖励手动逐件提示，查看规则暂停，刷新保留尚未展示的奖励', async ({ page }) => {
+test('从领奖提示打开预览，关闭后直接返回学习页并继续奖励队列', async ({ page }) => {
   const state = fresh();
   for (let index = 0; index < 10; index++) grantRewards(state, { type: 'answer', question: { id: `queued-${index}` } });
   await seed(page, state);
+  await page.clock.install();
   await page.goto('/');
   await expect(page.locator('.reward-notice')).toContainText('好奇放大镜');
   await page.getByRole('button', { name: '知道了', exact: true }).click();
   await expect(page.locator('.reward-notice')).toContainText('知识纸飞机');
+  await expect(page.locator('.reward-notice .reward-plane')).toHaveCSS('animation-name', 'viewer-plane-orbit');
   await page.locator('.reward-notice-view').click();
   await expect(page.locator('.reward-notice')).toHaveCount(0);
-  await page.getByRole('button', { name: '查看收藏规则', exact: true }).click();
+  expect((await stored(page)).rewards.pending).toEqual(['garden-sprout']);
+  await expect(page.locator('#reward-detail-name')).toHaveText('知识纸飞机');
+  const plane = page.locator('.reward-detail .reward-plane');
+  await expect(plane).toHaveCSS('animation-name', 'viewer-plane-orbit');
+  await expect(plane).toHaveCSS('animation-iteration-count', '1');
+  await page.locator('.reward-viewer-scene').evaluate(scene => {
+    for (const animation of scene.getAnimations({ subtree: true })) animation.finish();
+  });
+  await expect(page.locator('[data-viewer-action="motion"]')).toHaveText('播放动效');
+  await expect(plane).toHaveCSS('animation-name', 'none');
+  await page.locator('[data-viewer-action="motion"]').click();
+  await expect(plane).toHaveCSS('animation-name', 'viewer-plane-orbit');
+  await page.clock.runFor(20_000);
+  await expect(page.locator('#reward-detail-name')).toBeVisible();
   await expect(page.locator('.reward-notice')).toHaveCount(0);
-  await page.getByRole('button', { name: '返回收藏册', exact: true }).click();
   await page.getByRole('button', { name: '关闭弹窗', exact: true }).click();
-  await expect(page.locator('.reward-notice')).toContainText('知识纸飞机');
+  await expect(page.locator('#dialog')).toBeHidden();
+  await expect(page.locator('.reward-notice')).toContainText('窗边小树苗');
   await page.reload();
-  await expect(page.locator('.reward-notice')).toContainText('知识纸飞机');
-  expect((await stored(page)).rewards.pending).toEqual(['paper-plane', 'garden-sprout']);
+  await expect(page.locator('.reward-notice')).toContainText('窗边小树苗');
+  expect((await stored(page)).rewards.pending).toEqual(['garden-sprout']);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(page.locator('.reward-notice .reward-art > g')).toHaveCSS('animation-name', 'none');
+  await page.locator('.reward-notice-view').click();
+  await expect(page.locator('#reward-detail-name')).toHaveText('窗边小树苗');
+  await expect(page.locator('.reward-detail .reward-art > g')).toHaveCSS('animation-name', 'none');
+  await expect(page.locator('[data-viewer-action="motion"]')).toBeDisabled();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#dialog')).toBeHidden();
+  await expect(page.locator('.reward-notice')).toHaveCount(0);
 });
 
-test('普通提示自动消失后继续下一件', async ({ page }) => {
+test('星星提示的查看打开星星明细', async ({ page }) => {
+  const state = fresh();
+  state.rewards.unlocks['hello-bunny'] = Date.now();
+  await seed(page, state);
+  await page.clock.install();
+  await page.goto('/');
+  await page.locator('[data-action="known"]').click();
+  const notice = page.locator('[data-reward-notice="stars"]');
+  await expect(notice).toContainText('收获 1 颗成长星');
+  await notice.getByRole('button', { name: '查看', exact: true }).click();
+  const ledger = page.getByRole('dialog', { name: '每颗星星，都有来处' });
+  await expect(notice).toHaveCount(0);
+  await page.clock.runFor(20_000);
+  await expect(ledger.locator('.reward-ledger')).toContainText('第一次认识：a');
+  await ledger.getByRole('button', { name: '关闭弹窗' }).click();
+  await expect(notice).toHaveCount(0);
+});
+
+test('普通提示悬停和聚焦时仍在 20 秒自动收起并继续下一件', async ({ page }) => {
   const state = fresh();
   for (let index = 0; index < 10; index++) grantRewards(state, { type: 'answer', question: { id: `automatic-${index}` } });
   await seed(page, state);
   await page.clock.install();
   await page.goto('/');
-  await expect(page.locator('.reward-notice')).toContainText('好奇放大镜');
-  await page.clock.runFor(6800);
-  await expect(page.locator('.reward-notice')).toContainText('知识纸飞机');
+  const notice = page.locator('.reward-notice');
+  await expect(notice).toContainText('好奇放大镜');
+  await notice.hover();
+  await notice.getByRole('button', { name: '查看', exact: true }).focus();
+  await page.clock.runFor(19_000);
+  await expect(notice).toContainText('好奇放大镜');
+  await page.clock.runFor(1_300);
+  await expect(notice).toContainText('知识纸飞机');
+});
+
+test('金牌颁奖显示 20 秒后自动收起并继续队列', async ({ page }) => {
+  const state = fresh();
+  state.rewards.unlocks['stage-math-1-gold'] = Date.now();
+  state.rewards.pending = ['stage-math-1-gold'];
+  await seed(page, state);
+  await page.clock.install();
+  await page.goto('/');
+  const gold = page.locator('.gold-celebration');
+  await expect(gold).toBeVisible();
+  await page.clock.runFor(19_000);
+  await expect(gold).toBeVisible();
+  await page.clock.runFor(1_300);
+  await expect(gold).toHaveCount(0);
+  await expect(page.locator('.reward-notice')).toContainText('金色向日葵');
 });
 
 test('金牌居中颁奖、主动收下后继续队列，支持手机与减少动态效果', async ({ page }) => {
@@ -98,11 +161,12 @@ test('金牌居中颁奖、主动收下后继续队列，支持手机与减少�
   await expect(gold).toBeVisible();
   await expect(gold).toContainText('数与运算金牌');
   await expect(gold).toHaveClass(/gold-motion/);
-  await expect(gold.locator('.gold-prize')).toHaveCSS('animation-name', 'gold-arrive');
+  const animatedPrize = gold.locator('.gold-prize .reward-viewer-character');
+  await expect(animatedPrize).toHaveCSS('animation-name', 'gold-arrive');
   await page.screenshot({ path: 'artifacts/reward-gold-desktop.png' });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await expect(gold.locator('.gold-prize')).toHaveCSS('animation-name', 'none');
+  await expect(animatedPrize).toHaveCSS('animation-name', 'none');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: 'artifacts/reward-gold-mobile.png' });
   await page.getByRole('button', { name: '太棒啦，收下金牌', exact: true }).click();
