@@ -47,7 +47,7 @@ function learningCard(topic, state) {
   const literacy = isLiteracyTopic(topic);
   const category = topic.categories.find(item => item.id === state.category);
   const picker = `<div class="hz-item-list ct-lesson-list" aria-label="选择学习内容">${lessons.map(item => control('lesson', `${read(item.title)}${state.known.includes(item.id) ? ' ✓' : ''}`, `data-id="${item.id}" aria-label="${escape(item.title)}" aria-pressed="${state.lessonId === item.id}"`, `hz-chip${learningTokenClass(item.title)}`)).join('')}</div>`;
-  const heading = `<div class="card-topline"><h2 class="category-badge">${icon(category.icon || 'flower')}${escape(category.name)}</h2>${learningPosition(index, lessons.length)}</div>`;
+  const heading = `<div class="card-topline"><h2 class="category-badge">${icon(category.icon || 'flower')}${escape(category.name)}</h2>${learningPosition(index, lessons.length)}${state.cardFavorite('lesson', lesson.id)}</div>`;
   return `<section class="hz-card ct-lesson study-card ct-sentence-card" aria-label="${topic.name}学习卡">${heading}
     <div class="ct-lesson-intro"><h3 class="${learningTokenClass(lesson.title).trim()}" aria-label="${escape(lesson.title)}">${read(lesson.title)}</h3>${literacySupplement(lesson, state)}<p>${read(lesson.body)}</p></div>
     ${topic.subject === 'math' ? mathVisual(lesson.visual) : lessonVisual(topic, lesson, state.showPinyin)}
@@ -59,7 +59,6 @@ function learningCard(topic, state) {
 }
 
 function quizCard(topic, state) {
-  const read = topicText(topic, state);
   const round = state.round;
   if (round.finished) {
     const stats = roundStats(round);
@@ -68,7 +67,7 @@ function quizCard(topic, state) {
   const question = round.questions[round.index];
   const read = topic.id === 'character-readings' && question.category === 'polyphones' && !round.revealed
     ? escape : topicText(topic, state);
-  return `<section class="hz-card ct-quiz quiz-card ct-sentence-card" aria-label="${topic.name}练习"><div class="hz-card-heading quiz-top"><h2 class="category-badge">${icon('pen')}${round.scope === 'review' ? `${topic.name}错题本` : '动脑小练习'}</h2>${learningPosition(round.index, round.questions.length, { practice: true })}</div>
+  return `<section class="hz-card ct-quiz quiz-card ct-sentence-card" aria-label="${topic.name}练习"><div class="hz-card-heading quiz-top"><h2 class="category-badge">${icon('pen')}${round.scope === 'review' ? `${topic.name}错题本` : '动脑小练习'}</h2>${learningPosition(round.index, round.questions.length, { practice: true })}${state.cardFavorite('question', question.id)}</div>
     ${question.passage ? readingPassage(question.passage, state.showPinyin, round.revealed ? question.evidence : []) : ''}
     ${question.display ? `<p class="ct-context">${read(question.display)}</p>` : ''}<h3 class="ct-prompt">${read(question.prompt)}</h3>
     <div class="hz-options answer-grid">${question.options.map((option, index) => control('answer', learningAnswerLabel(index, read(option)), `data-value="${escape(option)}" aria-label="${escape(option)}" ${round.revealed ? 'disabled' : ''}`, `hz-option answer-option${learningTokenClass(option)} ${round.revealed && option === question.answer ? 'is-correct correct-answer' : round.selected === option ? 'is-wrong wrong-answer' : ''}`)).join('')}</div>
@@ -81,7 +80,7 @@ function lookupCard(state) {
   const { method, selections } = state.lookup;
   const lookup = dictionaryLookup(method, selections);
   const labels = { initial: '先选大写音序', syllable: '再选不带声调的音节', text: '找到汉字，点击查看释义', radicalStrokes: '先数部首笔画', radical: '在部首目录中找到部首', remaining: '再数除去部首后的笔画' };
-  return `<section class="hz-card ct-lookup"><h2>查字小实验</h2><p>这是含 ${dictionaryEntries.length} 个示例字的小型索引，不是完整字典。纸质字典还需要按索引页码翻到正文，各版本页码不同，这里不编造页码。</p>
+  return `<section class="hz-card ct-lookup"><div class="card-topline"><h2>查字小实验</h2>${lookup.entry ? state.cardFavorite('entry', lookup.entry.text) : ''}</div><p>这是含 ${dictionaryEntries.length} 个示例字的小型索引，不是完整字典。纸质字典还需要按索引页码翻到正文，各版本页码不同，这里不编造页码。</p>
     ${dictionaryDiagram(method, state.showPinyin)}
     <div class="hz-actions">${control('lookup-method', '音序查字法', `data-id="sound" aria-pressed="${method === 'sound'}"`, 'hz-chip')}${control('lookup-method', '部首查字法', `data-id="radical" aria-pressed="${method === 'radical'}"`, 'hz-chip')}</div>
     <p class="ct-lookup-path" role="status">已选：${lookup.selections.map(escape).join(' → ') || '还没有选择'}</p>

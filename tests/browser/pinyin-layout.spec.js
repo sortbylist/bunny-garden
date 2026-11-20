@@ -4,7 +4,7 @@ for (const width of [320, 390, 440, 480, 760, 820, 1030, 1100, 1440]) {
   test(`拼音卡片在 ${width}px 宽度下保持单行且不溢出`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
-    await page.locator('[data-setting="group"]').selectOption('all');
+    await page.locator('[data-action="map-group"][data-id="all"]').click();
     await expect(page.getByRole('button', { name: '学习 yuan', exact: true })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
 

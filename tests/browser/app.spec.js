@@ -39,7 +39,7 @@ test('所有练习方式可进入，随机范围不重复', async ({ page }) => 
     await expect(page.locator('dialog')).not.toBeVisible();
   }
   await chooseMode(page, 'random');
-  await page.locator('[data-setting="group"]').selectOption('single');
+  await page.locator('[data-action="map-group"][data-id="single"]').click();
   const seen = [];
   for (let index = 0; index < 6; index++) {
     seen.push(await page.locator('.pinyin-display').textContent());

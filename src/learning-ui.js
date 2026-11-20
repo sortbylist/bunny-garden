@@ -23,8 +23,8 @@ export function learningTokenClass(value) {
   return [...text].length === 1 ? ' learning-token learning-glyph' : ' learning-token';
 }
 
-export function favoriteButton(action, saved) {
-  return `<button type="button" data-action="${action}" class="soft-button learning-favorite" aria-label="收藏" aria-pressed="${saved}">${icon('heart')}${saved ? '已收藏' : '收藏'}</button>`;
+export function favoriteButton(action, saved, ref = '') {
+  return `<button type="button" data-action="${action}" ${ref ? `data-ref="${encodeURIComponent(ref)}" ` : ''}class="soft-button learning-favorite" aria-label="收藏" aria-pressed="${saved}">${icon('heart')}${saved ? '已收藏' : '收藏'}</button>`;
 }
 
 export function roundSettings(field, length, choices, nextRound = false) {

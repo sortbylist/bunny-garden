@@ -15,7 +15,12 @@ async function chooseNavigationItem(page, root, id, category) {
 }
 
 export async function chooseMode(page, id) {
-  if (['mistakes', 'favorites'].includes(id)) {
+  if (id === 'favorites') {
+    await page.locator('.garden-links [data-action="saved-content"]').click();
+    await page.locator('[data-action="review-saved-words"]').click();
+    return;
+  }
+  if (id === 'mistakes') {
     await page.locator(`.garden-links [data-action="mode"][data-id="${id}"]`).click();
     return;
   }

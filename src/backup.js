@@ -53,7 +53,7 @@ function migrateGarden(saved) {
   const state = withDefaults(saved, defaultState());
   Object.assign(state.settings, learningPreferences(saved));
   state.phonics = migratePhonics(state.phonics);
-  checkStringArrays(state, ['seen', 'known', 'favorites']);
+  checkStringArrays(state, ['seen', 'known', 'favorites', 'savedContent']);
   if (state.hanzi !== null && !isRecord(state.hanzi)) invalid();
   if (!state.history.every(entry => isRecord(entry) && typeof entry.name === 'string' && Number.isFinite(entry.time) && Number.isFinite(entry.correct) && Number.isFinite(entry.total))) invalid();
   if (!state.mistakes.every(entry => isRecord(entry) && isRecord(entry.question))) invalid();

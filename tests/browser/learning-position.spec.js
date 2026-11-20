@@ -48,7 +48,7 @@ test('拼音顺序、随机和收藏各范围均使用精确数字，切换及�
   for (const mode of ['sequence', 'random']) {
     await chooseMode(page, mode);
     for (const group of ['all', ...groups.map(group => group.id)]) {
-      await page.locator('[data-setting="group"]').selectOption(group);
+      await page.locator(`[data-action="map-group"][data-id="${group}"]`).click();
       const total = await page.locator('.letter-tile').count();
       await expectPosition(page, 0, total);
       await page.locator('[data-action="next"]').click();

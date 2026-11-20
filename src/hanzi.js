@@ -50,7 +50,7 @@ function learningCard(state) {
   const index = items.indexOf(lesson);
   const category = hanziCategories.find(item => item.id === state.category);
   return `<section class="hz-card study-card" aria-label="汉字学习卡">
-    <div class="card-topline"><h2 class="category-badge">${icon(category.icon)}${category.name}</h2>${learningPosition(index, items.length)}</div>
+    <div class="card-topline"><h2 class="category-badge">${icon(category.icon)}${category.name}</h2>${learningPosition(index, items.length)}${state.cardFavorite('lesson', lesson.id)}</div>
     ${lessonContent(state, lesson)}
     ${learningCardFooter('hz', { known: state.known.includes(lesson.id), category: state.category, index, total: items.length })}
   </section><section class="pinyin-map ct-sentence-lessons learning-lesson-map" aria-label="本节学习卡"><div class="section-title"><h2>${icon('grid')}本节学习卡</h2><span>每一张都可以直接开始</span></div><div class="hz-item-list" aria-label="选择学习内容">${items.map(item => control('lesson', `${escape(item.title)}${state.known.includes(item.id) ? ' ✓' : ''}`, `data-id="${item.id}" aria-pressed="${item.id === lesson.id}"`, `hz-chip${learningTokenClass(item.title)}`)).join('')}</div></section>`;
@@ -66,7 +66,7 @@ function quizCard(state) {
   const question = round.questions[round.index];
   const response = round.responses[round.index];
   const sample = strokes.find(item => item.id === question.strokeId);
-  return `<section class="hz-card hz-quiz quiz-card" aria-label="汉字练习"><div class="hz-card-heading quiz-top"><h2 class="category-badge">${icon('pen')}${round.scope === 'review' ? '汉字错题本' : '汉字小练习'}</h2>${learningPosition(round.index, round.questions.length, { practice: true })}</div>
+  return `<section class="hz-card hz-quiz quiz-card" aria-label="汉字练习"><div class="hz-card-heading quiz-top"><h2 class="category-badge">${icon('pen')}${round.scope === 'review' ? '汉字错题本' : '汉字小练习'}</h2>${learningPosition(round.index, round.questions.length, { practice: true })}${state.cardFavorite('question', question.id)}</div>
     <h3 class="question-prompt">${read(question.prompt)}</h3>
     ${sample ? writingGrid([sample], 1, '待辨认的笔画，请观察形状') : `<div class="hz-question-character">${question.display}</div>`}
     <div class="hz-options answer-grid">${question.options.map((option, index) => control('answer', learningAnswerLabel(index, read(option)), `data-value="${escape(option)}" aria-label="${escape(option)}" ${round.revealed ? 'disabled' : ''}`, `hz-option answer-option${learningTokenClass(option)} ${round.revealed && option === question.answer ? 'is-correct correct-answer' : round.selected === option ? 'is-wrong wrong-answer' : ''}`)).join('')}</div>

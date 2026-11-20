@@ -87,7 +87,8 @@ test('自然拼读的个人入口移入成长花园，错题与语文隔离且�
   await page.locator('[data-action="ph-favorite"]').click();
   await page.locator('[data-action="ph-known"]').click();
   await expect(garden.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1');
-  await garden.locator('[data-id="favorites"]').click();
+  await garden.locator('[data-action="saved-content"]').click();
+  await page.locator('[data-action="review-saved-words"]').click();
   await expect(page.locator('.ph-word')).toHaveText('map');
   await page.locator('.ph-modes [data-id="rules"]').click();
   await page.locator('[data-action="ph-answer"][data-value="zip"]').click();

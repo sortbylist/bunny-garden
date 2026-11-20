@@ -127,7 +127,7 @@ test('答错重试可收获新题星，完成有效练习每日加星，错题�
 test('末项发奖在完成弹窗中可见，减少动态效果生效，清空记录包含奖励昵称', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
-  await page.locator('[data-setting="group"]').selectOption('single');
+  await page.locator('[data-action="map-group"][data-id="single"]').click();
   await page.locator('.pinyin-map [data-index="5"]').click();
   await page.locator('[data-action="known"]').click();
   await expect(page.locator('dialog .reward-notice')).toContainText('出发小兔');

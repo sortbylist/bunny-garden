@@ -48,7 +48,7 @@ for (const mode of ['sequence', 'random']) {
     await page.locator('[data-action="finish-study"]').click();
     await page.locator('[data-action="next-section"]').click();
     await expect(page.locator('dialog')).not.toBeVisible();
-    await expect(page.locator('[data-setting="group"]')).toHaveValue('initial');
+    await expect(page.locator('[data-action="map-group"][aria-current]')).toHaveAttribute('data-id', 'initial');
     state = await stored(page);
     expect(state.mode).toBe(mode);
     const next = state.sessions[`${mode}:initial:all:retroflex:10`];
@@ -61,7 +61,7 @@ for (const mode of ['sequence', 'random']) {
 
 test('最后一项标记还要练也完成；末节明确结束，不循环到第一节', async ({ page }) => {
   await page.goto('/');
-  await page.locator('[data-setting="group"]').selectOption('whole');
+  await page.locator('[data-action="map-group"][data-id="whole"]').click();
   await page.locator('.pinyin-map [data-action="jump"][data-index="15"]').click();
   await page.locator('[data-action="practice-later"]').click();
   await expect(page.locator('dialog')).toContainText('最后一节');
@@ -69,19 +69,19 @@ test('最后一项标记还要练也完成；末节明确结束，不循环到�
   expect((await stored(page)).favorites).toContain('whole-ying');
   await page.locator('[data-action="restart-now"]').click();
   await expect(page.locator('.pinyin-display')).toHaveText('zhi');
-  await expect(page.locator('[data-setting="group"]')).toHaveValue('whole');
+  await expect(page.locator('[data-action="map-group"][aria-current]')).toHaveAttribute('data-id', 'whole');
 });
 
-test('地图保留范围列表，点击范围保持玩法并同步下拉框', async ({ page }) => {
+test('地图保留分组列表，点击分组保持玩法且不再重复显示下拉框', async ({ page }) => {
   await page.goto('/');
   await chooseMode(page, 'sequence');
-  await expect(page.locator('.learning-map [data-action="map-group"]')).toHaveCount(6);
+  await expect(page.locator('.learning-map [data-action="map-group"]')).toHaveCount(7);
   await page.locator('.learning-map [data-id="initial"]').click();
-  await expect(page.locator('[data-setting="group"]')).toHaveValue('initial');
+  await expect(page.locator('[data-setting="group"]')).toHaveCount(0);
   await expect(page.locator('.learning-map [data-id="initial"]')).toHaveAttribute('aria-current', 'true');
   expect((await stored(page)).mode).toBe('sequence');
   await page.locator('.learning-map [data-id="single"]').click();
-  await expect(page.locator('.learning-map [data-action="map-group"]')).toHaveCount(6);
+  await expect(page.locator('.learning-map [data-action="map-group"]')).toHaveCount(7);
   await page.locator('.pinyin-map [data-index="5"]').click();
   await page.locator('[data-action="finish-study"]').click();
   await expect(page.locator('[data-action="next-section"]')).toHaveText('下一节：声母');
@@ -90,7 +90,7 @@ test('地图保留范围列表，点击范围保持玩法并同步下拉框', as
   await chooseMode(page, 'hanzi');
   await expect(page.locator('.learning-map [data-action="map-group"]')).toHaveCount(0);
   await page.locator('.learning-map [data-action="map-word-scope"][data-id="words"]').click();
-  await expect(page.locator('[data-setting="wordScope"]')).toHaveValue('words');
+  await expect(page.locator('[data-setting="wordScope"]')).toHaveCount(0);
   await expect(page.locator('.learning-map .stop-info b')).toHaveText(['字词一起练', '常见单字', '双字词语']);
   await expect(page.locator('.learning-map [data-id="words"]')).toHaveAttribute('aria-current', 'true');
   const state = await stored(page);
@@ -98,30 +98,29 @@ test('地图保留范围列表，点击范围保持玩法并同步下拉框', as
   const round = state.sessions['hanzi:all:words:retroflex:10'];
   expect(round.index).toBe(0);
   expect(round.questions.every(question => question.itemId.startsWith('word-'))).toBe(true);
-  await page.locator('[data-setting="wordScope"]').selectOption('characters');
+  await page.locator('[data-action="map-word-scope"][data-id="characters"]').click();
   await expect(page.locator('.learning-map .stop-info b')).toHaveText(['字词一起练', '常见单字', '双字词语']);
   await expect(page.locator('.learning-map [data-id="characters"]')).toHaveAttribute('aria-current', 'true');
   await page.locator('.learning-map [data-id="all"]').click();
-  await expect(page.locator('[data-setting="wordScope"]')).toHaveValue('all');
+  await expect(page.locator('[data-action="map-word-scope"][aria-current]')).toHaveAttribute('data-id', 'all');
 });
 
-test('各玩法地图与下拉选项一致，选择任意范围后列表保持不变', async ({ page }) => {
+test('各玩法只在地图切换分组，选择后列表保持不变', async ({ page }) => {
   await page.goto('/');
   for (const mode of ['sequence', 'random', 'listen', 'audio', 'hanzi', 'pinyin', 'match', 'challenge', 'tones', 'blend', 'confusing', 'rules', 'favorites']) {
     await chooseMode(page, mode);
-    const options = await page.locator('select[data-setting="group"] option, select[data-setting="wordScope"] option').evaluateAll(elements => elements.filter(element => element.textContent !== '全部拼音').map(element => ({ name: element.textContent, id: element.value, field: element.parentElement.dataset.setting })));
+    await expect(page.locator('select[data-setting="group"], select[data-setting="wordScope"], select[data-setting="confusion"]')).toHaveCount(0);
+    const options = await page.locator('.map-stop').evaluateAll(elements => elements.map(element => ({ name: element.querySelector('b').textContent, id: element.dataset.id, action: element.dataset.action })));
     if (!options.length) {
       await expect(page.locator('.learning-map')).toHaveCount(0);
       continue;
     }
     const names = options.map(option => option.name);
     await expect(page.locator('.learning-map .stop-info b')).toHaveText(names);
-    await expect(page.locator('.learning-map')).not.toContainText('全部拼音');
     for (const option of options) {
-      await page.locator(`select[data-setting="${option.field}"]`).selectOption(option.id);
+      await page.locator(`.learning-map [data-action="${option.action}"][data-id="${option.id}"]`).click();
       await expect(page.locator('.learning-map .stop-info b')).toHaveText(names);
-      const action = option.field === 'group' ? 'map-group' : 'map-word-scope';
-      await expect(page.locator(`.learning-map [data-action="${action}"][data-id="${option.id}"]`)).toHaveAttribute('aria-current', 'true');
+      await expect(page.locator(`.learning-map [data-action="${option.action}"][data-id="${option.id}"]`)).toHaveAttribute('aria-current', 'true');
     }
     expect((await stored(page)).mode).toBe(mode);
   }

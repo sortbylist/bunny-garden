@@ -8,7 +8,12 @@ async function openEnglish(page) {
 }
 
 async function englishState(page) { return page.evaluate(() => JSON.parse(localStorage.getItem('bunny-garden-v1')).phonics); }
-async function mode(page, id) { await page.locator(`${['review', 'favorites', 'records'].includes(id) ? '.garden-links' : '.ph-modes'} [data-id="${id}"]`).click(); }
+async function mode(page, id) {
+  if (id === 'favorites') {
+    await page.locator('.garden-links [data-action="saved-content"]').click();
+    await page.locator('[data-action="review-saved-words"]').click();
+  } else await page.locator(`${['review', 'records'].includes(id) ? '.garden-links' : '.ph-modes'} [data-id="${id}"]`).click();
+}
 async function section(page, id) {
   const toggle = page.locator('.ph-map-toggle');
   if (await toggle.isVisible() && await toggle.getAttribute('aria-expanded') === 'false') await toggle.click();

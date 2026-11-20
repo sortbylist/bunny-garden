@@ -154,7 +154,7 @@ export function roundStats(round) {
 export const defaultState = () => ({
   version: 1, subject: 'chinese', collapsed: false, features: { chinese: 'pinyin' }, mode: 'sequence',
   group: 'all', wordScope: 'all', confusion: 'retroflex', length: 10,
-  seen: [], known: [], favorites: [], mistakes: [], history: [], sessions: {},
+  seen: [], known: [], favorites: [], savedContent: [], mistakes: [], history: [], sessions: {},
   settings: { slow: false, showPinyin: true, effects: true, continuous: false, animations: true },
   nickname: '小小探索家', navigationSelections: {}, rewards: null,
   tonePractice: false, modeGroups: {}, hanzi: null, topics: {}, phonics: phonicsDefaults(),
@@ -178,6 +178,7 @@ export function loadState(storage) {
     }
     const state = { ...defaultState(), ...parsed, settings: { ...defaultState().settings, ...parsed.settings, ...learningPreferences(parsed) } };
     state.phonics = normalizePhonicsState(parsed.phonics);
+    state.savedContent = [...new Set(Array.isArray(parsed.savedContent) ? parsed.savedContent.filter(ref => typeof ref === 'string') : [])];
     state.navigationSelections = Object.fromEntries(Object.entries(parsed.navigationSelections && typeof parsed.navigationSelections === 'object' ? parsed.navigationSelections : {}).filter(([, value]) => typeof value === 'string'));
     if (['initials', 'finals', 'whole'].includes(state.mode)) {
       const legacyGroups = { initials: 'initial', finals: 'all', whole: 'whole' };
