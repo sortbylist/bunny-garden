@@ -1,9 +1,11 @@
+import { publicAsset } from './public-asset.js';
+
 export function createPoetryAudio(onStatus) {
   let manifest = { files: {} };
   let generation = 0;
   let active = null;
   let settle = null;
-  const ready = fetch('/audio/poetry/manifest.json')
+  const ready = fetch(publicAsset('/audio/poetry/manifest.json'))
     .then(response => response.ok ? response.json() : null)
     .then(data => {
       if (data?.locale === 'zh-CN' && data.files && typeof data.files === 'object') manifest = data;
@@ -32,7 +34,7 @@ export function createPoetryAudio(onStatus) {
       onStatus('error', '这首诗的朗读暂时无法播放，请稍后重试。');
       return false;
     }
-    const audio = new Audio(entry.path);
+    const audio = new Audio(publicAsset(entry.path));
     active = audio;
     audio.playbackRate = slow ? 0.8 : 1;
     audio.preservesPitch = true;

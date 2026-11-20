@@ -41,7 +41,20 @@ npm run build
 npm run preview
 ```
 
-生产文件输出到 `dist/`，可以部署到支持静态文件的网站根目录。若部署在子目录，需要同时调整 Vite 的 base 及应用内以 `/` 开头的资源路径；目前默认根目录部署。
+生产文件输出到 `dist/`，默认部署在网站根目录。
+
+## GitHub Pages 部署
+
+1. 在 GitHub 仓库打开 **Settings → Pages**，在 **Build and deployment → Source** 选择 **GitHub Actions**。
+2. 把包含 `.github/workflows/deploy-pages.yml` 的提交推送或合并到 `main`。每次更新 `main` 都会构建并发布 `dist/`。工作流使用 Pages 提供的子目录路径，并通过 `GITHUB_TOKEN` 自动发布。
+3. 在 **Actions → Deploy to GitHub Pages** 查看运行结果。首次配置发布源后，也可以点 **Run workflow**，选择 `main` 手动发布。
+
+发布成功后访问 <https://sortbylist.github.io/rabbit-garden/>。本地可用以下命令预览同样的子目录路径，打开 `http://127.0.0.1:4173/rabbit-garden/`。
+
+```sh
+npm run build -- --base /rabbit-garden/
+npm run preview -- --base /rabbit-garden/
+```
 
 ## 公共规则
 

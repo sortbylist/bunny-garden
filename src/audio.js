@@ -1,5 +1,7 @@
+import { publicAsset } from './public-asset.js';
+
 let manifest = { files: {} };
-const ready = fetch('/audio/manifest.json').then(response => response.ok ? response.json() : manifest).then(data => { manifest = data; }).catch(() => {});
+const ready = fetch(publicAsset('/audio/manifest.json')).then(response => response.ok ? response.json() : manifest).then(data => { manifest = data; }).catch(() => {});
 let generation = 0;
 let active = null;
 let finish = null;
@@ -29,7 +31,7 @@ export async function playAudio(request, slow = false) {
   for (const path of paths) {
     if (token !== generation) return false;
     const success = await new Promise(resolve => {
-      const audio = new Audio(path);
+      const audio = new Audio(publicAsset(path));
       active = audio;
       audio.playbackRate = slow ? 0.8 : 1;
       audio.preservesPitch = true;

@@ -1,11 +1,12 @@
 import { availablePhonicsAudio } from './phonics-engine.js';
+import { publicAsset } from './public-asset.js';
 
 export function createPhonicsAudio(onStatus) {
   let manifest = { files: {} };
   let generation = 0;
   let active;
   let settle;
-  const ready = fetch('/audio/phonics/manifest.json').then(response => response.ok ? response.json() : null).then(data => {
+  const ready = fetch(publicAsset('/audio/phonics/manifest.json')).then(response => response.ok ? response.json() : null).then(data => {
     if (data?.locale === 'en-GB' && data.files && typeof data.files === 'object') manifest = data;
   }).catch(() => {});
 
@@ -25,7 +26,7 @@ export function createPhonicsAudio(onStatus) {
     await ready;
     if (generation !== token) return false;
     if (!available(id)) { onStatus('error', '暂时无法播放，请先选择其他内容。'); return false; }
-    const audio = new Audio(manifest.files[id].path);
+    const audio = new Audio(publicAsset(manifest.files[id].path));
     active = audio;
     audio.playbackRate = slow ? 0.8 : 1;
     audio.preservesPitch = true;

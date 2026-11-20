@@ -28,7 +28,9 @@ import { practiceLengths } from './chinese-practice.js';
 import './ui-theme.css';
 import { createBackup, parseBackup, restoreBackup, maxBackupBytes } from './backup.js';
 import { saveState } from './storage.js';
+import { publicAsset } from './public-asset.js';
 
+const bunnyImage = publicAsset('/bunny.svg');
 const app = document.querySelector('#app');
 const dialog = document.querySelector('#dialog');
 const loaded = loadState({ getItem: key => localStorage.getItem(key) });
@@ -179,7 +181,7 @@ function render() {
     <a class="skip-link" href="#main-content">跳到学习内容</a>
     ${mobileMenu ? '<button class="drawer-backdrop" data-action="mobile-menu" aria-label="关闭学科导航"></button>' : ''}
     <aside class="sidebar" aria-label="学科导航">
-      <div class="brand"><img src="/bunny.svg" alt="" width="43" height="43"><div class="brand-text"><strong>小兔学习乐园</strong><span>每天进步一点点</span></div></div>
+      <div class="brand"><img src="${bunnyImage}" alt="" width="43" height="43"><div class="brand-text"><strong>小兔学习乐园</strong><span>每天进步一点点</span></div></div>
       ${button('collapse', '<span class="nav-label">收起侧栏</span>', 'panel', 'collapse-button', `aria-label="${state.collapsed ? '展开' : '收起'}侧栏" aria-expanded="${!state.collapsed}"`)}
       <div class="nav-caption">我的学习天地</div>
       <nav class="subjects">${subjects.map(item => `<button class="subject ${item.color} ${state.subject === item.id ? 'active' : ''}" data-action="subject" data-id="${item.id}" aria-label="${item.name}" ${state.subject === item.id ? 'aria-current="page"' : ''}><span class="subject-icon">${icon(item.icon)}</span><span class="subject-name">${item.name}<small>${item.english}</small></span>${icon('chevron', 'nav-arrow')}</button>`).join('')}</nav>
@@ -190,7 +192,7 @@ function render() {
       <header class="topbar">
         ${button('mobile-menu', '', 'menu', 'icon-button mobile-toggle', 'aria-label="切换学科导航"')}
         <div class="breadcrumb">学习乐园 ${icon('chevron')} <span>${subject.name}</span></div>
-        <div class="topbar-right"><button class="star-counter" data-action="reward-rules" aria-label="查看星星收获与获取规则">${icon('star')}<b>${rewardStats(state.rewards).stars}</b><span>颗成长星</span>${icon('info')}</button><details class="my-menu"><summary class="my-menu-toggle" aria-label="打开我的菜单"><img src="/bunny.svg" alt="" width="38" height="38"><span>${escape(state.nickname)}<small>我的 ${icon('down')}</small></span></summary><div class="my-menu-content"><strong>你好，${escape(state.nickname)}</strong>${button('profile', '我的成长空间', 'sprout')}${personalButtons('menu')}${button('reward-collection', '奖励收藏册', 'star')}${button('menu-settings', '学习设置', 'settings')}</div></details></div>
+        <div class="topbar-right"><button class="star-counter" data-action="reward-rules" aria-label="查看星星收获与获取规则">${icon('star')}<b>${rewardStats(state.rewards).stars}</b><span>颗成长星</span>${icon('info')}</button><details class="my-menu"><summary class="my-menu-toggle" aria-label="打开我的菜单"><img src="${bunnyImage}" alt="" width="38" height="38"><span>${escape(state.nickname)}<small>我的 ${icon('down')}</small></span></summary><div class="my-menu-content"><strong>你好，${escape(state.nickname)}</strong>${button('profile', '我的成长空间', 'sprout')}${personalButtons('menu')}${button('reward-collection', '奖励收藏册', 'star')}${button('menu-settings', '学习设置', 'settings')}</div></details></div>
       </header>
       ${navigation.render({ id: `features-${subject.id}`, label: `${subject.name}主题`, groups: featureGroups(subject), selected: state.features[subject.id], memories: state.navigationSelections, action: 'feature', className: 'feature-navigation' })}
       <main id="main-content" tabindex="-1">${topic ? renderTopic(topic, { ...state.topics[topic.id], cardFavorite, showPinyin: topic.subject !== 'math' && state.settings.showPinyin }, progressCard()) : isHanzi ? renderHanzi({ ...state.hanzi, cardFavorite, showPinyin: state.settings.showPinyin }, progressCard()) : state.subject === 'chinese' ? learningPage() : state.subject === 'english' ? phonics.render() : comingSoon(subject)}</main>
@@ -539,7 +541,7 @@ function importBackup() {
 function showProfile() {
   const stats = rewardStats(state.rewards);
   const badge = rewardCatalog.find(reward => reward.id === state.rewards.equipped.badge);
-  openDialog('我的成长空间', `<div class="profile-heading"><img src="/bunny.svg" alt="" width="76" height="76"><div><h3>${escape(state.nickname)}</h3><p>${badge ? badge.name : '每一天，都可以有新的发现'}</p>${button('edit-nickname', '修改昵称', 'pen', 'text-button')}</div></div><div class="profile-totals"><div><b>${stats.stars}</b><span>成长星星</span></div><div><b>${Object.keys(state.rewards.unlocks).length}</b><span>已解锁奖励</span></div><div><b>${stats.days}</b><span>累计练习天数</span></div></div><div class="profile-display">${equippedRewards() || '<p>解锁奖励后，可以在这里展示喜欢的贴纸、徽章和摆件。</p>'}</div>${personalLinks()}${button('reward-rules', '星星从哪里来？查看规则与明细', 'info', 'reward-rules-link')}<p class="personal-footnote">按自己的节奏长大，不比较、不扣星；休息几天也不会失去收获。</p>`, 'profile-dialog');
+  openDialog('我的成长空间', `<div class="profile-heading"><img src="${bunnyImage}" alt="" width="76" height="76"><div><h3>${escape(state.nickname)}</h3><p>${badge ? badge.name : '每一天，都可以有新的发现'}</p>${button('edit-nickname', '修改昵称', 'pen', 'text-button')}</div></div><div class="profile-totals"><div><b>${stats.stars}</b><span>成长星星</span></div><div><b>${Object.keys(state.rewards.unlocks).length}</b><span>已解锁奖励</span></div><div><b>${stats.days}</b><span>累计练习天数</span></div></div><div class="profile-display">${equippedRewards() || '<p>解锁奖励后，可以在这里展示喜欢的贴纸、徽章和摆件。</p>'}</div>${personalLinks()}${button('reward-rules', '星星从哪里来？查看规则与明细', 'info', 'reward-rules-link')}<p class="personal-footnote">按自己的节奏长大，不比较、不扣星；休息几天也不会失去收获。</p>`, 'profile-dialog');
 }
 
 function showNickname() {
@@ -719,7 +721,7 @@ function showTopicRecords() {
 }
 
 function showAbout() {
-  openDialog('关于小兔学习乐园', `<p class="dialog-intro">专为小学生准备的一方学习小天地。没有广告，不需要注册，按照自己的节奏慢慢学。</p><h3>关于拼音和读音</h3><p>内容包含 23 个声母、24 个韵母和 16 个整体认读音节，采用小学常见分类。</p><p>真人录音来自 audio-cmn：音节由 Chen Wang 录制，词语由 Yue Tan 录制，Hugo Lopez 与 Nicolas Vion 参与整理和技术支持，采用上游声明的 CC BY-SA 许可。</p><p>部分韵母借助完整音节示范，ong 使用 dōng 的例音，学习卡片上会明确提示。录音尚待普通话教师逐项试听审核。</p><p><a href="/audio/ATTRIBUTION.md" target="_blank" rel="noopener">查看音频来源与署名说明</a></p><h3>使用小提醒</h3><p>首次听音需要点击喇叭。跟着录音自己读一读即可，本应用不会录音，也不会自动评价你的发音。</p><p>页面风格参考 Bunny Math，插画与练习界面为本项目绘制。</p>`);
+  openDialog('关于小兔学习乐园', `<p class="dialog-intro">专为小学生准备的一方学习小天地。没有广告，不需要注册，按照自己的节奏慢慢学。</p><h3>关于拼音和读音</h3><p>内容包含 23 个声母、24 个韵母和 16 个整体认读音节，采用小学常见分类。</p><p>真人录音来自 audio-cmn：音节由 Chen Wang 录制，词语由 Yue Tan 录制，Hugo Lopez 与 Nicolas Vion 参与整理和技术支持，采用上游声明的 CC BY-SA 许可。</p><p>部分韵母借助完整音节示范，ong 使用 dōng 的例音，学习卡片上会明确提示。录音尚待普通话教师逐项试听审核。</p><p><a href="${publicAsset('/audio/ATTRIBUTION.md')}" target="_blank" rel="noopener">查看音频来源与署名说明</a></p><h3>使用小提醒</h3><p>首次听音需要点击喇叭。跟着录音自己读一读即可，本应用不会录音，也不会自动评价你的发音。</p><p>页面风格参考 Bunny Math，插画与练习界面为本项目绘制。</p>`);
 }
 
 function changeMode(id) {
