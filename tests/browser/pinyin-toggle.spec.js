@@ -4,6 +4,7 @@ import { selectTopic, setLearningPreference, stored } from './helpers.js';
 test('拼音辅助只在学习设置中显示，关闭后跨主题生效并支持刷新恢复', async ({ page }) => {
   await page.goto('/');
   await selectTopic(page, '汉字笔画与结构');
+  await page.locator('[data-action="hz-lesson"][data-id="stroke-horizontal-left"]').click();
   await expect(page.locator('.hanzi-page ruby').first()).toBeVisible();
   await expect(page.getByRole('switch', { name: '拼音辅助' })).toHaveCount(0);
   await setLearningPreference(page, 'showPinyin', false);

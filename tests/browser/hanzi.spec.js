@@ -164,7 +164,7 @@ test('手机平板桌面无横向溢出，键盘和减少动态效果可用', as
 test('新增笔顺、拼音辅助和30题轮次可保存，切换题量不重置当前题目', async ({ page }) => {
   await openHanzi(page);
   await page.locator('[data-action="hz-lesson"][data-id="stroke-horizontal-left"]').click();
-  await expect(page.locator('.hz-demo ruby rt').first()).toHaveText('héng piě');
+  await expect(page.locator('.hz-demo h3 ruby rt')).toHaveText('piě');
   await setLearningPreference(page, 'showPinyin', false);
   await expect(page.locator('.hanzi-page ruby')).toHaveCount(0);
   await page.locator('[data-action="hz-category"][data-id="order"]').click();

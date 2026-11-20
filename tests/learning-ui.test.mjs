@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { favoriteButton, learningCardFooter, learningTokenClass, learningTools, roundSettings } from '../src/learning-ui.js';
-import { readingHints } from '../src/chinese-reading.js';
-import { vocabularyEntries } from '../src/vocabulary-data.js';
+import { difficultCharacters, contextualCharacters } from '../src/prose-readings-data.js';
+import { chineseTopics } from '../src/chinese-topics.js';
+import { hanziLessons, hanziQuestions } from '../src/hanzi-data.js';
 
 test('学习卡复用带图标的轻量操作区，翻页独立且保留边界与认识状态', () => {
   for (const prefix of ['ct', 'hz']) {
@@ -66,10 +67,16 @@ test('各练习共用设置外观，收藏组件同步图标和选中状态', ()
   }
 });
 
-test('新增和已有词卡均有完整词组拼音，避免把多音字拆成固定读音', () => {
-  for (const entry of vocabularyEntries) {
-    assert.ok(readingHints[entry.text], entry.text);
-    assert.equal(readingHints[entry.text].split(' ').length, [...entry.text].length, entry.text);
-    assert.ok(entry.sentence.includes(entry.text), entry.text);
+test('正文字表中的目标字和消歧语境均来自实际课程', () => {
+  const corpus = JSON.stringify([chineseTopics, hanziLessons, hanziQuestions]);
+  for (const character of [...Object.keys(difficultCharacters), ...Object.keys(contextualCharacters)]) {
+    assert.match(character, /^\p{Script=Han}$/u);
+    assert.ok(corpus.includes(character), character);
+  }
+  for (const [character, readings] of Object.entries(contextualCharacters)) {
+    assert.ok(!Object.hasOwn(difficultCharacters, character));
+    for (const word of Object.values(readings).flat()) {
+      assert.ok(word.includes(character) && corpus.includes(word), word);
+    }
   }
 });

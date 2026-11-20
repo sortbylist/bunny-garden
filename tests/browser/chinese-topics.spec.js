@@ -197,7 +197,7 @@ test('教学图解和难词拼音在320像素宽度可读，同音节查字能�
     await page.locator(`[data-action="ct-category"][data-id="${category}"]`).click();
     await page.locator(`[data-action="ct-lesson"][data-id="${lessonId}"]`).click();
     await expect(page.locator('.ct-visual')).toBeVisible();
-    expect(await page.locator('.ct-lesson ruby').count()).toBeGreaterThan(0);
+    if (lessonId.endsWith('白雪皑皑')) await expect(page.locator('.ct-lesson-intro h3 rt')).toHaveText(['ái', 'ái']);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
 });

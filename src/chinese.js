@@ -66,6 +66,8 @@ function quizCard(topic, state) {
     return `<section class="hz-card ct-result result-card ct-sentence-card">${bunny()}<h2>这一轮完成啦！</h2><p>共 ${stats.total} 题，首次答对 ${stats.correct} 题，首次跳过 ${stats.skipped} 题。</p><p>重试不覆盖首次成绩；错题需要在新一轮复习中独立答对才移出。</p><div class="hz-actions">${control('learn', '回到学习')}${control('start', '再练一轮', `data-id="${round.scope}" ${round.scope === 'review' && !state.mistakes.length ? 'disabled' : ''}`, 'solid-button')}</div></section>`;
   }
   const question = round.questions[round.index];
+  const read = topic.id === 'character-readings' && question.category === 'polyphones' && !round.revealed
+    ? escape : topicText(topic, state);
   return `<section class="hz-card ct-quiz quiz-card ct-sentence-card" aria-label="${topic.name}练习"><div class="hz-card-heading quiz-top"><h2 class="category-badge">${icon('pen')}${round.scope === 'review' ? `${topic.name}错题本` : '动脑小练习'}</h2>${learningPosition(round.index, round.questions.length, { practice: true })}</div>
     ${question.passage ? readingPassage(question.passage, state.showPinyin, round.revealed ? question.evidence : []) : ''}
     ${question.display ? `<p class="ct-context">${read(question.display)}</p>` : ''}<h3 class="ct-prompt">${read(question.prompt)}</h3>

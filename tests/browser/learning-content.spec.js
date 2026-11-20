@@ -23,7 +23,7 @@ test('词语分类新增六类，扩充词卡可学习、自评并恢复进度',
   for (const category of ['school', 'daily', 'food', 'transport', 'weather', 'places']) {
     await page.locator(`[data-action="ct-category"][data-id="${category}"]`).click();
     await expect(page.locator('[data-action="ct-lesson"]')).toHaveCount(10);
-    await expect(page.locator('.ct-lesson-list ruby')).not.toHaveCount(0);
+    if (category === 'weather') await expect(page.getByRole('button', { name: '冰雹', exact: true }).locator('rt')).toHaveText('báo');
     await expect(page.locator('.ct-lesson-intro h3')).not.toBeEmpty();
   }
   await page.getByRole('button', { name: '博物馆', exact: true }).click();

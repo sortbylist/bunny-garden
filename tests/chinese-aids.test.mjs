@@ -8,15 +8,16 @@ import { selectPractice } from '../src/chinese-practice.js';
 import { readingText } from '../src/chinese-reading.js';
 import { dictionaryDiagram, lessonVisual } from '../src/chinese-visuals.js';
 
-test('拼音按完整词组匹配，处理多音词并转义内容，关闭后保留原文', () => {
-  const text = '整理整理、狐假虎威、果实累累、拔苗助长';
+test('正文只给难认字和有明确语境的多音字注音', () => {
+  const text = '同学和工人跨过门槛，搓着手拉开抽屉。树上果实累累。缝补裂缝后归还。';
   const html = readingText(text);
-  assert.equal((html.match(/<ruby>/g) || []).length, 4);
-  for (const reading of ['zhěng lǐ zhěng lǐ', 'hú jiǎ hǔ wēi', 'guǒ shí léi léi', 'bá miáo zhù zhǎng']) assert.ok(html.includes(`<rt>${reading}</rt>`));
+  const hints = [...html.matchAll(/<ruby>(.)<rp>（<\/rp><rt>([^<]+)<\/rt>/gu)].map(match => match.slice(1));
+  assert.deepEqual(hints, [['槛', 'kǎn'], ['搓', 'cuō'], ['屉', 'tì'], ['累', 'léi'], ['累', 'léi'], ['缝', 'féng'], ['缝', 'fèng'], ['还', 'huán']]);
   assert.equal(readingText(text, false), text);
   assert.equal(readingText('<script>"&"</script>', false), '&lt;script&gt;&quot;&amp;&quot;&lt;/script&gt;');
   assert.ok(!readingText('<img src=x onerror=alert(1)>蝴蝶').includes('<img'));
-  assert.equal(readingText('长大、银行、快乐'), '长大、银行、快乐');
+  const plain = '同学、工人、学校、小雨、整理、结束、还有、行、重、槛';
+  assert.equal(readingText(plain), plain);
 });
 
 test('抽题先覆盖小节再优先未见题，不改原题库，题量不足不重复凑数', () => {

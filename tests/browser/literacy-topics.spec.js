@@ -28,7 +28,9 @@ test('形近字和多音字对照可读，关闭拼音仍保留辨析所需的�
   await expect(page.locator('.ct-comparison ruby')).toHaveCount(0);
   await expect(page.locator('.ct-comparison')).toContainText('在“得到”中读 dé');
   await page.locator('[data-action="ct-start"][data-id="polyphones"]').click();
+  await setLearningPreference(page, 'showPinyin', true);
   await expect(page.locator('.ct-comparison')).toHaveCount(0);
+  await expect(page.locator('.ct-quiz ruby')).toHaveCount(0);
   const round = (await stored(page)).topics['character-readings'].round;
   await page.locator('.ct-quiz').getByRole('button', { name: round.questions[0].answer, exact: true }).click();
   expect((await stored(page)).topics['character-readings'].round.responses[0].correct).toBe(true);
