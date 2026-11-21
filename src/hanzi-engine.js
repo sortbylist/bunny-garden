@@ -79,5 +79,6 @@ export function advanceHanziRound(state) {
   }
   round.finished = true;
   const stats = roundStats(round);
-  return { time: Date.now(), name: round.scope === 'review' ? '汉字错题本' : '汉字笔画与结构', total: stats.total, correct: stats.correct };
+  const category = hanziCategories.find(item => item.id === round.scope)?.id;
+  return { time: Date.now(), name: round.scope === 'review' ? '汉字错题本' : '汉字笔画与结构', topicId: 'hanzi-structure', category, total: stats.total, correct: stats.correct };
 }

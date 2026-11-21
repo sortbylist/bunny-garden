@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { defaultState } from '../../src/engine.js';
+import { seedStoredState, stored } from './helpers.js';
 
 test('英语随机词卡一轮不重复，切换课次不丢失当前轮', async ({ page }) => {
   await page.goto('/');
@@ -26,15 +27,10 @@ test('英语随机词卡一轮不重复，切换课次不丢失当前轮', async
   await expect(page.locator('.ph-word')).toHaveText(savedWord);
 });
 
-test('损坏英语记录降级，不妨碍语文；全局清空同时重置英语', async ({ page }) => {
-  await page.addInitScript(initial => {
-    if (!sessionStorage.getItem('injected-phonics')) {
-      const state = JSON.parse(localStorage.getItem('bunny-garden-v1')) || initial;
-      state.phonics = '{broken';
-      localStorage.setItem('bunny-garden-v1', JSON.stringify(state));
-      sessionStorage.setItem('injected-phonics', 'yes');
-    }
-  }, defaultState());
+test('全局清空同时重置语文和英语', async ({ page }) => {
+  const state = defaultState();
+  state.known = ['single-a'];
+  await seedStoredState(page, state);
   await page.goto('/');
   await expect(page.locator('.pinyin-display')).toHaveText('a');
   await page.locator('.subjects [data-id="english"]').click();
@@ -46,7 +42,9 @@ test('损坏英语记录降级，不妨碍语文；全局清空同时重置英�
   await expect(page.locator('.pinyin-display')).toHaveText('a');
   await page.locator('.subjects [data-id="english"]').click();
   await expect(page.locator('.ph-word')).toHaveText('map');
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('bunny-garden-v1')).phonics.known)).toEqual([]);
+  const reset = await stored(page);
+  expect(reset.phonics.known).toEqual([]);
+  expect(reset.known).toEqual([]);
 });
 
 test('英语未完成题首答与重试可在刷新后保持', async ({ page }) => {
@@ -61,7 +59,7 @@ test('英语未完成题首答与重试可在刷新后保持', async ({ page }) 
   await expect(page.locator('.ph-feedback')).toContainText('先看看答案');
   await page.locator('[data-action="ph-next-question"]').click();
   await expect(page.locator('.ph-finish')).toContainText('0 / 1');
-  const history = await page.evaluate(() => JSON.parse(localStorage.getItem('bunny-garden-v1')).phonics.history);
+  const history = (await stored(page)).phonics.history;
   expect(history).toHaveLength(1);
   expect(history[0].skipped).toBe(0);
 });

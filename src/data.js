@@ -1,6 +1,6 @@
 import { chineseTopics } from './chinese-topics.js';
 import { mathTopics } from './math-topics.js';
-import { englishTopics } from './english-topics.js';
+import { englishFirstStage, englishTopics } from './english-topics.js';
 
 export const groups = [
   { id: 'single', name: '单韵母', short: '从 a o e 开始', color: 'pink' },
@@ -129,7 +129,25 @@ export const neutralToneExamples = ['妈妈', '爸爸', '哥哥', '姐姐', '朋
 export const tonePracticeSounds = ['ma', 'ba', 'yi', 'wu', 'yu'].flatMap(syllable => [1, 2, 3, 4].map(tone => `${syllable}${tone}`));
 
 export const subjects = [
-  { id: 'chinese', name: '语文', english: 'CHINESE', icon: 'book', color: 'pink', features: [{ id: 'pinyin', name: '拼音学习', icon: 'type', category: '拼音学习' }, { id: 'hanzi-structure', name: '汉字笔画与结构', icon: 'pen', category: '第一阶段 · 字词基础' }, ...chineseTopics.map(topic => ({ id: topic.id, name: topic.name, category: topic.stage, icon: ({ dictionary: 'search', 'word-categories': 'grid', 'word-relations': 'compare', collocations: 'link', 'word-patterns': 'flower', 'sentence-building': 'puzzle', punctuation: 'quote', 'sentence-patterns': 'layers', 'sentence-revision': 'refresh', 'vivid-expression': 'leaf', 'similar-characters': 'character-radical', 'character-readings': 'sound', 'poetry-culture': 'scroll', 'reading-information': 'search', 'reading-context': 'link', 'reading-paragraphs': 'layers', 'reading-stories': 'heart', 'reading-summary': 'book' })[topic.id] || 'book' }))] },
+  { id: 'chinese', name: '语文', english: 'CHINESE', icon: 'book', color: 'pink', features: [{ id: 'pinyin', name: '拼音学习', icon: 'type', category: '第一阶段 · 字词基础' }, { id: 'hanzi-structure', name: '汉字笔画与结构', icon: 'pen', category: '第一阶段 · 字词基础' }, ...chineseTopics.map(topic => ({ id: topic.id, name: topic.name, category: topic.stage, icon: ({ dictionary: 'search', 'word-categories': 'grid', 'word-relations': 'compare', collocations: 'link', 'word-patterns': 'flower', 'sentence-building': 'puzzle', punctuation: 'quote', 'sentence-patterns': 'layers', 'sentence-revision': 'refresh', 'vivid-expression': 'leaf', 'similar-characters': 'character-radical', 'character-readings': 'sound', 'poetry-culture': 'scroll', 'reading-information': 'search', 'reading-context': 'link', 'reading-paragraphs': 'layers', 'reading-stories': 'heart', 'reading-summary': 'book' })[topic.id] || 'book' }))] },
   { id: 'math', name: '数学', english: 'MATH', icon: 'math', color: 'blue', features: mathTopics.map(topic => ({ id: topic.id, name: topic.name, category: topic.stage, icon: topic.icon })) },
-  { id: 'english', name: '英语', english: 'ENGLISH', icon: 'globe', color: 'yellow', features: [{ id: 'phonics', name: '自然拼读', icon: 'type', category: '自然拼读' }, ...englishTopics.map(topic => ({ id: topic.id, name: topic.name, category: topic.stage, icon: topic.icon }))] },
+  { id: 'english', name: '英语', english: 'ENGLISH', icon: 'globe', color: 'yellow', features: [{ id: 'phonics', name: '自然拼读', icon: 'type', category: englishFirstStage }, ...englishTopics.map(topic => ({ id: topic.id, name: topic.name, category: topic.stage, icon: topic.icon }))] },
 ];
+
+const chineseStageNames = { 第一阶段: '字词基础', 第二阶段: '句子运用', 第三阶段: '阅读与积累', 第四阶段: '表达与写作' };
+const stageOrdinals = '一二三四五六七八九十';
+
+export function featureGroups(subject) {
+  const stages = new Map();
+  for (const feature of subject.features) {
+    const [stage, name] = feature.category.split(' · ');
+    const number = stageOrdinals.indexOf(stage.slice(1, 2)) + 1;
+    const id = `${subject.id}-${number}`;
+    if (!stages.has(id)) {
+      const stageName = (subject.id === 'chinese' && chineseStageNames[stage]) || name || stage;
+      stages.set(id, { id, number, name: stageName, stage, items: [] });
+    }
+    stages.get(id).items.push(feature);
+  }
+  return [...stages.values()].sort((first, second) => first.number - second.number);
+}

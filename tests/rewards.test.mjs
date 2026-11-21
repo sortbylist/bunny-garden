@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { basics, modes, playModes, modeSections } from '../src/data.js';
 import { defaultState, loadState } from '../src/engine.js';
+import { encodeLearningData } from '../src/learning-data.js';
 import { initializeRewards, grantRewards, rewardStats, equipReward, normalizeNickname, localDay } from '../src/rewards.js';
 
 const firstDate = () => new Date(2026, 10, 8, 12);
@@ -21,7 +22,7 @@ test('认读和题目奖励去重，重新标记、切换玩法、重载不重�
   assert.equal(earned.stars, 1);
   assert.deepEqual(earned.unlocked, ['hello-bunny']);
   assert.equal(grantRewards(state, action, firstDate()).stars, 0);
-  const restored = loadState({ getItem: () => JSON.stringify(state) }).state;
+  const restored = loadState({ getItem: () => JSON.stringify(encodeLearningData(state)) }).state;
   initializeRewards(restored, firstDate());
   assert.equal(grantRewards(restored, action, firstDate()).stars, 0);
   assert.equal(grantRewards(restored, { type: 'answer', question: { id: 'rule:r1', prompt: '水' } }, firstDate()).stars, 1);
@@ -74,7 +75,7 @@ test('贴纸、徽章和摆件按真实进度解锁，未解锁不能展示，�
   assert.ok(state.rewards.unlocks.explorer);
 });
 
-test('旧版认识记录一次性补发，旧声母和整体认读迁移到顺序学习且保留学习位置', () => {
+test('初始化奖励时，对尚未入账的认识记录只补发一次', () => {
   const old = defaultState();
   delete old.rewards;
   old.known = ['single-a', 'single-a', 'single-o', 'unknown'];
@@ -84,13 +85,6 @@ test('旧版认识记录一次性补发，旧声母和整体认读迁移到顺�
   assert.ok(old.rewards.events.every(event => event.migrated));
   initializeRewards(old, firstDate());
   assert.equal(rewardStats(old.rewards).stars, 2);
-  const legacy = defaultState();
-  legacy.mode = 'initials';
-  legacy.sessions['initials:all:all:retroflex:10'] = { ids: ['initial-b', 'initial-p'], index: 1 };
-  const restored = loadState({ getItem: () => JSON.stringify(legacy) }).state;
-  assert.equal(restored.mode, 'sequence');
-  assert.equal(restored.group, 'initial');
-  assert.equal(restored.sessions['sequence:initial:all:retroflex:10'].index, 1);
 });
 
 test('昵称去空白、支持中文、拒绝空昵称及过长昵称', () => {

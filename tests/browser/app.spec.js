@@ -29,8 +29,8 @@ test('顺序学习、点读、收藏、进度恢复与学科切换', async ({ pa
 
 test('所有练习方式可进入，随机范围不重复', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('.garden-links [data-id="mistakes"]')).toBeDisabled();
-  const modes = ['random', 'tones', 'listen', 'audio', 'blend', 'hanzi', 'pinyin', 'confusing', 'rules', 'match', 'challenge', 'favorites'];
+  await expect(page.locator('.my-menu [data-action="library-open"][data-id="mistakes"]')).toHaveText('错题本（0）');
+  const modes = ['random', 'tones', 'listen', 'audio', 'blend', 'hanzi', 'pinyin', 'confusing', 'rules', 'match', 'challenge'];
   for (const id of modes) {
     await chooseMode(page, id);
     await expect(page.locator('.learning-main')).toHaveAttribute('aria-label', /.+/);
@@ -99,7 +99,7 @@ test('分类、主题、学习操作和刷新保持各自选择与进度', async
   await page.locator('[data-action="next"]').click();
   await expect(page.locator('.pinyin-display')).toHaveText('o');
   await selectTopic(page, '近义词与反义词');
-  await expect(page.getByRole('tab')).toHaveCount(6);
+  await expect(page.getByRole('tab')).toHaveCount(7);
   await page.reload();
   await expect(page.getByRole('tab', { name: '近义词与反义词', exact: true })).toHaveAttribute('aria-selected', 'true');
   await page.locator('[data-action="subject"][data-id="english"]').click();
@@ -166,12 +166,13 @@ test('学习设置的开关行与操作行沿用下拉菜单悬停样式', async
     const css = getComputedStyle(element);
     return [css.backgroundColor, css.borderRadius];
   };
+  await expect.poll(() => menuSettings.evaluate(hoverStyle)).toEqual(['rgb(247, 237, 243)', '9px']);
   const expected = await menuSettings.evaluate(hoverStyle);
   await menuSettings.click();
   const settings = page.getByRole('dialog', { name: '学习设置' });
   for (const row of [settings.locator('label.setting-row').first(), settings.getByRole('button', { name: '清空本机学习记录' })]) {
     await row.hover();
-    expect(await row.evaluate(hoverStyle)).toEqual(expected);
+    await expect.poll(() => row.evaluate(hoverStyle)).toEqual(expected);
   }
 });
 

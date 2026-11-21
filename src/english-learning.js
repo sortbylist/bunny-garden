@@ -71,10 +71,10 @@ export function englishActivity(lesson) {
     ${lesson.checklist ? `<ul>${lesson.checklist.map(item => `<li>${item}</li>`).join('')}</ul>` : ''}</div>`;
 }
 
-export function englishQuizAudio(question, revealed, heard) {
+export function englishQuizAudio(question, revealed, heard, preview = false) {
   if (!question.clip) return '';
   return `<div class="en-listen" data-en-listen="${question.clip.id}">${audioControls(question.clip, heard || revealed ? '再听一次' : '播放题目')}
-    ${status}${revealed ? `<p class="ct-sample">听力原文 ${englishText(question.clip.text)}</p>` : '<p class="hz-caption">音频播完后就能选图。</p><button type="button" data-action="en-study-text" class="text-button">看文字去学习</button>'}</div>`;
+    ${status}${revealed ? `<p class="ct-sample">听力原文 ${englishText(question.clip.text)}</p>` : `<p class="hz-caption">音频播完后就能选图。</p>${preview ? '' : '<button type="button" data-action="en-study-text" class="text-button">看文字去学习</button>'}`}</div>`;
 }
 
 export function englishChoice(choice) {
@@ -87,7 +87,7 @@ export function createEnglishAudio() {
   let heardIndex;
 
   function update(message, busy = false) {
-    const page = document.querySelector('.en-topic');
+    const page = document.querySelector('.review-card-dialog[open] .en-topic') || document.querySelector('.en-topic');
     page?.querySelectorAll('[data-en-audio-status]').forEach(element => { element.textContent = message; });
     page?.querySelectorAll('[data-action="en-stop"]').forEach(element => { element.disabled = !busy; });
   }

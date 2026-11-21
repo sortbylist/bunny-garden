@@ -4,7 +4,7 @@ import { mathTopics } from '../../src/math-topics.js';
 import { groups } from '../../src/data.js';
 import { hanziCategories, hanziLessons } from '../../src/hanzi-data.js';
 import { phonicsLessons } from '../../src/phonics-data.js';
-import { chooseMode, selectTopic, stored } from './helpers.js';
+import { chooseMode, openMyMenu, selectTopic, stored } from './helpers.js';
 
 async function expectPosition(page, index, total, practice = false) {
   const position = page.locator('#main-content .learning-position');
@@ -58,12 +58,14 @@ test('拼音顺序、随机和收藏各范围均使用精确数字，切换及�
     }
   }
   await page.locator('[data-action="favorite"]').click();
-  await chooseMode(page, 'favorites');
-  await expectPosition(page, 0, 1);
+  await openMyMenu(page, '[data-id="favorites"]');
+  await expect(page.locator('.review-items li')).toHaveCount(1);
   await page.reload();
-  await expectPosition(page, 0, 1);
-  await page.locator('[data-action="favorite"]').click();
-  await expect(page.locator('.learning-position')).toHaveCount(0);
+  await page.locator('[data-action="library-item"]').click();
+  await page.locator('[data-action="library-toggle-favorite"]').click();
+  await page.locator('[data-action="library-close-card"]').click();
+  await expect(page.locator('.review-items li')).toHaveCount(0);
+  await page.locator('[data-action="library-exit"]').click();
   await chooseMode(page, 'rules');
   const sessions = (await stored(page)).sessions;
   const round = Object.values(sessions).find(session => session.questions?.length);
@@ -103,7 +105,7 @@ test('英语全部课程的词卡位置及练习位置统一，保留题目跳�
   await page.reload();
   const total = phonicsLessons.at(-1).words.length;
   await expectPosition(page, total - 1, total);
-  await page.locator('[data-action="ph-mode"][data-id="rules"]').click();
+  await page.locator('.ph-modes [data-id="rules"]').click();
   await expect(page.locator('.learning-position')).toHaveText(/第 1 \/ \d+ 题/);
   await page.locator('[data-action="ph-question"]').last().click();
   const count = await page.locator('[data-action="ph-question"]').count();

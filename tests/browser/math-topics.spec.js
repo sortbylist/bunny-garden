@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { mathTopics } from '../../src/math-topics.js';
-import { selectTopic, stored, setRoundLength } from './helpers.js';
+import { appStorageKey } from '../../src/storage.js';
+import { openMyMenu, selectTopic, stored, setRoundLength } from './helpers.js';
 
 async function subject(page, id) {
   const button = page.locator(`.subjects [data-action="subject"][data-id="${id}"]`);
@@ -53,7 +54,7 @@ for (const topic of mathTopics) {
     await page.locator('[data-action="ct-learn"]').click();
     for (const category of topic.categories) {
       await page.locator(`[data-action="ct-category"][data-id="${category.id}"]`).click();
-      await expect(page.locator('.ct-lesson .category-badge')).toHaveText(category.name);
+      await expect(page.locator('.ct-lesson .category-badge')).toHaveText(`学习 · ${category.name}`);
       await expect(page.locator('.ct-lesson-list button')).toHaveCount(2);
       await page.locator('[data-action="ct-activity-example"]').click();
       await expect(page.locator('.ct-sample')).not.toBeEmpty();
@@ -106,17 +107,15 @@ test('数学自评、首次成绩、刷新、错题复习和学习记录完整�
   }
   await expect(page.locator('.ct-result')).toContainText('首次答对 9 题');
   expect((await stored(page)).history.at(-1).name).toBe('加减法');
-  await page.locator('.growth-card [data-action="ct-start"][data-id="review"]').click();
-  await page.getByRole('button', { name: first.answer, exact: true }).click();
+  await page.locator('.ct-result [data-action="library-open"]').click();
+  await expect(page.locator('#library-filter-feature')).toHaveText(`数学 / ${topic.name}`);
+  await page.locator(`[data-action="library-review-group"][data-id="${topic.id}"]`).click();
+  await page.locator('dialog').getByRole('button', { name: first.answer, exact: true }).click();
   expect((await stored(page)).topics[topic.id].mistakes).toEqual([]);
-  await page.locator('[data-action="ct-advance"]').click();
-  await page.locator('.garden-links [data-action="topic-records"]').click();
-  await expect(page.locator('dialog')).toContainText('数学主题学习记录');
-  await expect(page.locator('dialog')).toContainText('自评认识 1 / 12 项');
-  await page.keyboard.press('Escape');
-  await page.locator('.my-menu summary').click();
-  await page.locator('.my-menu [data-action="math-records"]').click();
-  await expect(page.locator('dialog')).toContainText('数学主题学习记录');
+  await page.locator('[data-action="library-next"]').click();
+  await openMyMenu(page, '[data-id="records"]');
+  await expect(page.locator('.review-library')).toContainText('自评确认 1 项');
+  await expect(page.locator('.history-list')).toContainText('加减法 · 错题复习');
 });
 
 test('数学与语文进度隔离，主题选择恢复，损坏题目恢复原始内容并支持清空', async ({ page }) => {
@@ -136,12 +135,13 @@ test('数学与语文进度隔离，主题选择恢复，损坏题目恢复原�
   expect((await stored(page)).topics.dictionary.mistakes).toEqual([]);
   await subject(page, 'math');
   expect((await stored(page)).topics[topic.id]).toEqual(mathState);
-  await page.evaluate(topicId => {
-    const saved = JSON.parse(localStorage.getItem('bunny-garden-v1'));
-    saved.topics[topicId].round.questions[0].prompt = '外来题目';
-    saved.topics[topicId].round.questions[0].answer = '外来答案';
-    localStorage.setItem('bunny-garden-v1', JSON.stringify(saved));
-  }, topic.id);
+  await page.evaluate(({ topicId, key }) => {
+    const saved = JSON.parse(localStorage.getItem(key));
+    const question = saved.subjects.math.stages['math-1'].topics[topicId].round.questions[0];
+    question.prompt = '外来题目';
+    question.answer = '外来答案';
+    localStorage.setItem(key, JSON.stringify(saved));
+  }, { topicId: topic.id, key: appStorageKey });
   await page.reload();
   await expect(page.locator('.math-topic h1')).toHaveText('除法✿');
   await expect(page.locator('.ct-prompt')).not.toContainText('外来题目');

@@ -78,18 +78,11 @@ test('浏览器存储不可用或损坏时可降级', () => {
   assert.equal(loadState({ getItem: () => null }).available, true);
 });
 
-test('旧记录补齐导航偏好，损坏偏好不丢学习进度', () => {
-  const saved = { ...defaultState(), known: ['single-a'], mode: 'audio', modesExpanded: true, tabsExpanded: true };
-  delete saved.navigationSelections;
-  const restore = value => loadState({ getItem: () => JSON.stringify(value) });
-  assert.deepEqual(restore(saved).state.navigationSelections, {});
-  for (const navigationSelections of [null, 'broken', { 'pinyin-modes:group': '趣味练习', invalid: null, numeric: 5 }]) {
-    const result = restore({ ...saved, navigationSelections });
-    assert.equal(result.available, true);
-    assert.equal(result.state.mode, 'audio');
-    assert.deepEqual(result.state.known, ['single-a']);
-    assert.deepEqual(result.state.navigationSelections, navigationSelections && typeof navigationSelections === 'object' ? { 'pinyin-modes:group': '趣味练习' } : {});
-  }
+test('扁平本机数据不会被当作四层结构读取', () => {
+  const saved = { ...defaultState(), known: ['single-a'], mode: 'audio' };
+  const result = loadState({ getItem: () => JSON.stringify(saved) });
+  assert.equal(result.available, false);
+  assert.deepEqual(result.state.known, []);
 });
 
 test('所有基础点读与练习音频均有本地资源，完整词语缺失时允许逐字拼读', async () => {

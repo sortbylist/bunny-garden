@@ -9,7 +9,7 @@ import { mathVisual } from './math-visuals.js';
 import { icon, bunny } from './icons.js';
 import { literacySupplement } from './chinese-literacy.js';
 import { readingPassage } from './reading-view.js';
-import { learningAnswerLabel, learningCardFooter, learningPosition, learningTokenClass, learningTools } from './learning-ui.js';
+import { activeLearningCategory, learningAnswerLabel, learningCardFooter, learningPosition, learningTokenClass, learningTools, reviewShortcut } from './learning-ui.js';
 import { englishLessonBody, englishActivity, englishQuizAudio, englishChoice, englishText } from './english-learning.js';
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
@@ -40,7 +40,7 @@ function activityCard(lesson, state) {
     ${saved.showExample ? `<p class="ct-sample">参考排列：${activity.answers.map(answer => escape(answer + activity.ending)).join(' / ')}</p>` : ''}<p class="hz-caption">这是学习尝试，不计入首次答题成绩。${paragraphOrder ? '按这篇短文的时间或事情发展顺序排列。' : '时间词有时可以放在不同位置。'}</p>`;
 }
 
-function learningCard(topic, state) {
+export function topicLearningCard(topic, state) {
   const read = topicText(topic, state);
   const lessons = topic.lessons.filter(item => item.category === state.category);
   const lesson = lessons.find(item => item.id === state.lessonId);
@@ -50,46 +50,59 @@ function learningCard(topic, state) {
   const english = topic.subject === 'english';
   const title = item => english && !item.lines ? englishText(item.title) : read(item.title);
   const picker = `<div class="hz-item-list ct-lesson-list" aria-label="选择学习内容">${lessons.map(item => control('lesson', `${title(item)}${state.known.includes(item.id) ? ' ✓' : ''}`, `data-id="${item.id}" ${english && !item.lines ? 'lang="en"' : ''} aria-label="${escape(item.title)}" aria-pressed="${state.lessonId === item.id}"`, `hz-chip${learningTokenClass(item.title)}`)).join('')}</div>`;
-  const heading = `<div class="card-topline"><h2 class="category-badge">${icon(category.icon || 'flower')}${escape(category.name)}</h2>${learningPosition(index, lessons.length)}${state.cardFavorite('lesson', lesson.id)}</div>`;
+  const heading = `<div class="card-topline"><h2 class="category-badge" data-activity-heading tabindex="-1">${icon(category.icon || 'flower')}学习 · ${escape(category.name)}</h2>${learningPosition(index, lessons.length)}${state.cardFavorite('lesson', lesson.id)}</div>`;
   if (english) return `<section class="hz-card ct-lesson study-card ct-sentence-card" aria-label="${topic.name}学习卡">${heading}
     <div class="ct-lesson-intro"><h3 class="${learningTokenClass(lesson.title).trim()}">${title(lesson)}</h3><p>${read(lesson.body)}</p></div>
     ${englishLessonBody(lesson)}${englishActivity(lesson)}
-    ${learningCardFooter('ct', { known: state.known.includes(lesson.id), category: state.category, index, total: lessons.length,
+    ${state.preview ? '' : learningCardFooter('ct', { known: state.known.includes(lesson.id), category: state.category, index, total: lessons.length,
       ...(lesson.lines ? { knownLabel: '我能说啦', confirmedLabel: '已自评能说 ✓' } : lesson.clip ? { knownLabel: '我能听懂啦', confirmedLabel: '已自评听懂 ✓' } : {}) })}</section>
-    <section class="pinyin-map ct-sentence-lessons learning-lesson-map" aria-label="本节学习卡"><div class="section-title"><h2>${icon('grid')}本节学习卡</h2></div>${picker}</section>`;
+    ${state.preview ? '' : `<section class="pinyin-map ct-sentence-lessons learning-lesson-map" aria-label="本节学习卡"><div class="section-title"><h2>${icon('grid')}本节学习卡</h2></div>${picker}</section>`}`;
   return `<section class="hz-card ct-lesson study-card ct-sentence-card" aria-label="${topic.name}学习卡">${heading}
     <div class="ct-lesson-intro"><h3 class="${learningTokenClass(lesson.title).trim()}" aria-label="${escape(lesson.title)}">${read(lesson.title)}</h3>${literacySupplement(lesson, state)}<p>${read(lesson.body)}</p></div>
     ${topic.subject === 'math' ? mathVisual(lesson.visual) : lessonVisual(topic, lesson, state.showPinyin)}
     ${!literacy ? `<div class="section-title ct-example-heading"><h4>${icon('book')}${isMathTopic(topic) ? '看一看算例' : '读一读例句'}</h4><span>${isMathTopic(topic) ? '想清方法，再动笔算' : '读出意思，也读出语气'}</span></div>` : ''}
     <ul class="ct-examples">${lesson.examples.map(example => `<li>${read(example)}</li>`).join('')}</ul>
     <div class="hz-note ct-activity"><strong class="ct-activity-heading">${icon('pen')}说一说，试一试</strong><p>${read(lesson.task)}</p>${activityCard(lesson, state)}</div>
-    ${learningCardFooter('ct', { known: state.known.includes(lesson.id), category: state.category, index, total: lessons.length })}</section>
-    <section class="pinyin-map ct-sentence-lessons learning-lesson-map" aria-label="本节学习卡"><div class="section-title"><h2>${icon('grid')}本节学习卡</h2><span>每一张都可以直接开始</span></div>${picker}</section>`;
+    ${state.preview ? '' : learningCardFooter('ct', { known: state.known.includes(lesson.id), category: state.category, index, total: lessons.length })}</section>
+    ${state.preview ? '' : `<section class="pinyin-map ct-sentence-lessons learning-lesson-map" aria-label="本节学习卡"><div class="section-title"><h2>${icon('grid')}本节学习卡</h2><span>每一张都可以直接开始</span></div>${picker}</section>`}`;
 }
 
-function quizCard(topic, state) {
+export function topicQuizCard(topic, state) {
   const round = state.round;
   if (round.finished) {
     const stats = roundStats(round);
-    return `<section class="hz-card ct-result result-card ct-sentence-card">${bunny()}<h2>这一轮完成啦！</h2><p>共 ${stats.total} 题，首次答对 ${stats.correct} 题，首次跳过 ${stats.skipped} 题。</p><p>重试不覆盖首次成绩；错题需要在新一轮复习中独立答对才移出。</p><div class="hz-actions">${control('learn', '回到学习')}${control('start', '再练一轮', `data-id="${round.scope}" ${round.scope === 'review' && !state.mistakes.length ? 'disabled' : ''}`, 'solid-button')}</div></section>`;
+    return `<section class="hz-card ct-result result-card ct-sentence-card">${bunny()}<h2 data-activity-heading tabindex="-1">这一轮完成啦！</h2><p>共 ${stats.total} 题，首次答对 ${stats.correct} 题，首次跳过 ${stats.skipped} 题。</p><p>重试不覆盖首次成绩；错题需要在新一轮复习中独立答对才移出。</p><div class="hz-actions">${control('learn', '回到学习')}${control('start', '再练一轮', `data-id="${round.scope}" ${round.scope === 'review' && !state.mistakes.length ? 'disabled' : ''}`, 'solid-button')}${reviewShortcut(topic.id, topic.categories.find(category => category.id === round.scope)?.id)}</div></section>`;
   }
   const question = round.questions[round.index];
   const read = topic.id === 'character-readings' && question.category === 'polyphones' && !round.revealed
     ? escape : topicText(topic, state);
   const english = topic.subject === 'english';
   const waitingForAudio = english && question.clip && !state.heard && !round.revealed;
-  return `<section class="hz-card ct-quiz quiz-card ct-sentence-card" aria-label="${topic.name}练习"><div class="hz-card-heading quiz-top"><h2 class="category-badge">${icon('pen')}${round.scope === 'review' ? `${topic.name}错题本` : '动脑小练习'}</h2>${learningPosition(round.index, round.questions.length, { practice: true })}${state.cardFavorite('question', question.id)}</div>
+  const title = state.label || (round.scope === 'review' ? '错题复习' : topic.categories.find(category => category.id === round.scope)?.name || '综合');
+  return `<section class="hz-card ct-quiz quiz-card ct-sentence-card" aria-label="${topic.name}练习"><div class="hz-card-heading quiz-top"><h2 class="category-badge" data-activity-heading tabindex="-1">${icon('pen')}练习 · ${escape(title)}</h2>${learningPosition(round.index, round.questions.length, { practice: true })}${state.cardFavorite('question', question.id)}</div>
     ${question.passage ? readingPassage(question.passage, state.showPinyin, round.revealed ? question.evidence : []) : ''}
     ${question.display ? `<p class="ct-context">${english ? englishText(question.display) : read(question.display)}</p>` : ''}<h3 class="ct-prompt">${read(question.prompt)}</h3>
-    ${english ? englishQuizAudio(question, round.revealed, state.heard) : ''}
+    ${english ? englishQuizAudio(question, round.revealed, state.heard, state.preview) : ''}
     <div class="hz-options answer-grid">${question.options.map((option, index) => {
       const choice = question.choices?.find(item => item.id === option);
       return control('answer', learningAnswerLabel(index, choice ? englishChoice(choice) : read(option)),
-        `data-value="${escape(option)}" ${choice?.language ? `lang="${choice.language}" ` : ''}aria-label="${escape(choice?.label || option)}" ${round.revealed || waitingForAudio ? 'disabled' : ''}`,
+        `data-value="${escape(option)}" ${choice?.language ? `lang="${choice.language}" ` : ''}aria-label="${escape(choice?.label || option)}" ${round.revealed || waitingForAudio || state.passive ? 'disabled' : ''}`,
         `hz-option answer-option${choice ? '' : learningTokenClass(option)} ${round.revealed && option === question.answer ? 'is-correct correct-answer' : round.selected === option ? 'is-wrong wrong-answer' : ''}`);
     }).join('')}</div>
     <div class="hz-feedback answer-feedback ${round.revealed && round.selected === question.answer ? 'success' : round.revealed || round.responses[round.index] ? 'warning' : ''}" role="status">${round.revealed ? `<strong>${round.selected === question.answer ? '答对啦！' : '先认识答案，再来练一练。'}</strong><p>${read(question.explanation)}</p>` : round.responses[round.index] ? `<strong>${question.clip ? '再听一次或先看答案。' : '再试一次。读一读题目，也可以先看答案。'}</strong>` : waitingForAudio ? '先听完题目，再选一个答案。' : '仔细观察，选一个答案。'}</div>
-    <div class="hz-actions quiz-actions">${control('learn', '回到学习')}${round.revealed ? control('advance', round.index === round.questions.length - 1 ? '查看本轮结果' : '下一题', '', 'solid-button') : control('skip', '先看答案', waitingForAudio ? 'disabled' : '')}</div></section>`;
+    ${state.preview ? '' : `<div class="hz-actions quiz-actions">${control('learn', '回到学习')}${round.revealed ? control('advance', round.index === round.questions.length - 1 ? '查看本轮结果' : '下一题', '', 'solid-button') : control('skip', '先看答案', waitingForAudio ? 'disabled' : '')}</div>`}</section>`;
+}
+
+export function dictionaryEntryCard(entry, read) {
+  return `<article class="ct-entry"><h3>${entry.text} <small>${entry.pinyin}</small></h3><p>部首：${entry.radical}（${entry.radicalStrokes} 画） · 总笔画：${entry.strokes}</p><ol>${entry.meanings.map(([meaning, sentence]) => `<li><strong>${read(meaning)}</strong><p>${read(sentence)}</p></li>`).join('')}</ol><p class="hz-caption">适龄简释，不包含全部读音和义项。</p></article>`;
+}
+
+export function topicClassName(topic) {
+  const classes = ['chinese-topic', 'ct-sentence-topic'];
+  if (isLiteracyTopic(topic)) classes.push('ct-literacy-topic');
+  if (isMathTopic(topic)) classes.push('math-topic');
+  if (topic.subject === 'english') classes.push('en-topic');
+  return classes.join(' ');
 }
 
 function lookupCard(state) {
@@ -97,23 +110,26 @@ function lookupCard(state) {
   const { method, selections } = state.lookup;
   const lookup = dictionaryLookup(method, selections);
   const labels = { initial: '先选大写音序', syllable: '再选不带声调的音节', text: '找到汉字，点击查看释义', radicalStrokes: '先数部首笔画', radical: '在部首目录中找到部首', remaining: '再数除去部首后的笔画' };
-  return `<section class="hz-card ct-lookup"><div class="card-topline"><h2>查字小实验</h2>${lookup.entry ? state.cardFavorite('entry', lookup.entry.text) : ''}</div><p>这是含 ${dictionaryEntries.length} 个示例字的小型索引，不是完整字典。纸质字典还需要按索引页码翻到正文，各版本页码不同，这里不编造页码。</p>
+  return `<section class="hz-card ct-lookup"><div class="card-topline"><h2 data-activity-heading tabindex="-1">学习 · 查字小实验</h2>${lookup.entry ? state.cardFavorite('entry', lookup.entry.text) : ''}</div><p>这是含 ${dictionaryEntries.length} 个示例字的小型索引，不是完整字典。纸质字典还需要按索引页码翻到正文，各版本页码不同，这里不编造页码。</p>
     ${dictionaryDiagram(method, state.showPinyin)}
     <div class="hz-actions">${control('lookup-method', '音序查字法', `data-id="sound" aria-pressed="${method === 'sound'}"`, 'hz-chip')}${control('lookup-method', '部首查字法', `data-id="radical" aria-pressed="${method === 'radical'}"`, 'hz-chip')}</div>
     <p class="ct-lookup-path" role="status">已选：${lookup.selections.map(escape).join(' → ') || '还没有选择'}</p>
-    ${lookup.entry ? `<article class="ct-entry"><h3>${lookup.entry.text} <small>${lookup.entry.pinyin}</small></h3><p>部首：${lookup.entry.radical}（${lookup.entry.radicalStrokes} 画） · 总笔画：${lookup.entry.strokes}</p><ol>${lookup.entry.meanings.map(([meaning, sentence]) => `<li><strong>${read(meaning)}</strong><p>${read(sentence)}</p></li>`).join('')}</ol><p class="hz-caption">适龄简释，不包含全部读音和义项。</p></article>` : `<h3 class="ct-prompt">${labels[lookup.field]}</h3><div class="hz-item-list">${lookup.options.map(option => control('lookup-pick', `${escape(option)}${['radicalStrokes', 'remaining'].includes(lookup.field) ? ' 画' : ''}`, `data-value="${escape(option)}"`, `hz-chip${learningTokenClass(option)}`)).join('')}</div>`}
+    ${lookup.entry ? dictionaryEntryCard(lookup.entry, read) : `<h3 class="ct-prompt">${labels[lookup.field]}</h3><div class="hz-item-list">${lookup.options.map(option => control('lookup-pick', `${escape(option)}${['radicalStrokes', 'remaining'].includes(lookup.field) ? ' 画' : ''}`, `data-value="${escape(option)}"`, `hz-chip${learningTokenClass(option)}`)).join('')}</div>`}
     <div class="hz-actions">${control('lookup-back', '退回一步', !selections.length ? 'disabled' : '')}${control('lookup-reset', '重新查找')}${control('learn', '回到学习')}</div></section>`;
 }
 
 export function renderTopic(topic, state, garden) {
-  const literacy = isLiteracyTopic(topic);
   const math = isMathTopic(topic);
   const english = topic.subject === 'english';
+  const activeCategory = activeLearningCategory(state);
   const tools = learningTools('ct', state);
   const sticker = `<div class="heading-sticker">${icon('sprout')}<span>今天也要<br><b>快乐生长</b></span></div>`;
-  return `<section class="chinese-topic ct-sentence-topic ${literacy ? 'ct-literacy-topic' : ''} ${math ? 'math-topic' : ''} ${english ? 'en-topic' : ''}" data-topic="${topic.id}"><div class="page-heading ${math ? '' : 'learning-heading'}"><div class="${math ? '' : 'learning-heading-copy'}"><div class="eyebrow"><span></span>${escape(topic.stage)}</div><h1>${topic.name}<span class="heading-flower">✿</span></h1><p>${topic.description}</p></div>${math ? sticker : `<div class="learning-heading-actions">${sticker}</div>`}</div>
-    <nav class="play-selector" aria-label="${topic.name}小${math || english ? '分类' : '节'}"><div class="play-mode-buttons">${topic.categories.map(category => control('category', `${icon(category.icon || 'book')}${escape(category.name)}`, `data-id="${category.id}" aria-pressed="${state.view === 'learn' && state.category === category.id}"`, `hz-category play-mode ${state.view === 'learn' && state.category === category.id ? 'selected' : ''}`)).join('')}</div></nav>
-    <div class="learning-layout"><div class="learning-main">${state.view === 'quiz' ? quizCard(topic, state) : state.view === 'lookup' ? lookupCard(state) : learningCard(topic, state)}${tools}</div><aside class="learning-aside">
+  return `<section class="${topicClassName(topic)}" data-topic="${topic.id}"><div class="page-heading ${math ? '' : 'learning-heading'}"><div class="${math ? '' : 'learning-heading-copy'}"><div class="eyebrow"><span></span>${escape(topic.stage)}</div><h1>${topic.name}<span class="heading-flower">✿</span></h1><p>${topic.description}</p></div>${math ? sticker : `<div class="learning-heading-actions">${sticker}</div>`}</div>
+    <nav class="play-selector" aria-label="${topic.name}小${math || english ? '分类' : '节'}"><div class="play-mode-buttons">${topic.categories.map(category => {
+      const selected = category.id === activeCategory;
+      return control('category', `${icon(category.icon || 'book')}${escape(category.name)}`, `data-id="${category.id}" aria-pressed="${selected}"`, `hz-category play-mode ${selected ? 'selected' : ''}`);
+    }).join('')}</div></nav>
+    <div class="learning-layout"><div class="learning-main" role="region" aria-label="${escape(topic.name)}">${state.view === 'quiz' ? topicQuizCard(topic, state) : state.view === 'lookup' ? lookupCard(state) : topicLearningCard(topic, state)}${tools}</div><aside class="learning-aside">
     ${garden}<section class="hz-card"><h2>我的学习足迹</h2><p>${english ? '自评确认' : '自评认识'} ${state.known.length} / ${topic.lessons.length} 项</p><progress value="${state.known.length}" max="${topic.lessons.length}" aria-label="${english ? '自评确认' : '自评认识'}进度"></progress><p>本主题题库 ${topic.questions.length} 题<br>当前小节 ${topic.questions.filter(item => item.category === state.category).length} 题</p><p>${english ? '自评确认' : '自评认识'}与首次答对分开记录，开始新一轮时优先抽取未练题。</p><div class="hz-sidebar-actions">
       ${topic.id === 'dictionary' ? control('lookup', '查字小实验', '', 'solid-button') : ''}${control('start', `综合练习 · 最多 ${state.practiceLength} 题`, 'data-id="all"', 'solid-button')}${state.round && !state.round.finished && state.view !== 'quiz' ? control('resume', '继续上次练习') : ''}</div>
       ${state.round && !state.round.finished ? '<p class="hz-caption">开始新练习会替换未完成的一轮；想保留当前题目，可继续上次练习。</p>' : ''}</section>

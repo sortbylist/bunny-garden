@@ -2,24 +2,14 @@ import { test, expect } from '@playwright/test';
 import { defaultState } from '../../src/engine.js';
 import { initializeRewards, grantRewards } from '../../src/rewards.js';
 import { phonicsQuestionById } from '../../src/phonics-engine.js';
-import { selectTopic } from './helpers.js';
-
-async function seed(page, state) {
-  await page.addInitScript(saved => {
-    if (!sessionStorage.getItem('reward-test-seeded')) {
-      localStorage.setItem('bunny-garden-v1', JSON.stringify(saved));
-      sessionStorage.setItem('reward-test-seeded', 'yes');
-    }
-  }, state);
-}
+import { openMyMenu, selectTopic, seedStoredState as seed, stored } from './helpers.js';
 
 function fresh() { const state = defaultState(); initializeRewards(state); return state; }
-const stored = page => page.evaluate(() => JSON.parse(localStorage.getItem('bunny-garden-v1')));
 
 test('收藏总则、分类和特例帮助支持摘要、全文、返回焦点与未解锁范围', async ({ page }) => {
   await page.goto('/');
-  await page.locator('.garden-links [data-action="reward-collection"]').click();
-  await expect(page.locator('.reward-card')).toHaveCount(100);
+  await openMyMenu(page, '[data-action="reward-collection"]');
+  await expect(page.locator('.reward-card')).toHaveCount(88);
   const general = page.getByRole('button', { name: '查看收藏规则', exact: true });
   await general.hover();
   await expect(page.locator('#reward-help-all')).toBeVisible();
@@ -44,7 +34,7 @@ test('收藏总则、分类和特例帮助支持摘要、全文、返回焦点�
   await general.hover();
   await expect(page.locator('#reward-help-all')).toBeVisible();
   await page.locator('[data-action="reward-filter"][data-id="medal"]').click();
-  await expect(page.locator('.reward-card')).toHaveCount(27);
+  await expect(page.locator('.reward-card')).toHaveCount(15);
   await page.getByRole('button', { name: '查看奖牌规则', exact: true }).click();
   await expect(page.locator('.reward-help-content')).toContainText('12个小节');
   await page.getByRole('button', { name: '返回收藏册', exact: true }).click();
@@ -207,7 +197,7 @@ test('英语认读与五题达标接入统一奖励，科目间共享每日星�
   expect((await stored(page)).rewards.events.some(event => event.id.startsWith('learn:english:'))).toBe(true);
   await page.locator('[data-action="section-assessment"]').click();
   for (let index = 0; index < 5; index++) {
-    const english = await page.evaluate(() => JSON.parse(localStorage.getItem('bunny-garden-v1')).phonics);
+    const english = (await stored(page)).phonics;
     const round = english.sessions[`assessment:lesson:${english.lessonId}:5`];
     const identifier = round.ids[round.index];
     const question = phonicsQuestionById.get(identifier);

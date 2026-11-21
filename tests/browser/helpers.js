@@ -1,4 +1,6 @@
-import { subjects, modes } from '../../src/data.js';
+import { subjects, featureGroups, modes } from '../../src/data.js';
+import { appStorageKey } from '../../src/storage.js';
+import { decodeLearningData, encodeLearningData } from '../../src/learning-data.js';
 
 async function chooseNavigationItem(page, root, id, category) {
   const currentGroup = root.locator('[data-action="nav-group"][aria-current="true"]');
@@ -15,20 +17,35 @@ async function chooseNavigationItem(page, root, id, category) {
 }
 
 export async function chooseMode(page, id) {
-  if (id === 'favorites') {
-    await page.locator('.garden-links [data-action="saved-content"]').click();
-    await page.locator('[data-action="review-saved-words"]').click();
-    return;
-  }
   if (id === 'mistakes') {
-    await page.locator(`.garden-links [data-action="mode"][data-id="${id}"]`).click();
+    await openMyMenu(page, '[data-action="library-open"][data-id="mistakes"]');
+    await page.locator('[data-action="library-review-group"][data-id="pinyin"]').click();
     return;
   }
   await chooseNavigationItem(page, page.locator('.mode-navigation'), id, modes.find(mode => mode.id === id).group);
 }
 
+export async function openMyMenu(page, selector) {
+  const menu = page.locator('.my-menu');
+  if (await menu.getAttribute('open') === null) await menu.locator('summary').click();
+  await menu.locator(selector).click();
+}
+
 export async function stored(page) {
-  return page.evaluate(() => JSON.parse(localStorage.getItem('bunny-garden-v1')));
+  const data = await storedDocument(page);
+  return data && decodeLearningData(data);
+}
+
+export function storedDocument(page) {
+  return page.evaluate(key => JSON.parse(localStorage.getItem(key)), appStorageKey);
+}
+
+export function seedStoredState(page, state) {
+  return page.addInitScript(({ key, data }) => {
+    if (sessionStorage.getItem('learning-data-seeded')) return;
+    localStorage.setItem(key, JSON.stringify(data));
+    sessionStorage.setItem('learning-data-seeded', 'yes');
+  }, { key: appStorageKey, data: encodeLearningData(state) });
 }
 
 export async function setLearningPreference(page, field, enabled) {
@@ -46,6 +63,8 @@ export async function setRoundLength(page, length) {
 }
 
 export async function selectTopic(page, name, subjectId = 'chinese') {
-  const feature = subjects.find(subject => subject.id === subjectId).features.find(item => item.name === name);
-  await chooseNavigationItem(page, page.locator('.feature-navigation'), feature.id, feature.category);
+  const subject = subjects.find(item => item.id === subjectId);
+  const stage = featureGroups(subject).find(group => group.items.some(item => item.name === name));
+  const feature = stage.items.find(item => item.name === name);
+  await chooseNavigationItem(page, page.locator('.feature-navigation'), feature.id, stage.id);
 }

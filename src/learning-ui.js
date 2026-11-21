@@ -2,7 +2,7 @@ import { practiceLengths } from './chinese-practice.js';
 import { icon } from './icons.js';
 
 export function learningCardFooter(prefix, { known, category, index, total, knownLabel = '我认识啦', confirmedLabel = '已经认识啦 ✓' }) {
-  return `<div class="hz-actions mastery-actions"><button type="button" data-action="${prefix}-known" class="soft-button mint" aria-pressed="${known}">${icon('check')}${known ? confirmedLabel : knownLabel}</button><button type="button" data-action="${prefix}-start" data-id="${category}" class="soft-button">${icon('pen')}练练这一节</button></div>
+  return `<div class="hz-actions mastery-actions"><button type="button" data-action="${prefix}-known" class="soft-button mint" aria-pressed="${known}">${icon('check')}${known ? confirmedLabel : knownLabel}</button><button type="button" data-action="${prefix}-start" data-id="${category}" class="soft-button">${icon('pen')}开始本节练习</button></div>
     <div class="hz-actions hz-card-footer card-navigation"><button type="button" data-action="${prefix}-previous" class="outline-button previous" ${index === 0 ? 'disabled' : ''}>${icon('chevron')}上一个</button><button type="button" data-action="${prefix}-next" class="outline-button" ${index === total - 1 ? 'disabled' : ''}>下一个${icon('chevron')}</button></div>`;
 }
 
@@ -14,6 +14,19 @@ export function learningAnswerLabel(index, content) {
 export function learningPosition(index, total, { practice = false } = {}) {
   if (!total) return '';
   return `<span class="card-position learning-position" aria-label="当前${practice ? '练习' : '学习'}位置">第 <b>${index + 1}</b> / ${total} ${practice ? '题' : '项'}</span>`;
+}
+
+export function reviewShortcut(feature, section = '') {
+  return `<button type="button" data-action="library-open" data-id="mistakes" data-feature="${feature}" ${section ? `data-section="${section}"` : ''} class="outline-button">${icon('notebook')}复习${section ? '本节' : '本主题'}错题</button>`;
+}
+
+export function focusLearningActivity() {
+  document.querySelector('#main-content [data-activity-heading]')?.focus();
+}
+
+export function activeLearningCategory({ view, category, round }) {
+  if (view === 'quiz') return round?.scope;
+  if (view === 'learn') return category;
 }
 
 export function learningTokenClass(value) {

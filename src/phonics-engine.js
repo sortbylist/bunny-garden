@@ -74,6 +74,14 @@ export function phonicsStats(round) {
   return { total: round.ids.length, answered: results.length, correct: results.filter(result => result.correct).length, skipped: results.filter(result => result.skipped).length };
 }
 
+export function editPhonicsDraft(question, value, action, letter) {
+  if (action === 'erase') return value.slice(0, -1);
+  const typed = value.toLowerCase().replace(/[^a-z]/g, '');
+  const used = [...typed].filter(character => character === letter).length;
+  const total = question.letters.filter(character => character === letter).length;
+  return used < total ? typed + letter : typed;
+}
+
 export function answerPhonics(state, round, answer, now = Date.now()) {
   if (round.finished) return null;
   const question = phonicsQuestionById.get(round.ids[round.index]);
@@ -95,13 +103,13 @@ export function answerPhonics(state, round, answer, now = Date.now()) {
   return { correct, skipped, first, question };
 }
 
-export function advancePhonicsRound(state, round, name, now = Date.now()) {
+export function advancePhonicsRound(state, round, name, now = Date.now(), lessonId = null) {
   if (round.finished || !round.views[round.ids[round.index]]?.resolved) return false;
   const remaining = round.ids.findIndex((id, index) => index > round.index && !round.views[id]?.resolved);
   const first = round.ids.findIndex(id => !round.views[id]?.resolved);
   if (first >= 0) { round.index = remaining >= 0 ? remaining : first; return true; }
   round.finished = true;
-  state.history.push({ id: round.id, name, time: now, ...phonicsStats(round) });
+  state.history.push({ id: round.id, name, time: now, ...(lessonId ? { lessonId } : {}), ...phonicsStats(round) });
   state.history = state.history.slice(-100);
   return true;
 }
@@ -126,9 +134,10 @@ export function normalizePhonicsState(saved) {
       }
     }
     if (saved.sessions && typeof saved.sessions === 'object') {
-      for (const [key, round] of Object.entries(saved.sessions).slice(-100)) {
-        if (!Array.isArray(round?.ids) || !round.ids.length || round.ids.length > 20 || new Set(round.ids).size !== round.ids.length || !round.ids.every(id => phonicsQuestionById.has(id))) continue;
+      for (const [key, round] of Object.entries(saved.sessions)) {
+        if (!Array.isArray(round?.ids) || round.ids.length > 20 || new Set(round.ids).size !== round.ids.length || !round.ids.every(id => phonicsQuestionById.has(id))) continue;
         const clean = createPhonicsRound(round.ids.map(id => phonicsQuestionById.get(id)), 20);
+        if (typeof round.id === 'string') clean.id = round.id;
         clean.ids = round.ids;
         clean.index = Number.isInteger(round.index) ? Math.max(0, Math.min(clean.ids.length - 1, round.index)) : 0;
         for (const id of clean.ids) {
@@ -144,7 +153,7 @@ export function normalizePhonicsState(saved) {
           if (clean.responses[id] && view && (view.answer === null || typeof view.answer === 'string')) clean.views[id] = { answer: view.answer, correct: view.answer === question.answer, skipped: view.answer === null, resolved: view.answer === null || view.answer === question.answer };
           if (question.kind === 'spelling' && typeof round.drafts?.[id] === 'string') clean.drafts[id] = round.drafts[id].slice(0, 40);
         }
-        clean.finished = clean.ids.every(id => clean.views[id]?.resolved) && round.finished === true;
+        clean.finished = clean.ids.length > 0 && clean.ids.every(id => clean.views[id]?.resolved) && round.finished === true;
         state.sessions[key] = clean;
       }
     }

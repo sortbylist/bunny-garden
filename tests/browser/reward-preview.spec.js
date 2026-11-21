@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { defaultState } from '../../src/engine.js';
 import { initializeRewards } from '../../src/rewards.js';
+import { openMyMenu, seedStoredState, stored } from './helpers.js';
 
 async function seed(page, { obtained = [], animations = true, equipped = {} } = {}) {
   const state = defaultState();
@@ -8,20 +9,15 @@ async function seed(page, { obtained = [], animations = true, equipped = {} } = 
   for (const id of obtained) state.rewards.unlocks[id] = Date.now();
   Object.assign(state.rewards.equipped, equipped);
   state.settings.animations = animations;
-  await page.addInitScript(saved => {
-    if (!sessionStorage.getItem('reward-preview-seeded')) {
-      localStorage.setItem('bunny-garden-v1', JSON.stringify(saved));
-      sessionStorage.setItem('reward-preview-seeded', 'yes');
-    }
-  }, state);
+  await seedStoredState(page, state);
 }
 
 async function openCollection(page) {
   await page.goto('/');
-  await page.locator('.garden-links [data-action="reward-collection"]').click();
+  await openMyMenu(page, '[data-action="reward-collection"]');
 }
 
-const savedRewards = page => page.evaluate(() => JSON.parse(localStorage.getItem('bunny-garden-v1')).rewards);
+const savedRewards = async page => (await stored(page)).rewards;
 
 test('悬停成长花园和收藏册的贴纸时提示可以查看动效', async ({ page }) => {
   await seed(page, { obtained: ['hello-bunny'], equipped: { sticker: 'hello-bunny' } });
@@ -32,7 +28,7 @@ test('悬停成长花园和收藏册的贴纸时提示可以查看动效', async
   await gardenSticker.hover();
   await expect(gardenHint).toBeVisible();
   await expect(gardenHint).toHaveText('点一下，看它动起来！');
-  await page.locator('.garden-links [data-action="reward-collection"]').click();
+  await openMyMenu(page, '[data-action="reward-collection"]');
   const collectionSticker = page.locator('[data-reward="hello-bunny"] .reward-preview-trigger');
   const collectionHint = collectionSticker.locator('.reward-motion-hint');
   await expect(collectionHint).toBeHidden();
@@ -72,8 +68,8 @@ test('成长花园与个人空间的佩戴物品可播放动效，关闭后返�
 test('所有物品正常彩色展示，只有已获得物品盖印，未获得物品也能放大和旋转', async ({ page }) => {
   await seed(page, { obtained: ['hello-bunny'] });
   await openCollection(page);
-  await expect(page.locator('.reward-card')).toHaveCount(100);
-  await expect(page.locator('.reward-preview-trigger')).toHaveCount(100);
+  await expect(page.locator('.reward-card')).toHaveCount(88);
+  await expect(page.locator('.reward-preview-trigger')).toHaveCount(88);
   await expect(page.locator('.reward-obtained-stamp')).toHaveCount(1);
   await expect(page.locator('[data-reward="hello-bunny"] .reward-obtained-stamp')).toContainText('已获得');
   await expect(page.locator('.reward-obtained-stamp path')).toHaveCount(1);
@@ -315,7 +311,7 @@ test('主题徽章在花园、收藏卡片、大图和颁奖中使用同一学�
   const gardenIcon = page.locator('.garden-display .reward-topic-icon');
   await expect(gardenIcon).toHaveAttribute('data-icon', 'pen');
   const expected = await gardenIcon.innerHTML();
-  await page.locator('.garden-links [data-action="reward-collection"]').click();
+  await openMyMenu(page, '[data-action="reward-collection"]');
   const cardIcon = page.locator('[data-reward="topic-hanzi-structure"] .reward-topic-icon');
   expect(await cardIcon.innerHTML()).toEqual(expected);
   await page.locator('[data-action="reward-detail"][data-id="topic-hanzi-structure"]').click();
@@ -327,7 +323,7 @@ test('主题徽章在花园、收藏卡片、大图和颁奖中使用同一学�
 test('预览中可以查看未获得奖牌的条件，返回后继续操作且不消费待颁奖队列', async ({ page }) => {
   await page.goto('/');
   await page.locator('[data-action="known"]').click();
-  await page.locator('.garden-links [data-action="reward-collection"]').click();
+  await openMyMenu(page, '[data-action="reward-collection"]');
   const before = await savedRewards(page);
   await page.locator('[data-action="reward-detail"][data-id="stage-math-1-gold"]').click();
   await page.getByRole('button', { name: '查看数与运算金牌获得条件', exact: true }).click();

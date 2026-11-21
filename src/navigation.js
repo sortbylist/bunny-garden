@@ -2,19 +2,12 @@ import './navigation.css';
 import { icon } from './icons.js';
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
-const categoryNames = { 第一阶段: '字词基础', 第二阶段: '句子运用', 第三阶段: '阅读与积累', 第四阶段: '表达与写作' };
 
-export function featureGroups(subject) {
-  const groups = new Map();
-  for (const feature of subject.features) {
-    const category = feature.category || subject.name;
-    if (!groups.has(category)) {
-      const [stage, name] = category.split(' · ');
-      groups.set(category, { id: category, name: (subject.id === 'chinese' ? categoryNames[stage] : '') || name || stage, stage: name ? stage : '', items: [] });
-    }
-    groups.get(category).items.push(feature);
-  }
-  return [...groups.values()];
+export function renderNavPicker({ className, summary, summaryLabel, summaryId, panelClass, panelLabel, content }) {
+  return `<details class="nav-picker ${className}">
+    <summary class="nav-select" aria-label="${escape(summaryLabel)}"${summaryId ? ` id="${escape(summaryId)}"` : ''}>${summary}${icon('down')}</summary>
+    <div class="nav-panel ${panelClass}" role="region" aria-label="${escape(panelLabel)}">${content}</div>
+  </details>`;
 }
 
 export function createNavigation(select) {
@@ -24,8 +17,9 @@ export function createNavigation(select) {
   const widths = new WeakMap();
   let observer;
 
-  function render({ id, label, groups, selected, memories, action, className = '' }) {
+  function render({ id, label, groupLabel, groups, selected, memories, action, className = '' }) {
     if (!groups.length) return `<div class="feature-bar"><span class="feature-placeholder">新的学习冒险，正在准备中</span></div>`;
+    const isStage = action === 'feature';
     const activeGroup = groups.find(group => group.items.some(item => item.id === selected))
       || groups.find(group => group.id === memories[`${id}:group`]) || groups[0];
     const activeItem = activeGroup.items.find(item => item.id === selected);
@@ -34,20 +28,40 @@ export function createNavigation(select) {
       memories[`${id}:${activeGroup.id}`] = selected;
     }
     configurations.set(id, { groups, activeGroup, selected, memories, action });
-    const single = groups.length > 1 && activeGroup.items.length === 1 && activeGroup.name === activeGroup.items[0].name;
+    const single = !isStage && groups.length > 1 && activeGroup.items.length === 1 && activeGroup.name === activeGroup.items[0].name;
     const groupBadge = group => {
       const index = groups.indexOf(group);
-      return `<span class="nav-group-index nav-group-color-${index % 5 + 1}" data-number="${String(index + 1).padStart(2, '0')}" aria-hidden="true"></span>`;
+      const number = group.number ?? index + 1;
+      return `<span class="nav-group-index nav-group-color-${index % 5 + 1}" data-number="${String(number).padStart(2, '0')}" aria-hidden="true"></span>`;
     };
     const itemButton = (item, catalog = false) => `<button type="button" class="${catalog ? 'nav-catalog-item' : action === 'mode' ? 'play-mode' : 'feature-tab'} ${!catalog && item.id === selected ? action === 'mode' ? 'selected' : 'active' : ''}" data-action="${action}" data-id="${escape(item.id)}" ${catalog ? item.id === selected ? 'aria-current="true"' : '' : action === 'mode' ? `aria-pressed="${item.id === selected}"` : `role="tab" aria-selected="${item.id === selected}"`} title="${escape(item.description || item.name)}">${item.icon ? icon(item.icon) : ''}<span>${escape(item.name)}</span>${catalog && item.id === selected ? icon('check') : ''}</button>`;
+    const groupPicker = isStage || groups.length > 1 ? renderNavPicker({
+      className: 'nav-group-picker',
+      summary: `<span class="nav-group-label">${groupBadge(activeGroup)}<span class="nav-group-name">${escape(activeGroup.name)}</span></span>`,
+      summaryLabel: `选择${groupLabel}，当前：${[activeGroup.stage, activeGroup.name].filter(Boolean).join(' · ')}`,
+      panelClass: 'nav-groups',
+      panelLabel: groupLabel,
+      content: `<div class="nav-panel-heading"><strong>选择${isStage ? '阶段' : '分类'}</strong></div>${groups.map(group => `<button type="button" class="nav-group-item" data-action="nav-group" data-id="${escape(group.id)}" ${group.id === activeGroup.id ? 'aria-current="true"' : ''}><span class="nav-group-label">${groupBadge(group)}<span class="nav-group-info"><strong>${escape(group.name)}</strong><small>${group.stage ? `${escape(group.stage)} · ` : ''}${group.items.length} ${isStage ? '个主题' : '种玩法'}</small></span></span>${group.id === activeGroup.id ? icon('check') : icon('chevron')}</button>`).join('')}`,
+    }) : '';
+    const catalogPicker = !single && (isStage || groups.length > 1 || activeGroup.items.length > 1) ? renderNavPicker({
+      className: 'nav-catalog-picker',
+      summary: `<span class="nav-desktop-label">${isStage ? '主题目录' : '本类玩法'} <small>${activeGroup.items.length}</small></span><span class="nav-mobile-label">${escape(activeItem?.name || '选择' + label)}</span>`,
+      summaryLabel: `选择${label}，当前：${activeItem?.name || '请选择'}`,
+      panelClass: 'nav-catalog',
+      panelLabel: `${activeGroup.name}${isStage ? '目录' : '玩法'}`,
+      content: `<div class="nav-panel-heading"><strong>${escape(activeGroup.name)}</strong><span>${activeGroup.items.length} ${isStage ? '个主题' : '种玩法'}</span></div>
+        <label class="nav-search">${icon('search')}<input type="search" placeholder="搜索${label}" aria-label="搜索${isStage ? '本阶段' : '本类'}${label}" autocomplete="off"></label>
+        <div class="nav-catalog-list">${activeGroup.items.map(item => itemButton(item, true)).join('')}</div>
+        <p class="nav-no-results" role="status" hidden>没有找到匹配的内容，试试其他关键词。</p>`,
+    }) : '';
     return `<nav class="learning-navigation ${className} ${single ? 'nav-single' : ''}" data-navigation="${id}" aria-label="${label}">
-      ${groups.length > 1 ? `<details class="nav-picker nav-group-picker"><summary class="nav-select" aria-label="选择${label}分类，当前：${escape(activeGroup.name)}"><span class="nav-group-label">${groupBadge(activeGroup)}<span class="nav-group-name">${escape(activeGroup.name)}</span></span>${icon('down')}</summary><div class="nav-panel nav-groups" role="region" aria-label="${label}分类"><div class="nav-panel-heading"><strong>选择分类</strong><span>可以自由切换学习</span></div>${groups.map(group => `<button type="button" class="nav-group-item" data-action="nav-group" data-id="${escape(group.id)}" ${group.id === activeGroup.id ? 'aria-current="true"' : ''}><span class="nav-group-label">${groupBadge(group)}<span class="nav-group-info"><strong>${escape(group.name)}</strong><small>${group.stage ? `${escape(group.stage)} · ` : ''}${group.items.length} ${action === 'mode' ? '种玩法' : '个主题'}</small></span></span>${group.id === activeGroup.id ? icon('check') : icon('chevron')}</button>`).join('')}</div></details>` : ''}
+      ${groupPicker}
       <div class="nav-rail" ${single ? 'hidden' : ''}>
         <button type="button" class="nav-scroll nav-previous" data-action="nav-scroll" data-direction="-1" aria-label="向左查看${label}" disabled>${icon('chevron')}</button>
         <div class="nav-tabs ${action === 'mode' ? 'play-mode-buttons' : 'feature-tabs'}" ${action === 'mode' ? 'role="group"' : 'role="tablist"'} aria-label="${label}" data-scroll-key="${escape(`${id}:${activeGroup.id}`)}">${activeGroup.items.map(item => itemButton(item)).join('')}</div>
         <button type="button" class="nav-scroll" data-action="nav-scroll" data-direction="1" aria-label="向右查看${label}" disabled>${icon('chevron')}</button>
       </div>
-      ${!single && (groups.length > 1 || activeGroup.items.length > 1) ? `<details class="nav-picker nav-catalog-picker"><summary class="nav-select" aria-label="选择${label}，当前：${escape(activeItem?.name || '请选择')}"><span class="nav-desktop-label">本类${action === 'mode' ? '玩法' : '目录'} <small>${activeGroup.items.length}</small></span><span class="nav-mobile-label">${escape(activeItem?.name || '选择' + label)}</span>${icon('down')}</summary><div class="nav-panel nav-catalog" role="region" aria-label="${escape(activeGroup.name)}${action === 'mode' ? '玩法' : '目录'}"><div class="nav-panel-heading"><strong>${escape(activeGroup.name)}</strong><span>${activeGroup.items.length} ${action === 'mode' ? '种玩法' : '个主题'}</span></div><label class="nav-search">${icon('search')}<input type="search" placeholder="搜索${label}" aria-label="搜索本类${label}" autocomplete="off"></label><div class="nav-catalog-list">${activeGroup.items.map(item => itemButton(item, true)).join('')}</div><p class="nav-no-results" role="status" hidden>没有找到匹配的内容，试试其他关键词。</p></div></details>` : ''}
+      ${catalogPicker}
     </nav>`;
   }
 

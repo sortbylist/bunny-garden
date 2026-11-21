@@ -108,5 +108,6 @@ export function advanceTopic(topic, state) {
   if (round.index < round.questions.length - 1) { round.index++; round.selected = null; round.revealed = false; return null; }
   round.finished = true;
   const stats = roundStats(round);
-  return { time: Date.now(), name: `${topic.name}${round.scope === 'review' ? ' · 错题本' : ''}`, topicId: topic.id, total: stats.total, correct: stats.correct };
+  const category = topic.categories.find(item => item.id === round.scope)?.id;
+  return { time: Date.now(), name: `${topic.name}${round.scope === 'review' ? ' · 错题本' : ''}`, topicId: topic.id, category, total: stats.total, correct: stats.correct };
 }

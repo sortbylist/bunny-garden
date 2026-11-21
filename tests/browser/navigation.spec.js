@@ -1,14 +1,15 @@
 import { test, expect } from '@playwright/test';
 import { selectTopic, chooseMode } from './helpers.js';
 
-test('主题按阶段分类，目录搜索、空结果、Escape和分类内选择恢复', async ({ page }) => {
+test('主题按阶段组织，目录搜索、空结果、Escape 和阶段内选择恢复', async ({ page }) => {
   await page.goto('/');
   const navigation = page.locator('.feature-navigation');
   await navigation.locator('.nav-group-picker summary').click();
-  await expect(navigation.locator('.nav-group-item')).toHaveCount(4);
+  await expect(navigation.locator('.nav-group-item')).toHaveCount(3);
   await expect(navigation.locator('.nav-groups')).toContainText('第三阶段');
   await navigation.locator('[data-action="nav-group"]').filter({ hasText: '字词基础' }).click();
-  await expect(navigation.getByRole('tab')).toHaveCount(6);
+  await expect(navigation.getByRole('tab')).toHaveCount(7);
+  await expect(navigation.getByRole('tab').first()).toHaveText('拼音学习');
   const height = (await navigation.boundingBox()).height;
   await navigation.locator('.nav-catalog-picker summary').click();
   const search = navigation.getByRole('searchbox');
@@ -25,7 +26,11 @@ test('主题按阶段分类，目录搜索、空结果、Escape和分类内选�
   await navigation.locator('[data-action="nav-group"]').filter({ hasText: '字词基础' }).click();
   await expect(navigation.getByRole('tab', { name: '近义词与反义词', exact: true })).toHaveAttribute('aria-selected', 'true');
   expect((await navigation.boundingBox()).height).toBe(height);
+  await selectTopic(page, '标点符号');
   await page.reload();
+  await expect(navigation.locator('.nav-group-picker summary')).toHaveText('句子运用');
+  await navigation.locator('.nav-group-picker summary').click();
+  await navigation.locator('[data-action="nav-group"][data-id="chinese-1"]').click();
   await expect(navigation.locator('.nav-group-picker summary')).toHaveText('字词基础');
   await expect(navigation.getByRole('tab', { name: '近义词与反义词', exact: true })).toHaveAttribute('aria-selected', 'true');
 });
@@ -93,6 +98,7 @@ test('四十个额外主题仍是一行，滚动、目录搜索与键盘选择�
   await expect(tabs.locator('button').first()).toHaveAttribute('aria-selected', 'true');
   expect(await tabs.locator('button').evaluateAll(elements => elements.map(element => element.dataset.id))).toEqual(order);
   expect((await navigation.boundingBox()).height).toBe(height);
+  await selectTopic(page, '汉字笔画与结构');
   await page.locator('[data-action="hz-next"]').click();
   await expect(navigation.locator('.nav-group-picker summary')).toHaveText('字词基础');
   expect(await tabs.evaluate(element => element.scrollLeft)).toBe(0);
@@ -118,20 +124,20 @@ test('手机切回桌面时选中项自动可见，导航方向键不翻学习�
 test('新增阶段按数据自动归类，手机只有一个主题时仍显示主题入口', async ({ page }) => {
   await page.route('**/src/data.js*', async route => {
     const response = await route.fetch();
-    await route.fulfill({ response, body: `${await response.text()}\nsubjects[0].features.push({ id: 'navigation-reading', name: '新增阅读主题', category: '第三阶段 · 阅读专项', icon: 'book' });` });
+    await route.fulfill({ response, body: `${await response.text()}\nsubjects[0].features.push({ id: 'navigation-reading', name: '新增阅读主题', category: '第四阶段 · 阅读专项', icon: 'book' });` });
   });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   const navigation = page.locator('.feature-navigation');
   await navigation.locator('.nav-group-picker summary').click();
-  await expect(navigation.locator('.nav-group-item')).toHaveCount(5);
-  await navigation.locator('[data-action="nav-group"][data-id="第三阶段 · 阅读专项"]').click();
+  await expect(navigation.locator('.nav-group-item')).toHaveCount(4);
+  await navigation.locator('[data-action="nav-group"][data-id="chinese-4"]').click();
   await expect(navigation.locator('.nav-mobile-label')).toHaveText('新增阅读主题');
   await navigation.locator('.nav-catalog-picker summary').click();
   await expect(navigation.locator('.nav-catalog-item:visible')).toHaveText('新增阅读主题');
   await expect(navigation.locator('.nav-catalog-item')).toHaveAttribute('aria-current', 'true');
   await page.reload();
-  await expect(navigation.locator('.nav-group-picker summary')).toHaveText('阅读与积累');
+  await expect(navigation.locator('.nav-group-picker summary')).toHaveText('表达与写作');
   await expect(navigation.locator('.nav-mobile-label')).toHaveText('新增阅读主题');
 });
 
@@ -158,7 +164,7 @@ test('两级分类带彩色编号，入口文字紧凑且主题图标各有区�
   await chooseMode(page, 'audio');
   await expect(modes.locator('summary .nav-group-index')).toHaveAttribute('data-number', '02');
   await selectTopic(page, '近义词与反义词');
-  await expect(navigation.locator('summary .nav-group-index')).toHaveAttribute('data-number', '02');
+  await expect(navigation.locator('summary .nav-group-index')).toHaveAttribute('data-number', '01');
   for (const topic of ['近义词与反义词', '标点符号', '短文信息查找']) {
     await selectTopic(page, topic);
     const graphics = await navigation.locator('.nav-tabs button > svg').evaluateAll(elements => elements.map(element => element.innerHTML));

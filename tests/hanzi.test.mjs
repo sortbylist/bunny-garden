@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { hanziCategories, hanziLessons, hanziQuestions, strokeCharacters, radicals } from '../src/hanzi-data.js';
 import { createHanziState, normalizeHanziState, startHanziRound, answerHanzi, advanceHanziRound } from '../src/hanzi-engine.js';
-import { defaultState, loadState } from '../src/engine.js';
+import { defaultState } from '../src/engine.js';
 import { initializeRewards, grantRewards, rewardStats } from '../src/rewards.js';
 
 test('六小节覆盖规划范围，学习项目和题目唯一且每题只有一个答案', () => {
@@ -97,13 +97,7 @@ test('答错重试保留首次结果，查看答案不清错题，独立复习�
   assert.equal(normalizeHanziState(JSON.parse(JSON.stringify(revealed))).round.finished, true);
 });
 
-test('旧记录新增默认汉字状态，损坏汉字数据局部降级且不丢拼音记录', () => {
-  const root = defaultState();
-  root.known = ['single-a'];
-  delete root.hanzi;
-  const loaded = loadState({ getItem: () => JSON.stringify(root) });
-  assert.deepEqual(normalizeHanziState(loaded.state.hanzi), createHanziState());
-  assert.deepEqual(loaded.state.known, ['single-a']);
+test('汉字状态校验过滤无效内容并限制笔顺范围', () => {
   const state = normalizeHanziState({
     category: 'order', lessonId: 'order-日', strokeStep: 999, view: 'quiz',
     known: ['order-日', 'bad', 'order-日'], mistakes: ['bad'],

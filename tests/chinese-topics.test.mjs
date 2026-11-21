@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import { chineseTopics } from '../src/chinese-topics.js';
 import { dictionaryEntries, dictionaryLookup } from '../src/dictionary-data.js';
 import { topicDefaults, normalizeTopic, startTopicRound, answerTopic, advanceTopic } from '../src/chinese-engine.js';
-import { defaultState, loadState } from '../src/engine.js';
 import { vocabularyEntries } from '../src/vocabulary-data.js';
 import { synonymPairs, antonymPairs, relationContexts } from '../src/word-relations-data.js';
 import { measureWords, verbPairs, deSamples, deQuestions } from '../src/collocations-data.js';
@@ -145,7 +144,7 @@ for (const topic of chineseTopics) {
     assert.equal(normalizeTopic(topic, JSON.parse(JSON.stringify(restored))).round.finished, true);
   });
 
-  test(`${topic.name}：损坏存储局部降级，外来题目和 HTML 不进入课程`, () => {
+  test(`${topic.name}：恢复练习使用课程题库，过滤外来题目和 HTML`, () => {
     const state = topicDefaults(topic);
     startTopicRound(topic, state, 'all');
     state.round.questions[0].prompt = '<script>alert(1)</script>';
@@ -158,12 +157,6 @@ for (const topic of chineseTopics) {
     assert.equal(restored.view, 'learn');
     assert.deepEqual(restored.known, [topic.lessons[0].id]);
     assert.deepEqual(restored.mistakes, []);
-    const old = defaultState();
-    delete old.topics;
-    old.known = ['single-a'];
-    const loaded = loadState({ getItem: () => JSON.stringify(old) });
-    assert.deepEqual(loaded.state.known, ['single-a']);
-    assert.deepEqual(normalizeTopic(topic, loaded.state.topics?.[topic.id]), topicDefaults(topic));
   });
 }
 

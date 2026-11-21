@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { mkdir, readFile } from 'node:fs/promises';
+import { openMyMenu, stored } from './helpers.js';
+import { appStorageKey } from '../../src/storage.js';
 
 async function openEnglish(page) {
   await page.goto('/');
@@ -7,12 +9,9 @@ async function openEnglish(page) {
   await expect(page.locator('.phonics-page')).toBeVisible();
 }
 
-async function englishState(page) { return page.evaluate(() => JSON.parse(localStorage.getItem('bunny-garden-v1')).phonics); }
+async function englishState(page) { return (await stored(page)).phonics; }
 async function mode(page, id) {
-  if (id === 'favorites') {
-    await page.locator('.garden-links [data-action="saved-content"]').click();
-    await page.locator('[data-action="review-saved-words"]').click();
-  } else await page.locator(`${['review', 'records'].includes(id) ? '.garden-links' : '.ph-modes'} [data-id="${id}"]`).click();
+  await page.locator(`.ph-modes [data-id="${id}"]`).click();
 }
 async function section(page, id) {
   const toggle = page.locator('.ph-map-toggle');
@@ -28,7 +27,14 @@ test('自然拼读入口、48 课地图、自评前进、收藏与刷新恢复�
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await openEnglish(page);
-  await expect(page.locator('[data-navigation="features-english"] .nav-group-picker summary')).toHaveAttribute('aria-label', '选择英语主题分类，当前：自然拼读');
+  const navigation = page.locator('[data-navigation="features-english"]');
+  const stages = navigation.locator('.nav-group-picker summary');
+  await expect(stages).toHaveAccessibleName('选择英语阶段，当前：第一阶段 · 词汇与日常听说');
+  await stages.click();
+  await expect(navigation.locator('.nav-group-item')).toHaveCount(1);
+  await expect(navigation.locator('.nav-group-item')).toContainText('第一阶段 · 4 个主题');
+  await navigation.locator('.nav-group-item').click();
+  await expect(navigation.getByRole('tab').first()).toHaveText('自然拼读');
   await expect(page.locator('.ph-map [data-action="ph-lesson"]')).toHaveCount(48);
   await expect(page.locator('#ph-lesson-select')).toHaveCount(0);
   await expect(page.locator('.ph-word')).toHaveText('map');
@@ -47,10 +53,10 @@ test('自然拼读入口、48 课地图、自评前进、收藏与刷新恢复�
   await expect(page.locator('.ph-word')).toHaveText('mat');
   await page.locator('[data-action="ph-favorite"]').click();
   await page.reload();
-  const root = await page.evaluate(() => JSON.parse(localStorage.getItem('bunny-garden-v1')));
+  const root = await stored(page);
   expect(root.favorites).toContain('single-a');
   expect(root.phonics.favorites).toEqual(expect.arrayContaining(['word-map', 'word-mat']));
-  expect(await page.evaluate(() => Object.keys(localStorage))).toEqual(['bunny-garden-v1']);
+  expect(await page.evaluate(() => Object.keys(localStorage))).toEqual([appStorageKey]);
   expect(errors).toEqual([]);
 });
 
@@ -64,12 +70,13 @@ test('规律答错重试保留首次结果、查看答案与新轮复习', async
   await expect(page.locator('.ph-feedback')).toContainText('答对啦');
   await page.locator('[data-action="ph-next-question"]').click();
   await expect(page.locator('.ph-finish')).toContainText('0 / 1');
-  await mode(page, 'review');
+  await openMyMenu(page, '[data-id="mistakes"]');
+  await page.locator('[data-action="library-review-group"][data-id="phonics"]').click();
   await page.locator('.ph-option').filter({ hasText: 'zed' }).click();
-  await page.locator('[data-action="ph-next-question"]').click();
+  await page.locator('[data-action="library-next"]').click();
   expect((await englishState(page)).mistakes).toEqual([]);
-  await mode(page, 'records');
-  await expect(page.locator('.ph-history li')).toHaveCount(2);
+  await openMyMenu(page, '[data-id="records"]');
+  await expect(page.locator('.history-list li')).toHaveCount(2);
 });
 
 test('拼词支持点选字母、直接输入、Enter 提交及未完成输入恢复', async ({ page }) => {
@@ -87,19 +94,30 @@ test('拼词支持点选字母、直接输入、Enter 提交及未完成输入�
   await page.locator('#ph-spelling-input').press('Enter');
   await expect(page.locator('.ph-feedback')).toContainText('答对啦');
   expect(currentRound(await englishState(page)).responses[round.ids[round.index]].correct).toBe(true);
+  await page.locator('.ph-quiz .learning-favorite').click();
+  const before = await englishState(page);
+  await openMyMenu(page, '[data-id="favorites"]');
+  await page.locator('[data-action="library-item"]').click();
+  await expect(page.locator('#review-spelling-input')).toBeDisabled();
+  await page.getByRole('button', { name: '再做一次' }).click();
+  await page.locator('#review-spelling-input').fill(wordId);
+  await page.locator('#review-spelling-input').press('Enter');
+  await expect(page.getByRole('dialog').locator('.ph-feedback')).toContainText('答对啦');
+  await page.getByRole('button', { name: '返回我的收藏' }).click();
+  expect(await englishState(page)).toEqual(before);
 });
 
 test('全部玩法、共读答案、课次跳转和缺失语音状态可用', async ({ page }) => {
   await page.route('**/audio/phonics/manifest.json', route => route.fulfill({ json: { locale: 'en-GB', files: {} } }));
   await openEnglish(page);
-  for (const id of ['random', 'meaning', 'spelling', 'rules', 'listen', 'favorites', 'records']) {
+  for (const id of ['random', 'meaning', 'spelling', 'rules', 'listen']) {
     await mode(page, id);
     await expect(page.locator('.ph-main')).toHaveAttribute('aria-label', /.+/);
     await expect(page.locator('.ph-section-title')).toHaveCount(0);
     await expect(page.locator('.ph-main > section')).not.toHaveCount(0);
   }
   await mode(page, 'listen');
-  await expect(page.locator('.garden-links [data-id="review"]')).toBeDisabled();
+  await expect(page.locator('.my-menu [data-id="mistakes"]')).toHaveText('错题本（0）');
   await expect(page.locator('.ph-empty')).toContainText('先来读一读吧');
   await expect(page.locator('[data-action="ph-answer"]')).toHaveCount(0);
   await mode(page, 'reading');
@@ -134,6 +152,13 @@ test('听词练习使用对应音频，完整播放后才允许作答', async ({
   await mode(page, 'listen');
   await expect(page.locator('[data-action="ph-answer"]:enabled')).toHaveCount(0);
   await page.locator('[data-action="ph-play"]').click();
+  await expect(page.locator('[data-action="ph-answer"]:enabled')).toHaveCount(4);
+  await page.locator('.ph-quiz .learning-favorite').click();
+  await openMyMenu(page, '[data-id="favorites"]');
+  await page.locator('[data-action="library-item"]').click();
+  await page.getByRole('button', { name: '再做一次' }).click();
+  await expect(page.locator('[data-action="ph-answer"]:enabled')).toHaveCount(0);
+  await page.getByRole('button', { name: '播放题目' }).click();
   await expect(page.locator('[data-action="ph-answer"]:enabled')).toHaveCount(4);
 });
 
@@ -241,15 +266,17 @@ test('顶部玩法与小节地图分层，切换小节保留玩法、范围和�
   await expect(page.locator('.ph-reading h2')).toHaveText(title);
   await expect(page.locator('.ph-map [aria-current="step"]')).toHaveAttribute('data-id', 'lesson-29');
   for (const id of ['favorites', 'records']) {
-    await mode(page, id);
+    await openMyMenu(page, `[data-id="${id}"]`);
+    await expect(page.locator('.review-library')).toBeVisible();
     await expect(page.locator('.ph-map')).toHaveCount(0);
-    await expect(page.locator('.ph-current-section')).toHaveCount(0);
+    await page.getByRole('button', { name: '返回课程' }).click();
+    await expect(page.locator('.ph-reading h2')).toHaveText(title);
   }
 });
 
 test('英语各玩法不设顶部工具栏，可调题量的练习在卡片下方提供设置', async ({ page }) => {
   await openEnglish(page);
-  for (const id of ['learn', 'random', 'meaning', 'spelling', 'rules', 'listen', 'reading', 'favorites', 'records']) {
+  for (const id of ['learn', 'random', 'meaning', 'spelling', 'rules', 'listen', 'reading']) {
     await mode(page, id);
     await expect(page.locator('.ph-main > .ph-controls, .ph-current-section')).toHaveCount(0);
     await expect(page.getByRole('button', { name: '重新开始', exact: true })).toHaveCount(0);

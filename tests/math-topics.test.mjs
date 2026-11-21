@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import { mathTopics } from '../src/math-topics.js';
 import { chineseTopics } from '../src/chinese-topics.js';
 import { subjects } from '../src/data.js';
-import { defaultState, loadState } from '../src/engine.js';
 import { topicDefaults, normalizeTopic, startTopicRound, answerTopic, advanceTopic, updateTopicActivity } from '../src/chinese-engine.js';
 
 function calculate(expression) {
@@ -179,7 +178,7 @@ for (const topic of mathTopics) {
   });
 }
 
-test('数学参考思路保存，自评和错题不会混入语文，旧存档可补齐', () => {
+test('数学参考思路保存，自评和错题按主题校验', () => {
   const topic = mathTopics[0];
   const state = topicDefaults(topic);
   updateTopicActivity(topic, state, 'example');
@@ -189,10 +188,4 @@ test('数学参考思路保存，自评和错题不会混入语文，旧存档�
   const restored = normalizeTopic(topic, state);
   assert.deepEqual(restored.known, [topic.lessons[0].id]);
   assert.deepEqual(restored.mistakes, [topic.questions[0].id]);
-  const old = defaultState();
-  delete old.topics;
-  old.known = ['single-a'];
-  const loaded = loadState({ getItem: () => JSON.stringify(old) });
-  assert.deepEqual(loaded.state.known, ['single-a']);
-  assert.deepEqual(loaded.state.topics, {});
 });

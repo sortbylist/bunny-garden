@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { defaultState } from '../src/engine.js';
 import { rewardCatalog, initializeRewards, grantRewards, recordMastery, refreshRewards, rewardProgress, rewardStats, equipReward } from '../src/rewards.js';
-import { rewardTopics, rewardStages, rewardSections, sectionProgress } from '../src/reward-curriculum.js';
+import { rewardTopics, rewardStages, rewardSections, phonicsRewardModules, sectionProgress } from '../src/reward-curriculum.js';
 import { rewardHelp } from '../src/reward-help.js';
 import { subjects } from '../src/data.js';
 import { phonicsModules } from '../src/phonics-data.js';
@@ -19,11 +19,13 @@ function completeSection(rewards, section) {
   recordMastery(rewards, section.topicId || rewardTopics.find(topic => topic.sections.includes(section)).id, questions, questions.map(() => ({ correct: true })), date.getTime(), section.id);
 }
 
-test('目录包含中间里程碑、三科主题与九套奖牌，标识唯一，摘要不超过100字', () => {
-  assert.equal(new Set(rewardCatalog.map(reward => reward.id)).size, 100);
+test('目录包含中间里程碑、三科主题与五套奖牌，标识唯一，摘要不超过100字', () => {
+  assert.equal(new Set(rewardCatalog.map(reward => reward.id)).size, 88);
   assert.deepEqual(rewardCatalog.filter(reward => reward.id.startsWith('solved-')).map(reward => reward.target), [50, 75, 100, 150, 200, 250, 300]);
-  assert.equal(rewardCatalog.filter(reward => reward.type === 'medal').length, 27);
-  assert.equal(rewardStages.filter(stage => stage.subject === 'english').length, 5);
+  assert.equal(rewardCatalog.filter(reward => reward.type === 'medal').length, 15);
+  assert.deepEqual(rewardStages.filter(stage => stage.subject === 'english').map(stage => stage.id), ['english-1']);
+  const medal = rewardCatalog.find(reward => reward.id === 'stage-english-1-gold');
+  assert.equal(rewardProgress(fresh().rewards, medal).target, 51);
   assert.equal(rewardSections.size, 160);
   for (const help of Object.values(rewardHelp)) assert.ok([...help.summary].length <= 100);
 });
@@ -43,11 +45,10 @@ test('词语和部首扩充同步登记学习确认、专项练习与阶段范�
 });
 
 test('所有主题徽章复用学习入口图标，汉字结构用笔，英语模块支持独立图标', () => {
-  for (const topic of rewardTopics) {
+  for (const topic of [...rewardTopics.filter(item => !item.phonics), ...phonicsRewardModules]) {
     const subject = subjects.find(item => item.id === topic.subject);
-    const expected = topic.phonics
-      ? phonicsModules.find(module => module.id === topic.id).icon || subject.features[0].icon
-      : subject.features.find(feature => feature.id === topic.id).icon;
+    const expected = phonicsModules.find(module => module.id === topic.id)?.icon ||
+      subject.features.find(feature => feature.id === topic.id)?.icon || subject.features[0].icon;
     const reward = rewardCatalog.find(item => item.topicId === topic.id);
     assert.equal(reward.icon, expected, topic.name);
     assert.ok(rewardArt(reward.art, '', reward.icon).includes(iconPaths(expected)), topic.name);
@@ -138,7 +139,7 @@ test('三色花圃按三科主题徽章计算，不以答题徽章或奖牌替�
   refreshRewards(rewards);
   assert.equal(rewards.unlocks['garden-three-colors'], undefined);
   for (const subject of ['chinese', 'math', 'english']) {
-    const topic = rewardTopics.find(item => item.subject === subject);
+    const topic = rewardTopics.find(item => item.subject === subject && !item.phonics);
     rewards.unlocks[`topic-${topic.id}`] = date.getTime();
   }
   refreshRewards(rewards);

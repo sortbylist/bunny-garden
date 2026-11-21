@@ -1,6 +1,7 @@
 import { basics, groups, vocabulary, characters, words, marked, spellingRules, blends, confusionSets, tonePracticeSounds } from './data.js';
-import { phonicsDefaults, normalizePhonicsState } from './phonics-engine.js';
-import { appStorageKey } from './storage.js';
+import { phonicsDefaults } from './phonics-engine.js';
+
+export { loadState } from './storage.js';
 
 export function shuffle(items, random = Math.random) {
   const result = [...items];
@@ -151,53 +152,26 @@ export function roundStats(round) {
   return { total: round.questions.length, correct: round.responses.filter(response => response?.correct).length, skipped: round.responses.filter(response => response?.skipped).length };
 }
 
+export function selectMatch(value, action, id) {
+  if (action === 'match-left') {
+    value.left = id;
+    return null;
+  }
+  if (!value.left) return null;
+  const left = value.left;
+  const correct = left === id;
+  value.left = null;
+  value.attempts++;
+  if (correct) value.matched.push(left);
+  else if (!value.wrong.includes(left)) value.wrong.push(left);
+  return { left, correct };
+}
+
 export const defaultState = () => ({
-  version: 1, subject: 'chinese', collapsed: false, features: { chinese: 'pinyin' }, mode: 'sequence',
+  subject: 'chinese', collapsed: false, features: { chinese: 'pinyin' }, mode: 'sequence',
   group: 'all', wordScope: 'all', confusion: 'retroflex', length: 10,
   seen: [], known: [], favorites: [], savedContent: [], mistakes: [], history: [], sessions: {},
   settings: { slow: false, showPinyin: true, effects: true, continuous: false, animations: true },
   nickname: '小小探索家', navigationSelections: {}, rewards: null,
   tonePractice: false, modeGroups: {}, hanzi: null, topics: {}, phonics: phonicsDefaults(),
 });
-
-export function learningPreferences(saved) {
-  if (typeof saved.settings?.showPinyin === 'boolean') return { slow: saved.settings.slow === true, showPinyin: saved.settings.showPinyin };
-  const topic = saved.topics?.[saved.features?.chinese];
-  const reading = topic?.showPinyin ?? saved.hanzi?.showPinyin;
-  return { slow: (saved.subject === 'english' ? saved.phonics?.slow ?? saved.settings?.slow : saved.settings?.slow) === true, showPinyin: reading !== false };
-}
-
-export function loadState(storage) {
-  try {
-    const raw = storage.getItem(appStorageKey);
-    if (!raw) return { state: defaultState(), available: true };
-    const parsed = JSON.parse(raw);
-    if (parsed.version !== 1 || typeof parsed !== 'object' || !parsed.settings || !parsed.sessions || !parsed.features) throw new Error('invalid state');
-    for (const key of ['seen', 'known', 'favorites', 'mistakes', 'history']) {
-      if (!Array.isArray(parsed[key])) throw new Error('invalid collection');
-    }
-    const state = { ...defaultState(), ...parsed, settings: { ...defaultState().settings, ...parsed.settings, ...learningPreferences(parsed) } };
-    state.phonics = normalizePhonicsState(parsed.phonics);
-    state.savedContent = [...new Set(Array.isArray(parsed.savedContent) ? parsed.savedContent.filter(ref => typeof ref === 'string') : [])];
-    state.navigationSelections = Object.fromEntries(Object.entries(parsed.navigationSelections && typeof parsed.navigationSelections === 'object' ? parsed.navigationSelections : {}).filter(([, value]) => typeof value === 'string'));
-    if (['initials', 'finals', 'whole'].includes(state.mode)) {
-      const legacyGroups = { initials: 'initial', finals: 'all', whole: 'whole' };
-      state.group = state.group === 'all' ? legacyGroups[state.mode] : state.group;
-      const oldPrefix = `${state.mode}:`;
-      for (const [sessionKey, session] of Object.entries(state.sessions)) {
-        if (sessionKey.startsWith(oldPrefix)) {
-          const parts = sessionKey.split(':');
-          if (parts[1] === 'all') parts[1] = legacyGroups[state.mode];
-          parts[0] = 'sequence';
-          const migratedKey = parts.join(':');
-          if (!state.sessions[migratedKey]) state.sessions[migratedKey] = session;
-        }
-      }
-      state.mode = 'sequence';
-    }
-    state.mistakes = state.mistakes.filter(entry => entry?.question?.id && Array.isArray(entry.question.options));
-    state.sessions = Object.fromEntries(Object.entries(state.sessions).filter(([, session]) => session && typeof session === 'object'));
-    if (![5, 10, 20].includes(state.length)) state.length = 10;
-    return { state, available: true };
-  } catch { return { state: defaultState(), available: false }; }
-}

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { selectTopic, stored } from './helpers.js';
+import { chooseMode, selectTopic, stored } from './helpers.js';
 
 const frame = locator => locator.evaluate(element => {
   const style = getComputedStyle(element);
@@ -29,12 +29,13 @@ for (const width of [1440, 1050, 1000, 820, 390, 320]) {
       await selectTopic(page, topic, subject);
       expect(await frame(page.locator(`${selector} .study-card`)), topic).toEqual(reference);
       expect(await columns(`${selector} .learning-layout`), topic).toBe(expectedColumns);
-      await expect(page.locator(`${selector} .study-card .category-badge`)).toBeVisible();
+      await expect(page.locator(`${selector} .study-card .category-badge`)).toHaveText(/^学习 · /);
       await expect(page.locator(`${selector} .learning-lesson-map`)).toHaveCount(1);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), topic).toBe(true);
     }
     await chooseSubject(page, 'english');
     expect(await frame(page.locator('.ph-word-card'))).toEqual(reference);
+    await expect(page.locator('.ph-word-card .ph-badge')).toHaveText(/^学习 · /);
     expect(await columns('.ph-layout')).toBe(expectedColumns);
     await expect(page.locator('.ph-word-navigation .solid-button')).toHaveCount(0);
     await expect(page.locator('[data-action="ph-known"] .icon')).toHaveCount(1);
@@ -65,6 +66,8 @@ test('学习辅助、选择题和反馈状态跨模块统一，首次成绩及�
   for (const [topic, prefix] of [['句式积累与仿写', 'ct'], ['查字典', 'ct'], ['汉字笔画与结构', 'hz']]) {
     await selectTopic(page, topic);
     await page.locator(`.mastery-actions [data-action="${prefix}-start"]`).click();
+    await expect(page.locator('.quiz-card .category-badge')).toHaveText(/^练习 · /);
+    await expect(page.locator('.answer-feedback + .quiz-actions').getByRole('button', { name: '回到学习' })).toBeVisible();
     const option = page.locator(`[data-action="${prefix}-answer"]`).first();
     const feedback = page.locator('.answer-feedback');
     await page.locator('.round-settings summary').click();
@@ -91,7 +94,9 @@ test('学习辅助、选择题和反馈状态跨模块统一，首次成绩及�
     await page.screenshot({ path: testInfo.outputPath(`${prefix}-${topic}-feedback.png`) });
   }
   await chooseSubject(page, 'english');
-  await page.locator('[data-action="ph-mode"][data-id="rules"]').click();
+  await page.locator('.ph-rule .ph-actions').getByRole('button', { name: '开始本课练习' }).click();
+  await expect(page.locator('.ph-main > .ph-quiz:first-child .ph-badge')).toHaveText(/^练习 · /);
+  await expect(page.locator('.ph-quiz .answer-feedback + .ph-actions').getByRole('button', { name: '回到课程学习' })).toBeVisible();
   const option = page.locator('.ph-quiz .ph-option').first();
   await expect(option.locator('.option-letter')).toHaveText('A');
   await expect(option.locator('.option-content')).toHaveCSS('font-size', '18px');
@@ -102,6 +107,44 @@ test('学习辅助、选择题和反馈状态跨模块统一，首次成绩及�
   await expect(page.locator('.ph-feedback')).toHaveClass(/warning/);
   await page.locator('.ph-option').filter({ hasText: 'zed' }).click();
   await expect(page.locator('.ph-feedback')).toHaveClass(/success/);
+});
+
+test('拼音配对复用卡内标题，返回按钮在配对题下方', async ({ page }) => {
+  await page.goto('/');
+  await chooseMode(page, 'match');
+  await expect(page.locator('.learning-main > .match-card:first-child .category-badge')).toHaveText('练习 · 牵起拼音的小手');
+  const returnToStudy = page.getByRole('button', { name: '返回拼音学习' });
+  await expect(returnToStudy).toHaveCount(1);
+  await expect(page.locator('.match-card .gentle-note + .quiz-actions').getByRole('button', { name: '返回拼音学习' })).toBeVisible();
+  await returnToStudy.click();
+  const studyTitle = page.locator('.study-card .category-badge');
+  await expect(studyTitle).toHaveText(/^学习 · /);
+  await expect(studyTitle).toBeFocused();
+});
+
+test('本节练习和续做高亮所属分类，综合练习清除分类高亮', async ({ page }) => {
+  await page.goto('/');
+  for (const [subject, topic, prefix] of [
+    ['chinese', '汉字笔画与结构', 'hz'],
+    ['math', '数的认识', 'ct'],
+  ]) {
+    await chooseSubject(page, subject);
+    await selectTopic(page, topic, subject);
+    const categories = page.locator(`[data-action="${prefix}-category"]`);
+    const practiceCategory = categories.first();
+    const otherCategory = categories.nth(1);
+    await practiceCategory.click();
+    await page.getByRole('button', { name: '开始本节练习' }).click();
+    await expect(practiceCategory).toHaveClass(/\bselected\b/);
+    await expect(practiceCategory).toHaveAttribute('aria-pressed', 'true');
+    await otherCategory.click();
+    await expect(otherCategory).toHaveAttribute('aria-pressed', 'true');
+    await page.getByRole('button', { name: '继续上次练习' }).click();
+    await expect(practiceCategory).toHaveAttribute('aria-pressed', 'true');
+    await expect(otherCategory).toHaveAttribute('aria-pressed', 'false');
+    await page.getByRole('button', { name: /^综合练习/ }).click();
+    await expect(page.locator(`[data-action="${prefix}-category"]:is(.selected, [aria-pressed="true"])`)).toHaveCount(0);
+  }
 });
 
 test('切换学科和主题回到内容顶部，同一学习卡操作不强制回页首', async ({ page }) => {

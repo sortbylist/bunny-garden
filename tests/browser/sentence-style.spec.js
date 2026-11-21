@@ -30,7 +30,7 @@ test('二阶段沿用拼音的布局、卡片、导航和成长花园样式', as
       return { columns: style.gridTemplateColumns, gap: style.gap };
     })).toEqual(layout);
     await expect(page.locator('.ct-sentence-lessons')).toBeVisible();
-    await expect(page.locator('.growth-card [data-action="ct-start"][data-id="review"]')).toBeDisabled();
+    await expect(page.locator('.my-menu [data-action="library-open"][data-id="mistakes"]')).toHaveText('错题本（0）');
   }
 });
 

@@ -1,9 +1,10 @@
 import { basics, vocabulary } from './data.js';
-import { rewardTopics, rewardStages, curriculumProgress } from './reward-curriculum.js';
+import { rewardTopics, rewardStages, phonicsRewardModules, curriculumProgress } from './reward-curriculum.js';
 import { phonicsQuestionById } from './phonics-engine.js';
 import { phonicsWordById } from './phonics-data.js';
 
 const topicNames = { chinese: '语文主题', math: '数学主题', english: '英语主题或自然拼读模块' };
+const badgeTopics = [...rewardTopics.filter(topic => !topic.phonics), ...phonicsRewardModules];
 
 export const rewardCatalog = [
   { id: 'hello-bunny', type: 'sticker', name: '出发小兔', art: 'bunny', description: '每一个新朋友，都是一次小小的出发。', metric: 'learned', target: 1, rule: '首次标记认识 1 个学习项目' },
@@ -32,10 +33,10 @@ export const rewardCatalog = [
   ...[
     ['chinese', '故事小书签', 'bookmark'], ['math', '数字小火箭', 'rocket'], ['english', '字母小精灵', 'fairy'],
   ].map(([subject, name, art]) => ({ id: `first-topic-${subject}`, type: 'sticker', name, art, subject, metric: `topics-${subject}`, target: 1, rule: `获得首枚${topicNames[subject]}徽章。`, description: '一个新主题，一份值得珍藏的发现。' })),
-  ...rewardTopics.map(topic => ({
+  ...badgeTopics.map(topic => ({
     id: `topic-${topic.id}`, type: 'badge', name: `${topic.name}小能手`, art: `topic-${topic.subject}`,
     topicId: topic.id, subject: topic.subject, icon: topic.icon, metric: 'topic', target: 1,
-    rule: `完成“${topic.name}”${topic.phonics ? '模块' : '主题'}的全部小节。`,
+    rule: `完成“${topic.name}”${phonicsRewardModules.includes(topic) ? '模块' : '主题'}的全部小节。`,
     description: '把一点一滴的练习，连成一份完整的收获。',
   })),
   ...rewardStages.flatMap(stage => [
@@ -73,14 +74,14 @@ export function rewardStats(rewards) {
 export function rewardProgress(rewards, reward, progress = curriculumProgress(rewards), stats = rewardStats(rewards)) {
   if (reward.metric === 'sections') return { value: progress.completed, target: reward.target };
   if (reward.metric === 'topic') {
-    const topic = rewardTopics.find(item => item.id === reward.topicId);
+    const topic = badgeTopics.find(item => item.id === reward.topicId);
     return { value: topic.sections.filter(section => progress.sections.get(section.id).complete).length, target: topic.sections.length };
   }
   if (reward.metric === 'stage') {
     const sections = rewardStages.find(stage => stage.id === reward.stageId).topics.flatMap(topic => topic.sections);
     return { value: sections.filter(section => progress.sections.get(section.id).complete).length, target: Math.ceil(sections.length * reward.portion / 3) };
   }
-  const topicCount = subject => rewardTopics.filter(topic => topic.subject === subject && rewards.unlocks[`topic-${topic.id}`]).length;
+  const topicCount = subject => badgeTopics.filter(topic => topic.subject === subject && rewards.unlocks[`topic-${topic.id}`]).length;
   if (reward.metric.startsWith('topics-')) return { value: topicCount(reward.metric.slice(7)), target: reward.target };
   if (reward.metric === 'gold') return { value: rewardCatalog.filter(item => item.tier === 'gold' && rewards.unlocks[item.id]).length, target: 1 };
   if (reward.metric === 'subjects') return { value: ['chinese', 'math', 'english'].filter(subject => topicCount(subject) > 0).length, target: 3 };

@@ -1,9 +1,10 @@
 import './phonics.css';
 import { alphabet, phonicsModules, phonicsLessons, phonicsWords, phonicsStories, phonicsModes, phonicsWordById, phonicsLessonById } from './phonics-data.js';
-import { shufflePhonics, questionPool, createPhonicsRound, answerPhonics, advancePhonicsRound, phonicsStats, phonicsQuestionById } from './phonics-engine.js';
+import { shufflePhonics, questionPool, createPhonicsRound, answerPhonics, advancePhonicsRound, phonicsStats, phonicsQuestionById, editPhonicsDraft } from './phonics-engine.js';
 import { createPhonicsAudio } from './phonics-audio.js';
 import { icon } from './icons.js';
-import { favoriteButton, learningAnswerLabel, learningPosition, learningTokenClass, roundSettings } from './learning-ui.js';
+import { favoriteButton, learningAnswerLabel, learningPosition, learningTokenClass, roundSettings, reviewShortcut, focusLearningActivity } from './learning-ui.js';
+import { phonicsPracticeLesson } from './learning-data.js';
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 const control = (action, label, attributes = '', style = 'ph-button') => `<button type="button" data-action="ph-${action}" class="${style}" ${attributes}>${label}</button>`;
@@ -11,7 +12,7 @@ const quizModes = ['meaning', 'spelling', 'rules', 'listen', 'review', 'alphabet
 const lessonModes = ['learn', 'random', 'meaning', 'spelling', 'rules', 'listen', 'reading'];
 const rangeModes = ['random', 'meaning', 'spelling', 'rules', 'listen'];
 
-export function createPhonicsView({ state, persist, redraw, notify, haltOtherAudio, renderGarden, cardFavorite, slowPlayback, rewardAction = () => {} }) {
+export function createPhonicsView({ state, persist, redraw, redrawPreview = () => {}, notify, haltOtherAudio, renderGarden, cardFavorite, slowPlayback, rewardAction = () => {} }) {
   let draft = '';
   let playedQuestion = null;
   let confirmRestart = false;
@@ -28,7 +29,8 @@ export function createPhonicsView({ state, persist, redraw, notify, haltOtherAud
   });
   audio.ready.then(() => {
     audioReady = true;
-    if (document.querySelector('.phonics-page')) redraw();
+    if (document.querySelector('#app .phonics-page')) redraw();
+    redrawPreview();
   });
 
   function sessionKey() { return `${state.mode}:${state.scope}:${state.lessonId}:${state.length}`; }
@@ -63,21 +65,13 @@ export function createPhonicsView({ state, persist, redraw, notify, haltOtherAud
   }
 
   function empty(title, text) {
-    return `<section class="ph-card ph-empty"><span class="ph-empty-symbol">✿</span><h2>${title}</h2><p>${text}</p>${control('mode', '回到课程学习', 'data-id="learn"', 'ph-button primary')}</section>`;
+    return `<section class="ph-card ph-empty"><span class="ph-empty-symbol">✿</span><h2 data-activity-heading tabindex="-1">${title}</h2><p>${text}</p>${control('mode', '回到课程学习', 'data-id="learn"', 'ph-button primary')}</section>`;
   }
 
   function playButton(id, label = '听一听') {
     return audio.available(id)
       ? control('play', `${icon('sound')}${label}`, `data-id="${escape(id)}"`, 'ph-button audio')
       : `<span class="ph-pending">${icon('headphones')}暂时无法播放</span>`;
-  }
-
-  function personalButtons() {
-    return ['review', 'records'].map(id => {
-      const entry = phonicsModes.find(mode => mode.id === id);
-      const count = id === 'review' ? `（${state.mistakes.length}）` : '';
-      return control('mode', `${icon(id === 'review' ? 'notebook' : 'book')}${entry.name}${count}`, `data-id="${id}" aria-pressed="${state.mode === id}" ${id === 'review' && !state.mistakes.length ? 'disabled' : ''}`, 'outline-button');
-    }).join('');
   }
 
   function reviewButton() {
@@ -113,14 +107,18 @@ export function createPhonicsView({ state, persist, redraw, notify, haltOtherAud
     if (position.finished) {
       return `<section class="ph-card ph-finish"><span class="ph-empty-symbol">✿</span><h2>这一轮，认真走完啦！</h2><p>浏览了 ${position.ids.length} 个词。自评与客观测验分开记录，听过不等于已经会读。</p><div class="ph-actions">${control('restart', '再学一轮')}${control('mode', '试试本课规律题', 'data-id="rules"', 'ph-button primary')}${state.mode === 'learn' && lesson().number < phonicsLessons.length ? control('lesson', '前往下一课 →', `data-id="lesson-${lesson().number + 1}"`) : ''}</div></section>`;
     }
-    const favorite = state.favorites.includes(word.id);
-    return `<section class="ph-card ph-word-card"><div class="ph-card-top"><span class="ph-badge">${state.mode === 'favorites' ? '收藏复习' : state.mode === 'random' ? '随机词卡' : `第 ${lesson().number} 课`}</span>${learningPosition(position.index, position.ids.length)}${favoriteButton('ph-favorite', favorite)}</div><div class="ph-word" lang="en-GB">${escape(word.text)}</div><p class="ph-meaning">${escape(word.meaning)}</p><div class="ph-actions">${playButton(word.id)}</div><p class="ph-small">先自己试着读，再听完整示范。不用汉字谐音给英语注音。</p><div class="ph-actions ph-mastery mastery-actions">${control('later', `${icon('refresh')}还要练一练`, '', 'soft-button')}${control('known', `${icon('check')}我会读了，下一词`, '', 'soft-button mint')}</div><div class="ph-word-navigation card-navigation">${control('previous', `${icon('chevron')}上一个`, position.index === 0 ? 'disabled' : '', 'outline-button previous')}${control('next', `${position.index === position.ids.length - 1 ? '完成这一轮' : '下一个'}${icon(position.index === position.ids.length - 1 ? 'check' : 'chevron')}`, '', 'outline-button')}</div></section><section class="ph-card learning-lesson-map"><h3>本轮单词 · 点一个继续</h3><div class="ph-word-grid">${position.ids.map((id, index) => control('jump', `${escape(phonicsWordById.get(id).text)}${state.known.includes(id) ? '<small>✓ 自评</small>' : ''}`, `data-index="${index}" ${index === position.index ? 'aria-current="true"' : ''}`, `ph-word-tile ${index === position.index ? 'selected' : ''}`)).join('')}</div></section>`;
+    return `${wordCard(word, position)}<section class="ph-card learning-lesson-map"><h3>本轮单词 · 点一个继续</h3><div class="ph-word-grid">${position.ids.map((id, index) => control('jump', `${escape(phonicsWordById.get(id).text)}${state.known.includes(id) ? '<small>✓ 自评</small>' : ''}`, `data-index="${index}" ${index === position.index ? 'aria-current="true"' : ''}`, `ph-word-tile ${index === position.index ? 'selected' : ''}`)).join('')}</div></section>`;
   }
 
-  function lessonIntro() {
-    const entry = lesson();
-    return `<section class="ph-rule"><div class="ph-card-top"><span class="ph-badge">本课发现</span>${cardFavorite('lesson', entry.id)}</div>
-      <h2>${entry.title}</h2><p>${entry.tip}</p><div class="ph-pattern" aria-label="单词的字母组合">${entry.parts.map(part => `<span lang="en">${escape(part)}</span>`).join('')}<span class="ph-pattern-arrow">→</span><b lang="en">${escape(entry.parts.join(''))}</b></div><p class="ph-small">看看字母怎样组成单词，再听一听它的声音。</p><details><summary>读音小提示</summary><p>试着读一读：/${escape(entry.sounds.join(' / /'))}/。</p><p>${entry.prerequisite}</p></details>${entry.number <= 3 ? `<div class="ph-actions">${control('mode', '字母大小写配对', 'data-id="alphabet"')}${control('mode', '文字起点检查', 'data-id="diagnostic"')}</div>` : ''}</section>`;
+  function wordCard(word, position, preview = null) {
+    const heading = preview ? '词卡' : state.mode === 'favorites' ? '收藏复习' : state.mode === 'random' ? '随机词卡' : `第 ${lesson().number} 课`;
+    return `<section class="ph-card ph-word-card"><div class="ph-card-top"><h2 class="ph-badge" data-activity-heading tabindex="-1">学习 · ${heading}</h2>${preview ? preview.favorite : learningPosition(position.index, position.ids.length) + favoriteButton('ph-favorite', state.favorites.includes(word.id))}</div><div class="ph-word" lang="en-GB">${escape(word.text)}</div><p class="ph-meaning">${escape(word.meaning)}</p><div class="ph-actions">${playButton(word.id)}</div><p class="ph-small">先自己试着读，再听完整示范。不用汉字谐音给英语注音。</p>${preview ? '' : `<div class="ph-actions ph-mastery mastery-actions">${control('later', `${icon('refresh')}还要练一练`, '', 'soft-button')}${control('known', `${icon('check')}我会读了，下一词`, '', 'soft-button mint')}</div><div class="ph-word-navigation card-navigation">${control('previous', `${icon('chevron')}上一个`, position.index === 0 ? 'disabled' : '', 'outline-button previous')}${control('next', `${position.index === position.ids.length - 1 ? '完成这一轮' : '下一个'}${icon(position.index === position.ids.length - 1 ? 'check' : 'chevron')}`, '', 'outline-button')}</div>`}</section>`;
+  }
+
+  function lessonIntro(entry = lesson(), preview = null) {
+    return `<section class="ph-rule"><div class="ph-card-top"><span class="ph-badge">学习 · 本课发现</span>${preview ? preview.favorite : cardFavorite('lesson', entry.id)}</div>
+      <h2 data-activity-heading tabindex="-1">${entry.title}</h2><p>${entry.tip}</p><div class="ph-pattern" aria-label="单词的字母组合">${entry.parts.map(part => `<span lang="en">${escape(part)}</span>`).join('')}<span class="ph-pattern-arrow">→</span><b lang="en">${escape(entry.parts.join(''))}</b></div><p class="ph-small">看看字母怎样组成单词，再听一听它的声音。</p><details><summary>读音小提示</summary><p>试着读一读：/${escape(entry.sounds.join(' / /'))}/。</p><p>${entry.prerequisite}</p></details>
+      ${preview ? '' : `<div class="ph-actions">${control('mode', '开始本课练习', 'data-id="rules"')}${entry.number <= 3 ? control('mode', '字母大小写配对', 'data-id="alphabet"') + control('mode', '文字起点检查', 'data-id="diagnostic"') : ''}</div>`}</section>`;
   }
 
   function answerChoice(action, option, index, { disabled, correct, incorrect }) {
@@ -129,7 +127,7 @@ export function createPhonicsView({ state, persist, redraw, notify, haltOtherAud
 
   function quizCard() {
     if (!audioReady && ['listen', 'review'].includes(state.mode)) {
-      return '<section class="ph-card ph-quiz" aria-busy="true"><h2 role="status">正在准备练习…</h2></section>';
+      return `<section class="ph-card ph-quiz" aria-busy="true"><h2 role="status" data-activity-heading tabindex="-1">正在准备练习…</h2><div class="ph-actions">${returnToLearning()}</div></section>`;
     }
     const value = round();
     if (!value.ids.length) {
@@ -139,30 +137,41 @@ export function createPhonicsView({ state, persist, redraw, notify, haltOtherAud
     }
     if (value.finished) {
       const stats = phonicsStats(value);
-      return `<section class="ph-card ph-finish"><span class="ph-empty-symbol">✦</span><h2>练习完成，每一步都算数</h2><div class="ph-stats"><div><b>${stats.correct} / ${stats.total}</b><span>首次答对</span></div><div><b>${stats.skipped}</b><span>首次跳过</span></div></div><p>重试不会覆盖第一次的结果。${state.mode === 'diagnostic' ? '这是文字起点参考，不测听觉合音或发音水平。可按错题对应课次复习，不自动判断孩子的能力。' : '去错题中看看哪些规律还需要再练。'}</p><div class="ph-actions">${control('restart', '再练一轮', '', 'ph-button primary')}${reviewButton()}${control('mode', '学习记录', 'data-id="records"')}</div></section>`;
+      return `<section class="ph-card ph-finish"><span class="ph-empty-symbol">✦</span><h2 data-activity-heading tabindex="-1">练习完成，每一步都算数</h2><div class="ph-stats"><div><b>${stats.correct} / ${stats.total}</b><span>首次答对</span></div><div><b>${stats.skipped}</b><span>首次跳过</span></div></div><p>重试不会覆盖第一次的结果。${state.mode === 'diagnostic' ? '这是文字起点参考，不测听觉合音或发音水平。可按错题对应课次复习，不自动判断孩子的能力。' : '去错题中看看哪些规律还需要再练。'}</p><div class="ph-actions">${returnToLearning()}${control('restart', '再练一轮', '', 'ph-button primary')}${reviewShortcut('phonics', phonicsPracticeLesson(state))}<button type="button" class="outline-button" data-action="library-open" data-id="records">学习记录</button></div></section>`;
     }
+    draft = value.drafts[value.ids[value.index]] || '';
+    return questionCard(value);
+  }
+
+  function questionCard(value, preview = null) {
     const question = phonicsQuestionById.get(value.ids[value.index]);
-    draft = value.drafts[question.id] || '';
+    const typed = value.drafts[question.id] || '';
     const view = value.views[question.id];
     const resolved = view?.resolved;
-    const answerAvailable = question.kind !== 'listen' || playedQuestion === question.id;
+    const answerAvailable = question.kind !== 'listen' || (preview ? preview.heard : playedQuestion === question.id);
+    const locked = resolved || preview?.passive;
     let body;
     if (question.kind === 'spelling') {
       const letters = [...question.letters].sort();
-      body = `<p class="ph-small">用这 ${letters.length} 个字母拼出单词；可以点字母，也可以直接输入。</p><div class="ph-letter-bank" aria-label="可用字母">${letters.map((letter, index) => control('letter', letter, `data-value="${letter}" data-index="${index}" ${resolved || [...draft].filter(value => value === letter).length >= letters.filter(value => value === letter).length ? 'disabled' : ''}`, 'ph-letter')).join('')}</div><form id="ph-spelling-form"><label for="ph-spelling-input">你的拼写</label><input id="ph-spelling-input" name="spelling" lang="en" value="${escape(draft)}" maxlength="40" autocomplete="off" autocapitalize="none" spellcheck="false" ${resolved ? 'disabled' : ''}><div class="ph-actions">${control('erase', '删除一格', resolved || !draft ? 'disabled' : '')}<button type="submit" class="ph-button primary" ${resolved ? 'disabled' : ''}>检查拼写</button></div></form>`;
-    } else body = `<div class="ph-options answer-grid">${value.options[question.id].map((option, index) => answerChoice('answer', option, index, { disabled: resolved || !answerAvailable, correct: resolved && option === question.answer, incorrect: view?.answer === option && !view.correct })).join('')}</div>`;
+      const field = preview ? 'review-spelling' : 'ph-spelling';
+      body = `<p class="ph-small">用这 ${letters.length} 个字母拼出单词；可以点字母，也可以直接输入。</p><div class="ph-letter-bank" aria-label="可用字母">${letters.map((letter, index) => control('letter', letter, `data-value="${letter}" data-index="${index}" ${locked || [...typed].filter(value => value === letter).length >= letters.filter(value => value === letter).length ? 'disabled' : ''}`, 'ph-letter')).join('')}</div><form id="${field}-form"><label for="${field}-input">你的拼写</label><input id="${field}-input" name="spelling" lang="en" value="${escape(typed)}" maxlength="40" autocomplete="off" autocapitalize="none" spellcheck="false" ${locked ? 'disabled' : ''}><div class="ph-actions">${control('erase', '删除一格', locked || !typed ? 'disabled' : '')}<button type="submit" class="ph-button primary" ${locked ? 'disabled' : ''}>检查拼写</button></div></form>`;
+    } else body = `<div class="ph-options answer-grid">${value.options[question.id].map((option, index) => answerChoice('answer', option, index, { disabled: locked || !answerAvailable, correct: resolved && option === question.answer, incorrect: view?.answer === option && !view.correct })).join('')}</div>`;
     const story = question.storyId && phonicsStories.find(entry => entry.id === question.storyId);
-    const audioPrompt = question.kind === 'listen' ? `<div class="ph-actions">${control('play', `${icon('sound')}播放题目`, 'data-id="question"', 'ph-button audio')}</div><p class="ph-small">请先完整听一次。播放失败不会记为知识错误。</p>` : '';
-    return `<section class="ph-card ph-quiz"><div class="ph-card-top"><span class="ph-badge">${state.mode === 'review' ? '错题本' : '小小练习'}</span>${learningPosition(value.index, value.ids.length, { practice: true })}${cardFavorite('question', question.id)}</div>
-      ${value.ids.length < state.length && state.mode !== 'diagnostic' ? `<p class="ph-small">本范围有 ${value.ids.length} 道可用题，按实际数量练习，不重复凑数。</p>` : ''}<h2>${escape(question.prompt)}</h2>${question.display ? `<div class="ph-question-word" lang="en-GB">${escape(question.display)}</div>` : ''}${story ? `<p class="ph-story-text" lang="en-GB">${escape(story.text)}</p>` : ''}${audioPrompt}${body}<div class="ph-feedback answer-feedback ${view?.correct ? 'good success' : view ? 'warning' : ''}" role="status">${view ? `<strong>${view.correct ? '答对啦！' : view.skipped ? '先看看答案，下次再试' : '还差一点，可以再试一次'}</strong>${resolved ? `<p>答案：${escape(question.answer)}</p><p>${escape(question.explanation)}</p>` : '<p>别着急，重新想一想。首次作答已经保留。</p>'}` : question.kind === 'listen' && !answerAvailable ? '先听完整题目，再选择答案。' : question.kind === 'spelling' ? '拼好单词，再检查答案。' : '想一想，再选出你的答案。'}</div><div class="ph-actions">${control('skip', '跳过并看答案', resolved || !answerAvailable ? 'disabled' : '')}${control('next-question', `继续${icon('chevron')}`, !resolved ? 'disabled' : '', 'ph-button primary')}${question.kind === 'listen' ? control('replace-audio', '音频有问题，换文字练习') : ''}</div><div class="ph-question-map" aria-label="本轮题目">${value.ids.map((id, index) => control('question', `${index + 1}${value.views[id]?.resolved ? ' ✓' : ''}`, `data-index="${index}" aria-label="第 ${index + 1} 题${value.views[id]?.resolved ? '，已完成' : ''}" ${value.index === index ? 'aria-current="true"' : ''}`, 'ph-question-dot')).join('')}</div></section>`;
+    const audioPrompt = question.kind === 'listen' ? `<div class="ph-actions">${preview ? playButton(question.wordId, '播放题目') : control('play', `${icon('sound')}播放题目`, 'data-id="question"', 'ph-button audio')}</div><p class="ph-small">请先完整听一次。播放失败不会记为知识错误。</p>` : '';
+    const title = preview?.label || (state.mode === 'review' ? '错题复习' : modeName());
+    return `<section class="ph-card ph-quiz"><div class="ph-card-top"><span class="ph-badge">练习 · ${escape(title)}</span>${learningPosition(value.index, value.ids.length, { practice: true })}${preview ? preview.favorite : cardFavorite('question', question.id)}</div>
+      ${!preview && value.ids.length < state.length && state.mode !== 'diagnostic' ? `<p class="ph-small">本范围有 ${value.ids.length} 道可用题，按实际数量练习，不重复凑数。</p>` : ''}
+      <h2 data-activity-heading tabindex="-1">${escape(question.prompt)}</h2>${question.display ? `<div class="ph-question-word" lang="en-GB">${escape(question.display)}</div>` : ''}${story ? `<p class="ph-story-text" lang="en-GB">${escape(story.text)}</p>` : ''}${audioPrompt}${body}<div class="ph-feedback answer-feedback ${view?.correct ? 'good success' : view ? 'warning' : ''}" role="status">${view ? `<strong>${view.correct ? '答对啦！' : view.skipped ? '先看看答案，下次再试' : '还差一点，可以再试一次'}</strong>${resolved ? `<p>答案：${escape(question.answer)}</p><p>${escape(question.explanation)}</p>` : '<p>别着急，重新想一想。首次作答已经保留。</p>'}` : question.kind === 'listen' && !answerAvailable ? '先听完整题目，再选择答案。' : question.kind === 'spelling' ? '拼好单词，再检查答案。' : '想一想，再选出你的答案。'}</div>
+      ${preview ? '' : `<div class="ph-actions">${returnToLearning()}${control('skip', '跳过并看答案', resolved || !answerAvailable ? 'disabled' : '')}${control('next-question', `继续${icon('chevron')}`, !resolved ? 'disabled' : '', 'ph-button primary')}${question.kind === 'listen' ? control('replace-audio', '音频有问题，换文字练习') : ''}</div><div class="ph-question-map" aria-label="本轮题目">${value.ids.map((id, index) => control('question', `${index + 1}${value.views[id]?.resolved ? ' ✓' : ''}`, `data-index="${index}" aria-label="第 ${index + 1} 题${value.views[id]?.resolved ? '，已完成' : ''}" ${value.index === index ? 'aria-current="true"' : ''}`, 'ph-question-dot')).join('')}</div>`}</section>`;
   }
 
-  function readingCard() {
-    const story = phonicsStories.find(entry => entry.lessonId === state.lessonId);
-    const correct = storyResponse === story.question.answer;
-    const options = shuffleStableOptions(story.question).map((option, index) => answerChoice('story-answer', option, index, { disabled: correct, correct: correct && storyResponse === option, incorrect: !correct && storyResponse === option }));
-    return `<section class="ph-card ph-reading"><div class="ph-card-top"><span class="ph-badge">一起读故事</span>${cardFavorite('story', story.id)}</div>
-      <h2 lang="en">${escape(story.title)}</h2><p class="ph-small">先认识这些词和读法：${escape(story.prerequisites)}。</p><p class="ph-story-text" lang="en">${escape(story.text)}</p><div class="ph-actions">${playButton(story.id, '听完整故事')}</div><h3>${escape(story.question.prompt)}</h3><div class="ph-options answer-grid">${options.join('')}</div><p class="ph-feedback answer-feedback ${storyResponse ? correct ? 'success' : 'warning' : ''}" role="status">${storyResponse ? correct ? '理解正确！再试着用自己的话讲讲这个故事。' : '回到故事里找找线索，再试一次。' : '读一读故事，再选择答案。'}</p>${control('story-hint', currentStoryHint ? '收起答案' : '需要帮助？查看答案', `aria-expanded="${currentStoryHint}"`)}${currentStoryHint ? `<p>答案：${escape(story.question.answer)}。</p>` : ''}</section>`;
+  function readingCard(story = phonicsStories.find(entry => entry.lessonId === state.lessonId), preview = null) {
+    const response = preview ? preview.storyResponse : storyResponse;
+    const hint = preview ? preview.storyHint : currentStoryHint;
+    const correct = response === story.question.answer;
+    const options = shuffleStableOptions(story.question).map((option, index) => answerChoice('story-answer', option, index, { disabled: correct, correct: correct && response === option, incorrect: !correct && response === option }));
+    return `<section class="ph-card ph-reading"><div class="ph-card-top"><span class="ph-badge">学习 · 一起读故事</span>${preview ? preview.favorite : cardFavorite('story', story.id)}</div>
+      <h2 lang="en" data-activity-heading tabindex="-1">${escape(story.title)}</h2><p class="ph-small">先认识这些词和读法：${escape(story.prerequisites)}。</p><p class="ph-story-text" lang="en">${escape(story.text)}</p><div class="ph-actions">${playButton(story.id, '听完整故事')}</div><h3>${escape(story.question.prompt)}</h3><div class="ph-options answer-grid">${options.join('')}</div><p class="ph-feedback answer-feedback ${response ? correct ? 'success' : 'warning' : ''}" role="status">${response ? correct ? '理解正确！再试着用自己的话讲讲这个故事。' : '回到故事里找找线索，再试一次。' : '读一读故事，再选择答案。'}</p>${control('story-hint', hint ? '收起答案' : '需要帮助？查看答案', `aria-expanded="${hint}"`)}${hint ? `<p>答案：${escape(story.question.answer)}。</p>` : ''}</section>`;
   }
 
   function shuffleStableOptions(question) {
@@ -175,19 +184,33 @@ export function createPhonicsView({ state, persist, redraw, notify, haltOtherAud
     return `<section class="ph-card"><h2>一点一点，看见成长</h2><div class="ph-stats"><div><b>${state.seen.length}</b><span>浏览过的词</span></div><div><b>${state.known.length}</b><span>自评会读</span></div><div><b>${state.mistakes.length}</b><span>待复习错题</span></div><div><b>${due}</b><span>到期复习题</span></div></div><p>浏览、自评和客观题表现分别记录。没有启用麦克风，也不推断发音是否合格。</p><div class="ph-actions">${control('due', '复习到期题目', due ? '' : 'disabled')}${reviewButton()}</div><h3>最近练习</h3>${state.history.length ? `<ol class="ph-history">${state.history.slice(-20).reverse().map(entry => `<li><div><b>${escape(entry.name)}</b><small>${escape(new Date(entry.time).toLocaleString('zh-CN'))}</small></div><span>首次答对 ${entry.correct}/${entry.total}<small>首次跳过 ${entry.skipped}</small></span></li>`).join('')}</ol>` : '<p class="ph-small">完成一轮客观练习后，这里会出现记录。</p>'}<p class="ph-small">复习参考间隔为 1、3、7 天；仅是学习安排，不是掌握诊断。清理浏览器数据可能丢失记录。</p></section>`;
   }
 
+  function returnToLearning() {
+    return control('mode', '回到课程学习', 'data-id="learn"');
+  }
+
+  function modeName() {
+    return phonicsModes.find(entry => entry.id === state.mode)?.name || (state.mode === 'assessment' ? '小节达标练习' : state.mode === 'alphabet' ? '字母大小写' : '文字起点检查');
+  }
+
   function render() {
     if (state.mode === 'reading') {
       if (!phonicsStories.some(story => story.lessonId === state.lessonId)) state.lessonId = phonicsStories[0].lessonId;
       state.scope = 'lesson';
     }
-    const mode = phonicsModes.find(entry => entry.id === state.mode)?.name || (state.mode === 'assessment' ? '小节达标练习' : state.mode === 'alphabet' ? '字母大小写' : '文字起点检查');
+    const mode = modeName();
     const canChooseLength = quizModes.includes(state.mode) && !['diagnostic', 'assessment'].includes(state.mode);
     const body = quizModes.includes(state.mode) ? quizCard() : state.mode === 'reading' ? readingCard() : state.mode === 'records' ? recordsCard() : learningCard();
+    const modeGroups = [false, true].map(practice => {
+      const label = practice ? '练习' : '学习';
+      const entries = phonicsModes.filter(entry => lessonModes.includes(entry.id) && quizModes.includes(entry.id) === practice);
+      const buttons = entries.map(entry => control('mode', `${icon(entry.icon)}${entry.name}`, `data-id="${entry.id}" aria-pressed="${state.mode === entry.id}"`, `play-mode ${state.mode === entry.id ? 'selected' : ''}`));
+      return `<div role="group" aria-label="${label}"><strong>${label}</strong><div class="play-mode-buttons">${buttons.join('')}</div></div>`;
+    });
     return `<div class="phonics-page"><section class="ph-hero"><div><div class="eyebrow">ENGLISH GARDEN</div><h1>让字母，变成会读的词<span>✿</span></h1><p>听见声音，发现规律。从一个小词，走进一个小故事。</p><div class="ph-tags"><span>听一听</span><span>拼一拼</span><span>读故事</span></div></div><div class="ph-hero-letters" aria-hidden="true"><span>sh</span><span>ee</span><span>p</span><small>small steps, big discoveries</small></div></section>
-      <nav class="ph-modes play-selector" aria-label="自然拼读学习方式"><div class="play-mode-buttons">${phonicsModes.filter(entry => lessonModes.includes(entry.id)).map(entry => control('mode', `${icon(entry.icon)}${entry.name}`, `data-id="${entry.id}" aria-pressed="${state.mode === entry.id}"`, `play-mode ${state.mode === entry.id ? 'selected' : ''}`)).join('')}</div></nav>
+      <nav class="ph-modes play-selector" aria-label="自然拼读学习方式">${modeGroups.join('')}</nav>
       <div class="ph-layout"><div class="ph-main" role="region" tabindex="-1" aria-label="${mode}">
-      ${confirmRestart ? `<section class="ph-confirm" role="group" aria-label="确认重新开始"><p>重新开始当前轮次？收藏、错题和以往记录会保留。</p><div class="ph-actions">${control('cancel-restart', '保留当前进度')}${control('confirm-restart', '确认重新开始', '', 'ph-button primary')}</div></section>` : ''}
       ${state.mode === 'learn' ? lessonIntro() : ''}${body}
+      ${confirmRestart ? `<section class="ph-confirm" role="group" aria-label="确认重新开始"><p>重新开始当前轮次？收藏、错题和以往记录会保留。</p><div class="ph-actions">${control('cancel-restart', '保留当前进度')}${control('confirm-restart', '确认重新开始', '', 'ph-button primary')}</div></section>` : ''}
       ${canChooseLength ? roundSettings('phonics', state.length, [5, 10, 20]) : ''}
       ${lesson().number <= 3 && state.mode === 'learn' ? `<details class="ph-card ph-alphabet"><summary>26 个字母 · 名称参考</summary><p class="ph-small">认识字母的名字，再学它们在单词里的声音。</p><div class="ph-alphabet-grid">${alphabet.map(letter => `<div><b lang="en">${letter.upper} ${letter.letter}</b><small>/${letter.name}/</small></div>`).join('')}</div></details>` : ''}
       <p class="ph-footnote">每天学一点，答错也没关系</p></div><aside class="ph-sidebar">${renderGarden()}${courseMap()}</aside></div></div>`;
@@ -222,7 +245,7 @@ export function createPhonicsView({ state, persist, redraw, notify, haltOtherAud
       const question = id === 'question' ? phonicsQuestionById.get(round().ids[round().index]) : null;
       if (question) id = question.wordId;
       audio.play(id, slowPlayback()).then(success => {
-        if (success && question && key === sessionKey() && round().ids[round().index] === question.id && document.querySelector('.phonics-page')) { playedQuestion = question.id; redraw(); }
+        if (success && question && key === sessionKey() && document.querySelector('#app .phonics-page') && round().ids[round().index] === question.id) { playedQuestion = question.id; redraw(); }
       });
       return true;
     }
@@ -257,17 +280,15 @@ export function createPhonicsView({ state, persist, redraw, notify, haltOtherAud
       if (action === 'answer') submit(target.dataset.value);
       if (action === 'skip') submit(null);
       if (action === 'replace-audio') { changeMode('rules'); notify('已切换到文字练习，音频问题未记为知识错误。'); }
-      if (action === 'letter') {
-        draft = document.querySelector('#ph-spelling-input')?.value.toLowerCase().replace(/[^a-z]/g, '') ?? draft;
-        if ([...draft].filter(letter => letter === target.dataset.value).length < question.letters.filter(letter => letter === target.dataset.value).length) draft += target.dataset.value;
+      if (action === 'letter' || action === 'erase') {
+        draft = editPhonicsDraft(question, document.querySelector('#ph-spelling-input')?.value ?? draft, action, target.dataset.value);
         value.drafts[question.id] = draft;
       }
-      if (action === 'erase') { draft = (document.querySelector('#ph-spelling-input')?.value ?? draft).slice(0, -1); value.drafts[question.id] = draft; }
       if (action === 'next-question') {
         const finished = value.finished;
-        advancePhonicsRound(state, value, phonicsModes.find(entry => entry.id === state.mode)?.name || '小节练习');
+        advancePhonicsRound(state, value, phonicsModes.find(entry => entry.id === state.mode)?.name || '小节练习', Date.now(), phonicsPracticeLesson(state));
         if (!finished && value.finished) rewardAction({
-          type: 'round', mode: `english:${state.mode}`, name: '英语练习', topicId: lesson().moduleId,
+          type: 'round', mode: `english:${state.mode}`, name: '英语练习', topicId: 'phonics',
           sectionId: `english/${state.lessonId}`, total: value.ids.length,
           answered: Object.values(value.responses).filter(response => !response.skipped).length,
           questions: value.ids.map(id => ({ id: `english:${id}` })), responses: value.ids.map(id => value.responses[id]),
@@ -290,9 +311,9 @@ export function createPhonicsView({ state, persist, redraw, notify, haltOtherAud
       if (action === 'jump') { const index = Number(target.dataset.index); if (Number.isInteger(index) && index >= 0 && index < position.ids.length) { position.index = index; position.finished = false; } }
     }
     redraw();
-    if (action === 'lesson' || action === 'mode') {
-      document.querySelector('.ph-main')?.focus({ preventScroll: true });
-    }
+    if (action === 'mode') focusLearningActivity();
+    else if (action === 'restart') document.querySelector('[data-action="ph-cancel-restart"]')?.focus();
+    else if (action === 'lesson') document.querySelector('.ph-main')?.focus({ preventScroll: true });
     return true;
   }
 
@@ -327,11 +348,23 @@ export function createPhonicsView({ state, persist, redraw, notify, haltOtherAud
     state.sessions[sessionKey()] = createPhonicsRound(assessmentPool(), 5);
     draft = ''; playedQuestion = null; redraw();
   }
-  function openLesson(mode, lessonId) {
+  function openLesson(mode, lessonId, wordId) {
     changeMode(mode);
     state.lessonId = lessonId;
     state.scope = 'lesson';
+    if (wordId) {
+      const position = learningSession();
+      const index = position.ids.indexOf(wordId);
+      if (index >= 0) { position.index = index; position.finished = false; }
+    }
     redraw();
   }
-  return { render, handle, change, submitForm, input, stop, reset, assess, openLesson, personalButtons, gardenData, knownCount: () => state.known.length };
+  function previewCard(item, preview) {
+    if (item.question) return questionCard(preview.round, preview);
+    if (item.word) return wordCard(item.word, null, preview);
+    if (item.story) return readingCard(item.story, preview);
+    return lessonIntro(item.lesson, preview);
+  }
+  return { render, handle, change, submitForm, input, stop, reset, assess, openLesson, gardenData, previewCard,
+    playSaved: id => audio.play(id, slowPlayback()), knownCount: () => state.known.length };
 }

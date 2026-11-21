@@ -59,7 +59,7 @@ for (const width of [1440, 820, 390, 320]) {
     }
     await chooseSubject(page, 'english');
     expect(await fontSizes(page.locator('.ph-word-tile'))).toEqual([cardSize]);
-    await page.locator('[data-action="ph-mode"][data-id="rules"]').click();
+    await page.locator('.ph-modes [data-id="rules"]').click();
     expect(await fontSizes(page.locator('.ph-option'))).toEqual([answerSize]);
   });
 }

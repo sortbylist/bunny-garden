@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
 import { englishTopics, englishAudioClips } from '../src/english-topics.js';
 import { normalizeTopic, startTopicRound, answerTopic } from '../src/chinese-engine.js';
+import { decodeLearningData } from '../src/learning-data.js';
 import { resolveFavorite } from '../src/content-favorites.js';
 import { defaultState } from '../src/engine.js';
 import { createBackup, parseBackup } from '../src/backup.js';
@@ -17,8 +18,7 @@ test('校园英语题目、音频素材与小节奖励使用稳定的内容标�
     const bytes = await readFile(new URL(`${id}.mp3`, audioDir));
     assert.ok(bytes.length > 100 && (bytes.subarray(0, 3).toString() === 'ID3' || (bytes[0] === 255 && (bytes[1] & 224) === 224)), id);
   }
-  assert.deepEqual(rewardStages.find(stage => stage.id === 'english-skills-1').topics.map(topic => topic.id), englishTopics.map(topic => topic.id));
-  assert.equal(rewardStages.find(stage => stage.id === 'english-1').topics.length, 3);
+  assert.deepEqual(rewardStages.find(stage => stage.id === 'english-1').topics.map(topic => topic.id), ['phonics', ...englishTopics.map(topic => topic.id)]);
   const ids = new Set();
   for (const topic of englishTopics) {
     const category = topic.categories[0].id;
@@ -38,7 +38,7 @@ test('校园英语题目、音频素材与小节奖励使用稳定的内容标�
       assert.equal(question.choices.filter(choice => choice.id === question.answer).length, 1);
       assert.ok(question.explanation);
       const favorite = resolveFavorite(`english/${topic.id}/question/${question.id}`, () => topic);
-      assert.ok(favorite.lines.includes(`答案：${question.choices.find(choice => choice.id === question.answer).label}`));
+      assert.equal(favorite.question, question);
     }
   }
 });
@@ -54,7 +54,7 @@ test('听力轮次和错题可备份，题干及配图按更新后的课程恢�
   assert.ok(answerTopic(progress, question.options.find(option => option !== question.answer)).first);
   assert.ok(answerTopic(progress, question.answer).correct);
   const saved = parseBackup(createBackup(state)).data;
-  const restored = normalizeTopic(topic, saved.topics[topic.id]);
+  const restored = decodeLearningData(saved).topics[topic.id];
   assert.deepEqual(restored.known, [lessonId]);
   assert.deepEqual(restored.mistakes, [question.id]);
   assert.deepEqual(restored.round.questions[0], question);

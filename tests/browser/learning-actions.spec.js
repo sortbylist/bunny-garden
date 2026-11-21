@@ -42,7 +42,7 @@ async function checkActions(page, prefix, reference, label) {
   await expect(actions, label).toHaveCount(1);
   await expect(actions.locator('button'), label).toHaveCount(2);
   const practice = actions.locator(`[data-action="${prefix}-start"]`);
-  await expect(practice, label).toHaveText('练练这一节');
+  await expect(practice, label).toHaveText('开始本节练习');
   await expect(known.locator('.icon'), label).toHaveCount(1);
   await expect(practice.locator('.icon'), label).toHaveCount(1);
   expect(await paint(known), label).toEqual(reference.known);

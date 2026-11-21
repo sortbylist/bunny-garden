@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { chineseTopics } from '../../src/chinese-topics.js';
-import { stored, selectTopic, setLearningPreference, setRoundLength } from './helpers.js';
+import { openMyMenu, stored, selectTopic, setLearningPreference, setRoundLength } from './helpers.js';
 
 async function openTopic(page, topic) {
   await page.goto('/');
@@ -62,13 +62,17 @@ for (const topic of chineseTopics) {
     expect(root.hanzi.mistakes).toEqual([]);
     await page.reload();
     expect((await stored(page)).history).toHaveLength(1);
-    await page.locator('[data-action="topic-records"]').click();
-    await page.locator(`dialog [data-action="topic-review"][data-id="${topic.id}"]`).click();
-    for (let index = 0; index < 2; index++) { await answer(page, topic); await page.locator('[data-action="ct-advance"]').click(); }
+    await openMyMenu(page, '[data-id="mistakes"]');
+    await page.locator(`[data-action="library-review-group"][data-id="${topic.id}"]`).click();
+    for (const id of root.topics[topic.id].mistakes) {
+      const target = topic.questions.find(item => item.id === id);
+      await page.locator('dialog').getByRole('button', { name: target.answer, exact: true }).click();
+      await page.locator('[data-action="library-next"]').click();
+    }
     root = await stored(page);
     expect(root.topics[topic.id].mistakes).toEqual([]);
     expect(root.rewards.events.filter(event => event.id === `review:${question.id}`)).toHaveLength(1);
-    await expect(page.locator('.growth-card [data-action="ct-start"][data-id="review"]')).toBeDisabled();
+    await expect(page.locator('.my-menu [data-id="mistakes"]')).toHaveText('错题本（0）');
   });
 }
 

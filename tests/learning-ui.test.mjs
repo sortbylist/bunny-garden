@@ -14,7 +14,7 @@ test('学习卡复用带图标的轻量操作区，翻页独立且保留边界�
       assert.ok(actions.includes(`data-action="${prefix}-known" class="soft-button mint" aria-pressed="${known}"`));
       assert.ok(actions.includes(known ? '已经认识啦 ✓' : '我认识啦'));
       assert.ok(actions.includes(`data-action="${prefix}-start" data-id="strokes" class="soft-button"`));
-      assert.match(actions, /练练这一节/);
+      assert.match(actions, /开始本节练习/);
       assert.equal((actions.match(/<svg/g) || []).length, 2);
       assert.match(navigation, /card-navigation/);
       assert.ok(navigation.includes(`data-action="${prefix}-previous" class="outline-button previous" disabled`));

@@ -1,4 +1,4 @@
-const stage = '第一阶段 · 词汇与日常听说';
+export const englishFirstStage = '第一阶段 · 词汇与日常听说';
 const audio = (id, text) => ({ id, text });
 const option = (id, label, visual = id) => ({ id, label, visual });
 
@@ -66,7 +66,7 @@ const dialogues = [
 
 function topic(id, name, icon, description, category, lessons, questions) {
   return {
-    id, name, icon, stage, subject: 'english', description,
+    id, name, icon, stage: englishFirstStage, subject: 'english', description,
     categories: [{ id: category[0], name: category[1], icon }],
     lessons: lessons.map(lesson => ({ ...lesson, id: `${id}-${lesson.id}`, category: category[0] })),
     questions: questions.map(question => ({ ...question, id: `${id}-${question.id}`, category: category[0] })),

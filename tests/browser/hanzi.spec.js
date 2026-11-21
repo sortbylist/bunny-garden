@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { stored, selectTopic, setLearningPreference, setRoundLength } from './helpers.js';
+import { openMyMenu, stored, selectTopic, setLearningPreference, setRoundLength } from './helpers.js';
 
 async function openHanzi(page) {
   await page.goto('/');
@@ -85,18 +85,15 @@ test('答错刷新重试、完成统计、独立错题复习和历史去重', as
   expect(root.mistakes).toEqual([]);
   await page.reload();
   expect((await stored(page)).history).toHaveLength(1);
-  await page.locator('.my-menu-toggle').click();
-  await page.locator('.my-menu [data-action="records"]').click();
-  await expect(page.locator('dialog')).toContainText('待复习错题 1 道');
-  await page.locator('dialog [data-action="hanzi-review"]').click();
-  await expect(page.locator('dialog')).not.toBeVisible();
-  await answerCurrent(page);
-  await page.locator('[data-action="hz-advance"]').click();
+  await openMyMenu(page, '[data-id="mistakes"]');
+  await page.locator('[data-action="library-review-group"][data-id="hanzi-structure"]').click();
+  await page.locator('dialog').getByRole('button', { name: question.answer, exact: true }).click();
+  await page.locator('[data-action="library-next"]').click();
   root = await stored(page);
   expect(root.hanzi.mistakes).toEqual([]);
   expect(root.history).toHaveLength(2);
   expect(root.rewards.events.filter(event => event.id === `review:${question.id}`)).toHaveLength(1);
-  await expect(page.locator('.hz-sidebar [data-action="hz-start"][data-id="review"]')).toBeDisabled();
+  await expect(page.locator('.my-menu [data-id="mistakes"]')).toHaveText('错题本（0）');
 });
 
 test('查看答案保留错题，离开与继续保留题目和首次结果', async ({ page }) => {
@@ -116,12 +113,11 @@ test('查看答案保留错题，离开与继续保留题目和首次结果', as
   expect(state.mistakes).toContain(question.id);
 });
 
-test('汉字页面只显示汉字错题本，清空记录同时清除汉字数据', async ({ page }) => {
+test('汉字页可打开统一错题本，清空记录同时清除汉字数据', async ({ page }) => {
   await openHanzi(page);
   await page.locator('[data-action="hz-known"]').click();
   await page.locator('.my-menu-toggle').click();
-  await expect(page.locator('.my-menu [data-action="mode"][data-id="mistakes"]')).toHaveCount(0);
-  await expect(page.locator('.my-menu [data-action="hanzi-review"]')).toBeDisabled();
+  await expect(page.locator('.my-menu [data-id="mistakes"]')).toBeEnabled();
   await expect(page.locator('.growth-card')).toContainText('我的成长花园');
   await page.locator('.my-menu-toggle').click();
   await page.locator('[data-action="settings"]').click();
