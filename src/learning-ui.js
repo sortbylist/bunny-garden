@@ -1,8 +1,8 @@
 import { practiceLengths } from './chinese-practice.js';
 import { icon } from './icons.js';
 
-export function learningCardFooter(prefix, { known, category, index, total }) {
-  return `<div class="hz-actions mastery-actions"><button type="button" data-action="${prefix}-known" class="soft-button mint" aria-pressed="${known}">${icon('check')}${known ? '已经认识啦 ✓' : '我认识啦'}</button><button type="button" data-action="${prefix}-start" data-id="${category}" class="soft-button">${icon('pen')}练练这一节</button></div>
+export function learningCardFooter(prefix, { known, category, index, total, knownLabel = '我认识啦', confirmedLabel = '已经认识啦 ✓' }) {
+  return `<div class="hz-actions mastery-actions"><button type="button" data-action="${prefix}-known" class="soft-button mint" aria-pressed="${known}">${icon('check')}${known ? confirmedLabel : knownLabel}</button><button type="button" data-action="${prefix}-start" data-id="${category}" class="soft-button">${icon('pen')}练练这一节</button></div>
     <div class="hz-actions hz-card-footer card-navigation"><button type="button" data-action="${prefix}-previous" class="outline-button previous" ${index === 0 ? 'disabled' : ''}>${icon('chevron')}上一个</button><button type="button" data-action="${prefix}-next" class="outline-button" ${index === total - 1 ? 'disabled' : ''}>下一个${icon('chevron')}</button></div>`;
 }
 

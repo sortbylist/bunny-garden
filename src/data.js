@@ -1,5 +1,6 @@
 import { chineseTopics } from './chinese-topics.js';
 import { mathTopics } from './math-topics.js';
+import { englishTopics } from './english-topics.js';
 
 export const groups = [
   { id: 'single', name: '单韵母', short: '从 a o e 开始', color: 'pink' },
@@ -130,5 +131,5 @@ export const tonePracticeSounds = ['ma', 'ba', 'yi', 'wu', 'yu'].flatMap(syllabl
 export const subjects = [
   { id: 'chinese', name: '语文', english: 'CHINESE', icon: 'book', color: 'pink', features: [{ id: 'pinyin', name: '拼音学习', icon: 'type', category: '拼音学习' }, { id: 'hanzi-structure', name: '汉字笔画与结构', icon: 'pen', category: '第一阶段 · 字词基础' }, ...chineseTopics.map(topic => ({ id: topic.id, name: topic.name, category: topic.stage, icon: ({ dictionary: 'search', 'word-categories': 'grid', 'word-relations': 'compare', collocations: 'link', 'word-patterns': 'flower', 'sentence-building': 'puzzle', punctuation: 'quote', 'sentence-patterns': 'layers', 'sentence-revision': 'refresh', 'vivid-expression': 'leaf', 'similar-characters': 'character-radical', 'character-readings': 'sound', 'poetry-culture': 'scroll', 'reading-information': 'search', 'reading-context': 'link', 'reading-paragraphs': 'layers', 'reading-stories': 'heart', 'reading-summary': 'book' })[topic.id] || 'book' }))] },
   { id: 'math', name: '数学', english: 'MATH', icon: 'math', color: 'blue', features: mathTopics.map(topic => ({ id: topic.id, name: topic.name, category: topic.stage, icon: topic.icon })) },
-  { id: 'english', name: '英语', english: 'ENGLISH', icon: 'globe', color: 'yellow', features: [{ id: 'phonics', name: '自然拼读', icon: 'type' }] },
+  { id: 'english', name: '英语', english: 'ENGLISH', icon: 'globe', color: 'yellow', features: [{ id: 'phonics', name: '自然拼读', icon: 'type', category: '自然拼读' }, ...englishTopics.map(topic => ({ id: topic.id, name: topic.name, category: topic.stage, icon: topic.icon }))] },
 ];
