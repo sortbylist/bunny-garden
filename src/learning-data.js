@@ -11,7 +11,7 @@ import { rewardTopics } from './reward-curriculum.js';
 import { emptyRewards } from './rewards.js';
 import { defaultState } from './engine.js';
 
-export const dataVersion = 2;
+export const dataVersion = 1;
 export const invalidData = () => { throw new Error('学习数据不完整或格式有误，本机记录未修改。'); };
 export const isRecord = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 
@@ -113,7 +113,7 @@ function pinyinQuestionIdCategory(id) {
 
 export function pinyinPracticeCategory(key) {
   const [mode, group] = key.split(':');
-  if (['sequence', 'random', 'listen', 'audio'].includes(mode)) return group === 'all' ? null : group;
+  if (['sequence', 'random', 'listen', 'audio', 'section-practice'].includes(mode)) return group === 'all' ? null : group;
   if (['hanzi', 'pinyin', 'match'].includes(mode)) return 'words';
   if (mode === 'tonequiz') return 'tones';
   return ['tones', 'blend', 'rules', 'confusing'].includes(mode) ? mode : null;
@@ -164,6 +164,7 @@ export function encodeLearningData(state) {
     const saved = progress || (hanzi ? createHanziState() : topicDefaults(topic));
     const node = topicNode(data, location);
     node.options = selectFields(saved, topicOptionFields);
+    if (saved.view === 'practice') node.options.view = 'learn';
     if (topic.id === 'dictionary') node.lookup = saved.lookup;
     if (hanzi && saved.strokeStep) bucket(node, saved.category).strokeStep = saved.strokeStep;
     for (const id of saved.known) addRecord(node, lessons.get(id), 'known', id);
@@ -173,11 +174,12 @@ export function encodeLearningData(state) {
     for (const [id, activity] of Object.entries(saved.activities || {})) addEntry(node, lessons.get(id), 'activities', id, activity);
     if (saved.round) {
       const { scope } = saved.round;
-      bucket(node, topic.categories.some(category => category.id === scope) ? scope : null).round = {
-        ...saved.round,
-        questions: saved.round.questions.map(({ id, options }) => ({ id, options })),
-        responses: saved.round.questions.map((_, index) => saved.round.responses[index] ?? null),
-      };
+      bucket(node, topic.categories.some(category => category.id === scope) ? scope : null).round = encodeTopicRound(saved.round);
+    }
+    for (const [key, round] of Object.entries(saved.rounds || {})) {
+      if (round === saved.round && key === `${round.scope}:${saved.practiceLength}`) continue;
+      const category = topic.categories.some(item => item.id === round.scope) ? round.scope : null;
+      addEntry(node, category, 'rounds', key, encodeTopicRound(round));
     }
   }
   for (const record of state.history) {
@@ -205,13 +207,17 @@ export function encodeLearningData(state) {
   return data;
 }
 
+function encodeTopicRound(round) {
+  return {
+    ...round,
+    questions: round.questions.map(({ id, options }) => ({ id, options })),
+    responses: round.questions.map((_, index) => round.responses[index] ?? null),
+  };
+}
+
 function record(value, required, optional = []) {
   validate(isRecord(value) && required.every(field => Object.hasOwn(value, field)) &&
     Object.keys(value).every(field => required.includes(field) || optional.includes(field)));
-}
-
-function keyed(value, keys) {
-  validate(isRecord(value) && Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key)));
 }
 
 export function checkTree(value, depth = 0) {
@@ -306,10 +312,14 @@ function restoreTopic(state, node, definition) {
       validate(!saved.round && isRecord(part.round) && (id ? part.round.scope === id : ['all', 'review'].includes(part.round.scope)));
       saved.round = part.round;
     }
+    if (Object.hasOwn(part, 'rounds')) Object.assign(saved.rounds ||= {}, readMap(part, 'rounds', (key, round) => isRecord(round) &&
+      (id ? round.scope === id : ['all', 'review'].includes(round.scope)) &&
+      [10, 20, 30].some(length => key === `${round.scope}:${length}`)));
   }
   if (hanzi) saved.strokeStep = node.categories[category].strokeStep;
   const result = hanzi ? normalizeHanziState(saved) : normalizeTopic(topic, saved);
   validate(!saved.round || result.round);
+  validate(Object.keys(saved.rounds || {}).every(key => Object.hasOwn(result.rounds, key)));
   if (hanzi) state.hanzi = result;
   else state.topics[topic.id] = result;
 }
@@ -345,37 +355,44 @@ function restorePhonics(state, node) {
 const categoryFields = {
   pinyin: ['seen', 'known', 'favorites', 'mistakes', 'sessions', 'savedContent', 'history'],
   phonics: ['seen', 'known', 'favorites', 'mistakes', 'reviews', 'positions', 'sessions', 'savedContent', 'history', 'mastery'],
-  topic: ['known', 'mistakes', 'practiceSeen', 'activities', 'round', 'savedContent', 'history', 'mastery'],
+  topic: ['known', 'mistakes', 'practiceSeen', 'activities', 'round', 'rounds', 'savedContent', 'history', 'mastery'],
 };
 
 function readCurriculum(state, data) {
-  keyed(data.subjects, subjects.map(subject => subject.id));
+  const nodes = new Map();
+  record(data.subjects, [], subjects.map(subject => subject.id));
   for (const subject of subjects) {
     const saved = data.subjects[subject.id];
+    if (saved === undefined) continue;
     const stages = featureGroups(subject);
     const locations = [...topicLocations.values()].filter(location => location.subject === subject.id);
     record(saved, ['selectedStage', 'stages']);
     validate(stages.some(stage => stage.id === saved.selectedStage));
-    keyed(saved.stages, stages.map(stage => stage.id));
+    record(saved.stages, [saved.selectedStage], stages.map(stage => stage.id));
     for (const definition of stages) {
       const stage = saved.stages[definition.id];
+      if (stage === undefined) continue;
       record(stage, ['selectedTopic', 'topics']);
       validate(definition.items.some(item => item.id === stage.selectedTopic));
-      keyed(stage.topics, locations.filter(location => location.stageId === definition.id).map(location => location.id));
+      record(stage.topics, [stage.selectedTopic], locations.filter(location => location.stageId === definition.id).map(location => location.id));
       state.navigationSelections[`features-${subject.id}:${definition.id}`] = stage.selectedTopic;
     }
     state.features[subject.id] = saved.stages[saved.selectedStage].selectedTopic;
     for (const location of locations) {
-      const node = topicNode(data, location);
+      const node = saved.stages[location.stageId]?.topics[location.id];
+      if (node === undefined) continue;
       const isPinyin = location === pinyin;
       const fields = location.phonics ? categoryFields.phonics : isPinyin ? categoryFields.pinyin : categoryFields.topic;
-      const shared = isPinyin ? ['sessions', 'history'] : location.phonics ? ['positions', 'sessions', 'history'] : ['round', 'history'];
+      const shared = isPinyin ? ['sessions', 'history'] : location.phonics ? ['positions', 'sessions', 'history'] : ['round', 'rounds', 'history'];
       if (location.id === 'dictionary') shared.push('lookup', 'savedContent');
       record(node, ['categories', 'options'], shared);
-      keyed(node.categories, location.sections.map(sectionKey));
+      validate(isRecord(node.options));
+      const selectedCategory = location.phonics ? node.options.lessonId : node.options.category;
+      record(node.categories, isString(selectedCategory) ? [selectedCategory] : [], location.sections.map(sectionKey));
       for (const section of location.sections) {
         const key = sectionKey(section);
         const part = node.categories[key];
+        if (part === undefined) continue;
         record(part, [], location.id === 'hanzi-structure' ? [...fields.filter(field => field !== 'activities'), 'strokeStep'] : fields);
         if (Object.hasOwn(part, 'strokeStep')) validate(isIndex(part.strokeStep) && node.options.category === key);
         if (Object.hasOwn(part, 'mastery')) {
@@ -392,8 +409,10 @@ function readCurriculum(state, data) {
           return target === location && (targetCategory ?? null) === category;
         }));
       }
+      nodes.set(location.id, node);
     }
   }
+  return nodes;
 }
 
 export function decodeLearningData(data) {
@@ -412,20 +431,27 @@ export function decodeLearningData(data) {
   record(rewards.equipped, Object.keys(emptyRewards().equipped));
   validate(Object.values(rewards.equipped).every(id => id === null || isString(id)));
   state.rewards = { ...rewards, mastery: {} };
-  record(data.settings, Object.keys(state.settings));
+  record(data.settings, [], Object.keys(state.settings));
   validate(Object.values(data.settings).every(value => typeof value === 'boolean'));
-  state.settings = data.settings;
+  Object.assign(state.settings, data.settings);
   record(data.navigation, ['subject', 'collapsed', 'pinyinModes']);
-  validate(subjects.some(subject => subject.id === data.navigation.subject) && typeof data.navigation.collapsed === 'boolean');
+  validate(subjects.some(subject => subject.id === data.navigation.subject) &&
+    isRecord(data.subjects) && Object.hasOwn(data.subjects, data.navigation.subject) &&
+    typeof data.navigation.collapsed === 'boolean');
   checkStringMap(data.navigation.pinyinModes);
   validate(Object.keys(data.navigation.pinyinModes).every(key => key.startsWith('pinyin-modes:')));
   state.subject = data.navigation.subject;
   state.collapsed = data.navigation.collapsed;
   state.navigationSelections = { ...data.navigation.pinyinModes };
-  readCurriculum(state, data);
-  restorePinyin(state, topicNode(data, pinyin));
-  for (const entry of learningTopics) restoreTopic(state, topicNode(data, entry.location), entry);
-  restorePhonics(state, topicNode(data, phonicsTopic));
+  const nodes = readCurriculum(state, data);
+  if (nodes.has(pinyin.id)) restorePinyin(state, nodes.get(pinyin.id));
+  for (const entry of learningTopics) {
+    const node = nodes.get(entry.topic.id);
+    if (node) restoreTopic(state, node, entry);
+    else if (entry.topic.id === 'hanzi-structure') state.hanzi = createHanziState();
+    else state.topics[entry.topic.id] = topicDefaults(entry.topic);
+  }
+  if (nodes.has(phonicsTopic.id)) restorePhonics(state, nodes.get(phonicsTopic.id));
   state.history.sort((first, second) => first.time - second.time);
   return state;
 }

@@ -1,9 +1,9 @@
 import { shuffle, recordAnswer, roundStats } from './engine.js';
 import { dictionaryLookup } from './dictionary-data.js';
-import { practiceLengths, selectPractice } from './chinese-practice.js';
+import { practiceLengths, restorePracticeRounds, selectPractice, switchPracticeRound } from './chinese-practice.js';
 
 export function topicDefaults(topic) {
-  return { category: topic.categories[0].id, lessonId: topic.lessons[0].id, view: 'learn', known: [], mistakes: [], round: null, activities: {}, lookup: { method: 'sound', selections: [] }, showPinyin: !['math', 'english'].includes(topic.subject), practiceLength: 10, practiceSeen: [] };
+  return { category: topic.categories[0].id, lessonId: topic.lessons[0].id, view: 'learn', known: [], mistakes: [], round: null, rounds: {}, activities: {}, lookup: { method: 'sound', selections: [] }, showPinyin: !['math', 'english'].includes(topic.subject), practiceLength: 10, practiceSeen: [] };
 }
 
 export function updateTopicActivity(topic, state, action, value) {
@@ -55,15 +55,22 @@ export function normalizeTopic(topic, saved) {
     state.lookup = { method, selections: dictionaryLookup(method, saved.lookup?.selections).selections };
     if (saved.view === 'lookup') state.view = 'lookup';
   }
-  const round = saved.round;
+  state.round = normalizeTopicRound(topic, saved.round);
+  restorePracticeRounds(state, saved, round => normalizeTopicRound(topic, round),
+    scope => scope === 'all' ? topic.questions.length : topic.questions.filter(question => question.category === scope).length);
+  if (saved.view === 'quiz' && state.round) state.view = 'quiz';
+  return state;
+}
+
+function normalizeTopicRound(topic, round) {
   if (!round || !['all', 'review', ...topic.categories.map(item => item.id)].includes(round.scope) ||
       !Array.isArray(round.questions) || !round.questions.length || round.questions.length > 30 ||
       !Number.isInteger(round.index) || round.index < 0 || round.index >= round.questions.length ||
-      !Array.isArray(round.responses) || new Set(round.questions.map(item => item?.id)).size !== round.questions.length) return state;
+      !Array.isArray(round.responses) || new Set(round.questions.map(item => item?.id)).size !== round.questions.length) return null;
   const questions = [];
   for (const item of round.questions) {
     const canonical = topic.questions.find(question => question.id === item?.id);
-    if (!canonical || (round.scope !== 'all' && round.scope !== 'review' && canonical.category !== round.scope)) return state;
+    if (!canonical || (round.scope !== 'all' && round.scope !== 'review' && canonical.category !== round.scope)) return null;
     const options = Array.isArray(item.options) && item.options.length === canonical.options.length && new Set(item.options).size === canonical.options.length && item.options.every(option => canonical.options.includes(option)) ? [...item.options] : [...canonical.options];
     questions.push({ ...canonical, options });
   }
@@ -71,24 +78,21 @@ export function normalizeTopic(topic, saved) {
     const response = round.responses[index];
     return response && (response.answer === null || question.options.includes(response.answer)) ? { answer: response.answer, correct: response.answer === question.answer, skipped: response.answer === null } : null;
   });
-  if (responses.slice(0, round.index).some(response => !response)) return state;
+  if (responses.slice(0, round.index).some(response => !response)) return null;
   const selected = questions[round.index].options.includes(round.selected) ? round.selected : null;
   const revealed = Boolean(round.revealed && responses[round.index] && (selected === questions[round.index].answer || round.selected === null));
-  state.round = { scope: round.scope, questions, responses, index: round.index, selected, revealed, finished: Boolean(round.finished && round.index === questions.length - 1 && revealed && responses.every(Boolean)) };
-  if (saved.view === 'quiz') state.view = 'quiz';
-  return state;
+  return { scope: round.scope, questions, responses, index: round.index, selected, revealed, finished: Boolean(round.finished && round.index === questions.length - 1 && revealed && responses.every(Boolean)) };
 }
 
-export function startTopicRound(topic, state, scope, length = state.practiceLength || 10) {
+export function startTopicRound(topic, state, scope, length = state.practiceLength || 10, restart = true) {
   if (!['all', 'review', ...topic.categories.map(item => item.id)].includes(scope)) return false;
   const pool = topic.questions.filter(item => scope === 'all' || (scope === 'review' ? state.mistakes.includes(item.id) : item.category === scope));
   if (!pool.length) return false;
-  const selection = selectPractice(pool, scope === 'all' ? topic.categories.map(item => item.id) : [], length, state.practiceSeen || [], shuffle);
-  const questions = selection.questions;
-  if (scope !== 'review') state.practiceSeen = selection.seenIds;
-  state.round = { scope, questions: questions.map(item => ({ ...item, options: shuffle(item.options) })), index: 0, responses: [], selected: null, revealed: false, finished: false };
-  state.view = 'quiz';
-  return true;
+  return switchPracticeRound(state, scope, length, () => {
+    const selection = selectPractice(pool, scope === 'all' ? topic.categories.map(item => item.id) : [], length, state.practiceSeen || [], shuffle);
+    if (scope !== 'review') state.practiceSeen = selection.seenIds;
+    return { scope, questions: selection.questions.map(item => ({ ...item, options: shuffle(item.options) })), index: 0, responses: [], selected: null, revealed: false, finished: false };
+  }, restart);
 }
 
 export function answerTopic(state, answer) {

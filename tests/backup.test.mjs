@@ -66,6 +66,9 @@ test('本机和备份共用四层结构，恢复学习进度、断点、草稿�
   const { state, writing, lesson, math, category, text } = completeBackup();
   const backup = parseBackup('\uFEFF' + text);
   const { data } = backup;
+  assert.equal(appStorageKey, 'bunny-garden-v1');
+  assert.equal(backup.version, 1);
+  assert.equal(data.version, 1);
   const mathCategory = topicNode(data, 'math', 'math-1', math.id).categories[category];
   const writingCategory = topicNode(data, 'chinese', 'chinese-2', writing.id).categories[lesson.category];
   assert.deepEqual(Object.keys(data), ['version', 'profile', 'settings', 'navigation', 'subjects']);
@@ -117,10 +120,37 @@ test('记录导出应用版本，导入只要求当前数据格式', () => {
   }
 });
 
-test('损坏、旧版、未来版本、分类错位和危险字段均在写入前拒绝', () => {
+test('同版本扩课后可读取本机档和导入备份，仅为新增内容补默认值', () => {
+  const { state, text, writing, lesson, math, category } = completeBackup();
+  const backup = JSON.parse(text);
+  delete backup.data.subjects.english;
+  delete backup.data.subjects.chinese.stages['chinese-3'];
+  delete backup.data.subjects.chinese.stages['chinese-1'].topics['hanzi-structure'];
+  const mathNode = topicNode(backup.data, 'math', 'math-1', math.id);
+  const newCategory = Object.keys(mathNode.categories).find(id => id !== category);
+  delete mathNode.categories[newCategory];
+  delete backup.data.settings.showPinyin;
+
+  const local = memoryStorage([[appStorageKey, JSON.stringify(backup.data)]]);
+  const imported = memoryStorage();
+  restoreBackup(imported, backup);
+  const loaded = loadState(local);
+  assert.equal(loaded.available, true);
+  assert.deepEqual(loadState(imported), loaded);
+  assert.deepEqual(loaded.state.topics[math.id].round, state.topics[math.id].round);
+  assert.deepEqual(loaded.state.topics[writing.id].activities[lesson.id], state.topics[writing.id].activities[lesson.id]);
+  assert.deepEqual(loaded.state.rewards, state.rewards);
+  assert.equal(loaded.state.settings.animations, false);
+  assert.equal(loaded.state.settings.showPinyin, defaultState().settings.showPinyin);
+  const exported = parseBackup(createBackup(loaded.state)).data;
+  assert.deepEqual(phonicsCategory(exported), {});
+  assert.deepEqual(topicNode(exported, 'math', 'math-1', math.id).categories[newCategory], {});
+});
+
+test('损坏、未发布格式、未来版本、分类错位和危险字段均在写入前拒绝', () => {
   const { text, math, category } = completeBackup();
   const changes = [
-    backup => { backup.version = 1; },
+    backup => { backup.data = { version: 1, settings: {}, sessions: {}, features: {} }; },
     backup => { backup.version = 999; },
     backup => { backup.data.version = 999; },
     backup => { backup.data.profile.rewards.version = 999; },
@@ -132,6 +162,7 @@ test('损坏、旧版、未来版本、分类错位和危险字段均在写入�
     backup => { backup.data.settings.constructor = {}; },
     backup => { backup.data.subjects.math.selectedStage = 'english-1'; },
     backup => { backup.data.subjects.english.stages['english-1'].selectedTopic = math.id; },
+    backup => { phonicsNode(backup.data).categories.unknown = {}; },
     backup => { delete topicNode(backup.data, 'math', 'math-1', math.id).categories[category]; },
   ];
   for (const change of changes) {

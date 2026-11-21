@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { mathTopics } from '../../src/math-topics.js';
 import { appStorageKey } from '../../src/storage.js';
-import { openMyMenu, selectTopic, stored, setRoundLength } from './helpers.js';
+import { chooseLearningCategory, openMyMenu, selectTopic, stored, setRoundLength, startCombinedPractice } from './helpers.js';
 
 async function subject(page, id) {
   const button = page.locator(`.subjects [data-action="subject"][data-id="${id}"]`);
@@ -21,22 +21,22 @@ test('数学复用语文的学习卡、练习选项、布局和成长花园', as
   await page.goto('/');
   await selectTopic(page, '标点符号');
   const card = await paint(page.locator('.ct-lesson'));
-  const mode = await paint(page.locator('.play-mode.selected'));
+  const mode = await paint(page.locator('.nav-tabs .play-mode.selected'));
   const garden = await paint(page.locator('.growth-card'));
   const layout = await page.locator('.learning-layout').evaluate(element => getComputedStyle(element).gridTemplateColumns);
-  await page.locator('[data-action="ct-start"][data-id="all"]').click();
+  await startCombinedPractice(page);
   const option = await paint(page.locator('.answer-option').first());
   await subject(page, 'math');
   for (const topic of mathTopics) {
     await selectTopic(page, topic.name, 'math');
     await expect(page.locator('.learning-main > .section-title')).toHaveCount(0);
     expect(await paint(page.locator('.ct-lesson'))).toEqual(card);
-    expect(await paint(page.locator('.play-mode.selected'))).toEqual(mode);
+    expect(await paint(page.locator('.nav-tabs .play-mode.selected'))).toEqual(mode);
     expect(await paint(page.locator('.growth-card'))).toEqual(garden);
     expect(await page.locator('.learning-layout').evaluate(element => getComputedStyle(element).gridTemplateColumns)).toEqual(layout);
     await expect(page.locator('.eyebrow')).toContainText('第一阶段 · 数与运算');
     await expect(page.getByRole('switch', { name: '拼音辅助' })).toHaveCount(0);
-    await page.locator('[data-action="ct-start"][data-id="all"]').click();
+    await startCombinedPractice(page);
     expect(await paint(page.locator('.answer-option').first())).toEqual(option);
     await page.locator('[data-action="ct-learn"]').click();
   }
@@ -49,11 +49,11 @@ for (const topic of mathTopics) {
     await subject(page, 'math');
     await selectTopic(page, topic.name, 'math');
     await expect(page.locator('.round-settings')).toHaveCount(0);
-    await page.locator('[data-action="ct-start"][data-id="all"]').click();
+    await startCombinedPractice(page);
     await setRoundLength(page, 20);
     await page.locator('[data-action="ct-learn"]').click();
     for (const category of topic.categories) {
-      await page.locator(`[data-action="ct-category"][data-id="${category.id}"]`).click();
+      await chooseLearningCategory(page, 'ct', category.id);
       await expect(page.locator('.ct-lesson .category-badge')).toHaveText(`学习 · ${category.name}`);
       await expect(page.locator('.ct-lesson-list button')).toHaveCount(2);
       await page.locator('[data-action="ct-activity-example"]').click();
@@ -61,7 +61,7 @@ for (const topic of mathTopics) {
       await page.locator('[data-action="ct-next"]').click();
       await expect(page.locator('.ct-lesson-intro h3')).toContainText('举一反三');
       await page.locator('[data-action="ct-previous"]').click();
-      await page.locator(`[data-action="ct-start"][data-id="${category.id}"]`).click();
+      await page.locator('.section-practice-shortcut').click();
       const state = await stored(page);
       expect(state.topics[topic.id].round.questions).toHaveLength(12);
       expect(state.topics[topic.id].round.questions.every(question => question.category === category.id)).toBe(true);
@@ -83,7 +83,7 @@ test('数学自评、首次成绩、刷新、错题复习和学习记录完整�
   await page.locator('[data-action="ct-known"]').click();
   await expect(page.locator('.star-counter b')).toHaveText(stars);
   await page.locator('[data-action="ct-activity-example"]').click();
-  await page.locator('[data-action="ct-start"][data-id="all"]').click();
+  await startCombinedPractice(page);
   let state = await stored(page);
   const first = state.topics[topic.id].round.questions[0];
   await page.getByRole('button', { name: first.options.find(option => option !== first.answer), exact: true }).click();
@@ -94,9 +94,13 @@ test('数学自评、首次成绩、刷新、错题复习和学习记录完整�
   await page.locator('[data-action="ct-learn"]').click();
   await expect(page.locator('.ct-sample')).toBeVisible();
   await expect(page.locator('.round-settings')).toHaveCount(0);
-  await page.locator('[data-action="ct-resume"]').click();
+  await startCombinedPractice(page);
   await setRoundLength(page, 30);
-  expect((await stored(page)).topics[topic.id].round.questions).toHaveLength(10);
+  expect((await stored(page)).topics[topic.id].round.questions).toHaveLength(30);
+  await setRoundLength(page, 10);
+  const resumed = (await stored(page)).topics[topic.id].round;
+  expect(resumed.questions[0]).toEqual(first);
+  expect(resumed.responses[0].correct).toBe(false);
   for (let index = 0; index < 10; index++) {
     if (index) {
       state = await stored(page);
@@ -126,7 +130,7 @@ test('数学与语文进度隔离，主题选择恢复，损坏题目恢复原�
   await selectTopic(page, topic.name, 'math');
   await page.locator('[data-action="ct-category"][data-id="zero"]').click();
   await page.locator('[data-action="ct-known"]').click();
-  await page.locator('[data-action="ct-start"][data-id="all"]').click();
+  await startCombinedPractice(page);
   await page.locator('[data-action="ct-skip"]').click();
   const mathState = (await stored(page)).topics[topic.id];
   await subject(page, 'chinese');
@@ -174,7 +178,7 @@ for (const width of [1440, 820, 320]) {
       expect(card.width).toBeGreaterThan(240);
       if (width === 1440) expect(garden.x).toBeGreaterThan(card.x + card.width);
       else expect(garden.y).toBeGreaterThan(card.y);
-      await page.locator('[data-action="ct-start"][data-id="all"]').click();
+      await startCombinedPractice(page);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await page.locator('[data-action="ct-skip"]').focus();
       await page.keyboard.press('Enter');
@@ -185,7 +189,7 @@ for (const width of [1440, 820, 320]) {
     await page.locator('[data-action="ct-category"][data-id="double"]').click();
     await mkdir('artifacts', { recursive: true });
     await page.screenshot({ path: `artifacts/math-learning-${width}.png`, fullPage: true });
-    await page.locator('[data-action="ct-start"][data-id="all"]').click();
+    await startCombinedPractice(page);
     await page.screenshot({ path: `artifacts/math-practice-${width}.png`, fullPage: true });
   });
 }

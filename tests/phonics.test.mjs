@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { alphabet, phonicsModules, phonicsLessons, phonicsWords, phonicsStories, phonicsSentences } from '../src/phonics-data.js';
 import { phonicsDefaults, phonicsQuestions, questionPool, createPhonicsRound, answerPhonics, advancePhonicsRound, phonicsStats, normalizePhonicsState, availablePhonicsAudio, shufflePhonics } from '../src/phonics-engine.js';
-import { defaultState, loadState } from '../src/engine.js';
+import { defaultState } from '../src/engine.js';
+import { loadState } from '../src/storage.js';
 import { appStorageKey, saveState } from '../src/storage.js';
 import { encodeLearningData } from '../src/learning-data.js';
 
@@ -141,4 +142,19 @@ test('损坏的英语分支无法作为有效本机数据读取', () => {
   data.subjects.english.stages['english-1'].topics.phonics = null;
   assert.equal(loadState({ getItem: () => JSON.stringify(data) }).available, false);
   assert.deepEqual(normalizePhonicsState(undefined), phonicsDefaults());
+});
+
+test('旧备份中的规律和达标练习转到普通练习并保留历史轮次', () => {
+  for (const mode of ['rules', 'assessment']) {
+    const root = defaultState();
+    Object.assign(root.phonics, { mode, lessonId: 'lesson-4' });
+    const key = `${mode}:lesson:lesson-4:10`;
+    root.phonics.sessions[key] = createPhonicsRound([phonicsQuestions.find(question => question.id === 'rule-4')]);
+    const data = encodeLearningData(root);
+    const restored = loadState({ getItem: () => JSON.stringify(data) }).state.phonics;
+    assert.equal(restored.mode, 'mixed');
+    assert.equal(restored.lessonId, 'lesson-4');
+    assert.equal(restored.scope, 'lesson');
+    assert.deepEqual(restored.sessions[key].ids, ['rule-4']);
+  }
 });

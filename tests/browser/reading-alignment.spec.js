@@ -62,6 +62,7 @@ test('词语搭配卡片仅在当前行有拼音时统一留高，换行和开�
   const cards = page.locator('.ct-lesson-list .hz-chip');
   for (const width of [390, 820, 1440, 320, 1440]) {
     await page.setViewportSize({ width, height: 1000 });
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     const enabled = await expectReadingRows(cards);
     expect(enabled.some(card => card.ruby)).toBe(true);
     expect(enabled.some(card => !card.reserved)).toBe(true);

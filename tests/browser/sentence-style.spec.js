@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { chineseTopics } from '../../src/chinese-topics.js';
-import { chooseMode, selectTopic, stored, setRoundLength } from './helpers.js';
+import { chooseLearningCategory, chooseMode, selectTopic, stored, setRoundLength, startCombinedPractice } from './helpers.js';
 
 const topics = chineseTopics.filter(topic => topic.stage.startsWith('第二阶段'));
 const paint = locator => locator.evaluate(element => {
@@ -12,7 +12,8 @@ const paint = locator => locator.evaluate(element => {
 test('二阶段沿用拼音的布局、卡片、导航和成长花园样式', async ({ page }) => {
   await page.goto('/');
   const card = await paint(page.locator('.study-card'));
-  const mode = await paint(page.locator('.play-mode.selected'));
+  await page.locator('[data-action="pinyin-category"][data-id="single"]').click();
+  const mode = await paint(page.locator('.nav-tabs .play-mode.selected'));
   const garden = await paint(page.locator('.growth-card'));
   const layout = await page.locator('.learning-layout').evaluate(element => {
     const style = getComputedStyle(element);
@@ -23,7 +24,7 @@ test('二阶段沿用拼音的布局、卡片、导航和成长花园样式', as
     await expect(page.locator('.ct-sentence-topic .heading-sticker')).toBeVisible();
     await expect(page.locator('.ct-sentence-topic .play-selector h3')).toHaveCount(0);
     expect(await paint(page.locator('.ct-lesson'))).toEqual(card);
-    expect(await paint(page.locator('.play-mode.selected'))).toEqual(mode);
+    expect(await paint(page.locator('.nav-tabs .play-mode.selected'))).toEqual(mode);
     expect(await paint(page.locator('.growth-card'))).toEqual(garden);
     expect(await page.locator('.learning-layout').evaluate(element => {
       const style = getComputedStyle(element);
@@ -76,7 +77,7 @@ for (const width of [1440, 820, 320]) {
       await page.locator('#ct-draft').fill('我认真读完了这句话。');
       await expect(page.locator('.round-settings')).toHaveCount(0);
       await expect(page.locator('#ct-draft')).toHaveValue('我认真读完了这句话。');
-      await page.locator('[data-action="ct-start"][data-id="all"]').click();
+      await startCombinedPractice(page);
       await setRoundLength(page, 30);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await page.locator('[data-action="ct-skip"]').focus();
@@ -84,10 +85,10 @@ for (const width of [1440, 820, 320]) {
       await expect(page.locator('[data-action="ct-advance"]')).toBeFocused();
     }
     await selectTopic(page, topics[0].name);
-    await page.locator('[data-action="ct-category"][data-id="order"]').click();
+    await chooseLearningCategory(page, 'ct', 'order');
     await mkdir('artifacts', { recursive: true });
     await page.screenshot({ path: `artifacts/sentence-learning-${width}.png`, fullPage: true });
-    await page.locator('[data-action="ct-start"][data-id="all"]').click();
+    await startCombinedPractice(page);
     await page.screenshot({ path: `artifacts/sentence-practice-${width}.png`, fullPage: true });
   });
 }

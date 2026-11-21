@@ -1,7 +1,7 @@
 import { defaultState } from './engine.js';
-import { decodeLearningData, encodeLearningData } from './learning-data.js';
+import { dataVersion, decodeLearningData, encodeLearningData } from './learning-data.js';
 
-export const appStorageKey = 'bunny-garden-v2';
+export const appStorageKey = `bunny-garden-v${dataVersion}`;
 
 export function saveState(storage, state) {
   writeLearningData(storage, encodeLearningData(state));

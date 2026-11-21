@@ -107,13 +107,23 @@ test('完整导出、清空、重新导入恢复配置、三科进度、草稿�
   await expect(page.getByRole('tab', { name: '主题词汇', exact: true })).toHaveAttribute('aria-selected', 'true');
 });
 
-test('拒绝旧版备份并保留本机记录', async ({ page }) => {
+test('拒绝未发布的双键结构并保留本机记录', async ({ page }) => {
   await page.goto('/');
   await openSettings(page);
   const before = await saved(page);
-  await upload(page, JSON.stringify({ format: 'bunny-learning-garden', version: 1, data: {} }));
-  await expect(page.locator('#backup-error')).toContainText('不支持此备份版本');
+  const backup = JSON.parse(createBackup(defaultState()));
+  backup.data = { version: 1, settings: {}, sessions: {}, features: {} };
+  await upload(page, JSON.stringify(backup));
+  await expect(page.locator('#backup-error')).toContainText('学习数据不完整或格式有误');
   expect(await saved(page)).toEqual(before);
+});
+
+test('本机档读取失败时自动保存不会覆盖原档', async ({ page }) => {
+  await page.addInitScript(key => localStorage.setItem(key, '{"version":2}'), appStorageKey);
+  await page.goto('/');
+  await openSettings(page);
+  await expect(page.getByRole('dialog')).toContainText('暂以临时模式学习');
+  expect(await page.evaluate(key => localStorage.getItem(key), appStorageKey)).toBe('{"version":2}');
 });
 
 test('损坏与未来版本不修改记录，取消导入不覆盖，确认昵称按文本展示', async ({ page }) => {

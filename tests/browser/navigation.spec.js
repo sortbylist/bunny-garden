@@ -57,12 +57,12 @@ for (const width of [320, 390, 820, 1440]) {
     }
     await selectTopic(page, '拼音学习');
     await chooseMode(page, 'audio');
-    await expect(page.locator('.mode-navigation .nav-group-picker summary')).toHaveText('趣味练习');
+    const areas = page.locator('.curriculum-navigation');
+    await expect(areas.getByRole('button', { name: '练习', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(areas.locator('.nav-tabs .play-mode.selected')).toHaveText('看拼音选读音');
     await chooseMode(page, 'sequence');
-    await page.locator('.mode-navigation .nav-group-picker summary').click();
-    await page.locator('.mode-navigation .nav-group-item').filter({ hasText: '趣味练习' }).click();
-    if (width <= 760) await expect(page.locator('.mode-navigation .nav-mobile-label')).toHaveText('看拼音选读音');
-    else await expect(page.locator('.mode-navigation .play-mode.selected')).toHaveText('看拼音选读音');
+    await expect(areas.getByRole('button', { name: '学习', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(areas.locator('.nav-rail')).toBeVisible();
     expect((await navigation.boundingBox()).height).toBe(original);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   });
@@ -107,7 +107,7 @@ test('四十个额外主题仍是一行，滚动、目录搜索与键盘选择�
 test('手机切回桌面时选中项自动可见，导航方向键不翻学习卡片', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await page.locator('.mode-navigation .nav-group-picker summary').focus();
+  await page.locator('[data-action="pinyin-area"][data-id="learn"]').focus();
   await page.keyboard.press('ArrowRight');
   await expect(page.locator('.pinyin-display')).toHaveText('a');
   await selectTopic(page, '叠词与四字词语');
@@ -141,13 +141,11 @@ test('新增阶段按数据自动归类，手机只有一个主题时仍显示�
   await expect(navigation.locator('.nav-mobile-label')).toHaveText('新增阅读主题');
 });
 
-test('两级分类带彩色编号，入口文字紧凑且主题图标各有区分', async ({ page }) => {
+test('阶段带彩色编号，主题图标各有区分', async ({ page }) => {
   await page.goto('/');
   const navigation = page.locator('.feature-navigation');
-  const modes = page.locator('.mode-navigation');
   await expect(navigation.locator('summary .nav-group-index')).toHaveAttribute('data-number', '01');
-  await expect(modes.locator('summary .nav-group-index')).toHaveAttribute('data-number', '01');
-  for (const root of [navigation, modes]) {
+  for (const root of [navigation]) {
     const summary = root.locator('.nav-group-picker summary');
     expect(await summary.evaluate(element => {
       const text = element.querySelector('.nav-group-name').getBoundingClientRect();
@@ -161,8 +159,6 @@ test('两级分类带彩色编号，入口文字紧凑且主题图标各有区�
     expect(await root.locator('.nav-group-item .nav-group-index').evaluateAll(elements => elements.map(element => element.dataset.number))).toEqual(Array.from({ length: groupCount }, (_, index) => String(index + 1).padStart(2, '0')));
     await page.keyboard.press('Escape');
   }
-  await chooseMode(page, 'audio');
-  await expect(modes.locator('summary .nav-group-index')).toHaveAttribute('data-number', '02');
   await selectTopic(page, '近义词与反义词');
   await expect(navigation.locator('summary .nav-group-index')).toHaveAttribute('data-number', '01');
   for (const topic of ['近义词与反义词', '标点符号', '短文信息查找']) {

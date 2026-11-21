@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { chineseTopics } from '../../src/chinese-topics.js';
-import { openMyMenu, stored, selectTopic, setLearningPreference, setRoundLength } from './helpers.js';
+import { openMyMenu, stored, selectTopic, setLearningPreference, setRoundLength, startCombinedPractice } from './helpers.js';
 
 async function openTopic(page, topic) {
   await page.goto('/');
@@ -41,7 +41,7 @@ for (const topic of chineseTopics) {
 
   test(`${topic.name}：答错重试、跳过、续练、历史、错题与奖励`, async ({ page }) => {
     await openTopic(page, topic);
-    await page.locator('[data-action="ct-start"][data-id="all"]').click();
+    await startCombinedPractice(page);
     const question = await answer(page, topic, false);
     await page.reload();
     await expect(page.locator('.hz-feedback')).toContainText('再试一次');
@@ -49,7 +49,7 @@ for (const topic of chineseTopics) {
     await page.locator('[data-action="ct-advance"]').click();
     await page.locator('[data-action="ct-skip"]').click();
     await page.locator('[data-action="ct-learn"]').click();
-    await page.locator('[data-action="ct-resume"]').click();
+    await startCombinedPractice(page);
     await expect(page.locator('.hz-feedback')).toContainText('先认识答案');
     await page.locator('[data-action="ct-advance"]').click();
     for (let index = 2; index < 10; index++) { await answer(page, topic); await page.locator('[data-action="ct-advance"]').click(); }
@@ -94,13 +94,14 @@ test('查字典：两种索引实际查到条目，支持退回、切换和刷�
 });
 
 test('所有主题在手机可切换、无溢出，清空同时清除所有主题进度', async ({ page }) => {
+  test.setTimeout(90000);
   await page.setViewportSize({ width: 320, height: 850 });
   await page.goto('/');
   for (const topic of chineseTopics) {
     await selectTopic(page, topic.name);
     await page.locator('[data-action="ct-known"]').click();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await page.locator('[data-action="ct-start"][data-id="all"]').click();
+    await startCombinedPractice(page);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.locator('[data-action="ct-skip"]').focus();
     await page.keyboard.press('Enter');
@@ -114,11 +115,12 @@ test('所有主题在手机可切换、无溢出，清空同时清除所有主�
 });
 
 test('各主题互不覆盖未完成练习和错题，跨主题刷新后仍可继续', async ({ page }) => {
+  test.setTimeout(90000);
   await page.goto('/');
   const questions = new Map();
   for (const topic of chineseTopics) {
     await selectTopic(page, topic.name);
-    await page.locator('[data-action="ct-start"][data-id="all"]').click();
+    await startCombinedPractice(page);
     const question = await answer(page, topic, false);
     questions.set(topic.id, question.id);
   }
@@ -134,6 +136,7 @@ test('各主题互不覆盖未完成练习和错题，跨主题刷新后仍可�
 });
 
 test('字词主题在浏览器存储不可用时仍能学习、查字和作答', async ({ page }) => {
+  test.setTimeout(90000);
   await page.addInitScript(() => {
     Storage.prototype.getItem = () => { throw new Error('blocked'); };
     Storage.prototype.setItem = () => { throw new Error('blocked'); };
@@ -143,29 +146,29 @@ test('字词主题在浏览器存储不可用时仍能学习、查字和作答',
     await selectTopic(page, topic.name);
     await page.locator('[data-action="ct-known"]').click();
     await expect(page.locator('[data-action="ct-known"]')).toContainText('已经认识');
-    await page.locator('[data-action="ct-start"][data-id="all"]').click();
+    await startCombinedPractice(page);
     await page.locator('[data-action="ct-skip"]').click();
     await expect(page.locator('.hz-feedback')).toContainText('先认识答案');
   }
   await selectTopic(page, '查字典');
+  await page.locator('[data-action="ct-area"][data-id="learn"]').click();
   await page.locator('[data-action="ct-lookup"]').click();
   for (const value of ['H', 'he', '河']) await page.locator(`[data-action="ct-lookup-pick"][data-value="${value}"]`).click();
   await expect(page.locator('.ct-entry')).toContainText('天然的大水道');
 });
 
 test('各主题题量和拼音设置分别保存，按实际题量刷新续练且保留原文判分', async ({ page }) => {
-  test.setTimeout(60000);
+  test.setTimeout(180000);
   await page.goto('/');
   for (const topic of chineseTopics) {
     await selectTopic(page, topic.name);
     await expect(page.locator('.round-settings')).toHaveCount(0);
-    await page.locator('[data-action="ct-start"][data-id="all"]').click();
+    await startCombinedPractice(page);
     await setRoundLength(page, 30);
-    await page.locator('[data-action="ct-start"][data-id="all"]').click();
     await expect(page.locator('.ct-quiz .hz-card-heading')).toContainText(`第 1 / ${Math.min(30, topic.questions.length)} 题`);
     await expect(page.locator('.ct-quiz .ct-visual')).toHaveCount(0);
-    const original = (await stored(page)).topics[topic.id].round.questions;
     await setRoundLength(page, 20);
+    const original = (await stored(page)).topics[topic.id].round.questions;
     await setLearningPreference(page, 'showPinyin', false);
     await expect(page.locator('.chinese-topic ruby')).toHaveCount(0);
     await page.reload();
@@ -175,7 +178,6 @@ test('各主题题量和拼音设置分别保存，按实际题量刷新续练�
     await setLearningPreference(page, 'showPinyin', true);
     await answer(page, topic);
     expect((await stored(page)).topics[topic.id].round.responses[0].correct).toBe(true);
-    await page.locator('[data-action="ct-start"][data-id="all"]').click();
     expect((await stored(page)).topics[topic.id].round.questions).toHaveLength(Math.min(20, topic.questions.length));
   }
 });

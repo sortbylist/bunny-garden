@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { chineseTopics } from '../../src/chinese-topics.js';
 import { mathTopics } from '../../src/math-topics.js';
-import { selectTopic, chooseMode, stored, setRoundLength } from './helpers.js';
+import { selectTopic, chooseMode, stored, setRoundLength, startCombinedPractice } from './helpers.js';
 
 const overflow = page => page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
 async function chooseSubject(page, id) {
@@ -43,22 +43,24 @@ test('三十种偏旁部首均可访问，学习例字与对应练习齐全', as
     await expect(page.locator('.hz-examples > span')).toHaveCount(6);
     await expect(page.locator('.hz-character')).toHaveText(radical);
   }
-  await page.locator('[data-action="hz-start"][data-id="radicals"]').click();
+  await page.locator('.section-practice-shortcut').click();
   const questions = (await stored(page)).hanzi.round.questions;
   expect(questions).toHaveLength(10);
   expect(questions.every(question => question.category === 'radicals')).toBe(true);
 });
 
-test('所有语文和数学主题学习页隐藏题数，进入练习才显示并保留当前题目', async ({ page }) => {
+test('语文和数学仅在练习页调整题量，切回题量时恢复原题', async ({ page }) => {
   await page.goto('/');
   for (const topic of chineseTopics) {
     await selectTopic(page, topic.name);
     await expect(page.locator('.round-settings')).toHaveCount(0);
-    await page.locator('[data-action="ct-start"][data-id="all"]').click();
+    await startCombinedPractice(page);
     await expect(page.locator('.quiz-card + .round-settings')).toBeVisible();
     await expect(page.getByLabel('每轮题数')).toBeHidden();
     const before = (await stored(page)).topics[topic.id].round.questions;
     await setRoundLength(page, 20);
+    expect((await stored(page)).topics[topic.id].round.questions).toHaveLength(Math.min(20, topic.questions.length));
+    await setRoundLength(page, 10);
     expect((await stored(page)).topics[topic.id].round.questions).toEqual(before);
     await page.locator('[data-action="ct-learn"]').click();
     await expect(page.locator('.round-settings')).toHaveCount(0);
@@ -67,7 +69,7 @@ test('所有语文和数学主题学习页隐藏题数，进入练习才显示�
   for (const topic of mathTopics) {
     await selectTopic(page, topic.name, 'math');
     await expect(page.locator('.round-settings')).toHaveCount(0);
-    await page.locator('[data-action="ct-start"][data-id="all"]').click();
+    await startCombinedPractice(page);
     await expect(page.locator('.quiz-card + .round-settings')).toBeVisible();
     await expect(page.getByLabel('每轮题数')).toBeHidden();
     await page.locator('[data-action="ct-learn"]').click();

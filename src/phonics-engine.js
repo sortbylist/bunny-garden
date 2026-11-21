@@ -40,7 +40,9 @@ export function questionPool(state, audioAvailable = () => false) {
     if (question.kind === 'listen' && (!audioAvailable(question.wordId) || hasHomophoneRisk(question.wordId))) return false;
     if (state.mode === 'review') return state.mistakes.includes(question.id);
     if (state.mode === 'diagnostic') return ['rule-1', 'rule-3', 'rule-4', 'rule-6', 'rule-9', 'rule-10', 'rule-16', 'rule-19', 'rule-20', 'rule-27'].includes(question.id);
-    if (question.kind !== (state.mode === 'rules' ? 'rule' : state.mode)) return false;
+    if (state.mode === 'mixed') {
+      if (!['rule', 'meaning', 'spelling'].includes(question.kind)) return false;
+    } else if (question.kind !== (state.mode === 'rules' ? 'rule' : state.mode)) return false;
     return state.scope === 'all' || question.lessonId === state.lessonId || lessonWords.has(question.wordId);
   });
 }
@@ -120,8 +122,9 @@ export function normalizePhonicsState(saved) {
     if (saved == null) return state;
     if (!saved || saved.version !== 1 || saved.locale !== 'en-GB') throw new Error('Invalid phonics state');
     if (phonicsLessonById.has(saved.lessonId)) state.lessonId = saved.lessonId;
-    if ([...phonicsModes.map(mode => mode.id), 'alphabet', 'diagnostic', 'assessment'].includes(saved.mode)) state.mode = saved.mode;
-    if (saved.scope === 'all') state.scope = 'all';
+    if ([...phonicsModes.map(mode => mode.id), 'alphabet', 'diagnostic'].includes(saved.mode)) state.mode = saved.mode;
+    if (saved.mode === 'rules' || saved.mode === 'assessment') state.mode = 'mixed';
+    if (saved.scope === 'all' && saved.mode !== 'assessment') state.scope = 'all';
     if ([5, 10, 20].includes(saved.length)) state.length = saved.length;
     for (const field of ['favorites', 'known', 'seen']) {
       state[field] = Array.isArray(saved[field]) ? [...new Set(saved[field].filter(id => phonicsWordById.has(id)))] : [];

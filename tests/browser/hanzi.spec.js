@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openMyMenu, stored, selectTopic, setLearningPreference, setRoundLength } from './helpers.js';
+import { openMyMenu, stored, selectTopic, setLearningPreference, setRoundLength, startCombinedPractice } from './helpers.js';
 
 async function openHanzi(page) {
   await page.goto('/');
@@ -21,7 +21,7 @@ test('独立入口、自由切换、笔顺前后演示与刷新恢复，拼音�
   await page.locator('[data-action="known"]').click();
   await selectTopic(page, '汉字笔画与结构');
   await expect(page).toHaveTitle('汉字笔画与结构 · 小兔学习乐园');
-  await expect(page.locator('.hz-category')).toHaveCount(6);
+  await expect(page.locator('[data-action="hz-category"]')).toHaveCount(6);
   await page.locator('[data-action="hz-category"][data-id="top-bottom"]').click();
   await expect(page.locator('.hz-parts')).toHaveClass(/top-bottom/);
   await page.locator('[data-action="hz-category"][data-id="order"]').click();
@@ -66,7 +66,7 @@ test('自评与奖励去重，所有结构与偏旁示例可直接访问', async
 
 test('答错刷新重试、完成统计、独立错题复习和历史去重', async ({ page }) => {
   await openHanzi(page);
-  await page.locator('[data-action="hz-start"][data-id="all"]').click();
+  await startCombinedPractice(page, 'hz');
   const question = await answerCurrent(page, false);
   await expect(page.locator('.hz-feedback')).toContainText('再试一次');
   await page.reload();
@@ -105,7 +105,7 @@ test('查看答案保留错题，离开与继续保留题目和首次结果', as
   await page.locator('[data-action="hz-learn"]').click();
   await selectTopic(page, '拼音学习');
   await selectTopic(page, '汉字笔画与结构');
-  await page.locator('[data-action="hz-resume"]').click();
+  await page.locator('.section-practice-shortcut').click();
   await expect(page.locator('.hz-feedback')).toContainText('先认识答案');
   const state = (await stored(page)).hanzi;
   expect(state.round.questions[0].id).toBe(question.id);
@@ -151,7 +151,7 @@ test('手机平板桌面无横向溢出，键盘和减少动态效果可用', as
   for (const width of [1440, 820, 390, 320]) {
     await page.setViewportSize({ width, height: 1000 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await page.locator('[data-action="hz-start"][data-id="all"]').click();
+    await startCombinedPractice(page, 'hz');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.locator('[data-action="hz-learn"]').click();
   }
@@ -168,18 +168,16 @@ test('新增笔顺、拼音辅助和30题轮次可保存，切换题量不重置
   await page.locator('[data-action="hz-stroke-jump"][data-index="2"]').click();
   await expect(page.locator('.hz-step-status')).toHaveText('第 2 / 3 笔：竖折');
   await expect(page.locator('.round-settings')).toHaveCount(0);
-  await page.locator('[data-action="hz-start"][data-id="all"]').click();
+  await startCombinedPractice(page, 'hz');
   await setRoundLength(page, 30);
-  await page.locator('[data-action="hz-start"][data-id="all"]').click();
-  const questions = (await stored(page)).hanzi.round.questions;
-  expect(questions).toHaveLength(30);
+  expect((await stored(page)).hanzi.round.questions).toHaveLength(30);
   await setRoundLength(page, 20);
+  const questions = (await stored(page)).hanzi.round.questions;
   await page.reload();
   expect((await stored(page)).hanzi.round.questions).toEqual(questions);
   expect((await stored(page)).settings.showPinyin).toBe(false);
   await setLearningPreference(page, 'showPinyin', true);
   await answerCurrent(page);
   expect((await stored(page)).hanzi.round.responses[0].correct).toBe(true);
-  await page.locator('[data-action="hz-start"][data-id="all"]').click();
   expect((await stored(page)).hanzi.round.questions).toHaveLength(20);
 });

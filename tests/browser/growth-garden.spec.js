@@ -28,14 +28,14 @@ test('换学科后仍能查看原收藏和另一科错题，复习后续做原�
   await page.goto('/');
   await chooseMode(page, 'tones');
   await page.locator('.tones-card .learning-favorite').click();
-  await page.locator('[data-action="toggle-tones"]').click();
+  await page.locator('[data-action="pinyin-section-practice"][data-id="tones"]').click();
   await expect(page.locator('.quiz-card .category-badge')).toHaveText('练习 · 听音辨声调');
   await page.locator('[data-action="skip"]').click();
   await page.locator('.subjects [data-id="math"]').click();
   await selectTopic(page, '加减法', 'math');
   const learning = await page.locator('.ct-lesson-intro h3').textContent();
   await page.locator('.ct-lesson .learning-favorite').click();
-  await page.getByRole('button', { name: '开始本节练习' }).click();
+  await page.locator('.section-practice-shortcut').click();
   const quizTitle = page.locator('.ct-quiz .category-badge');
   await expect(quizTitle).toHaveText(/^练习 · /);
   await expect(quizTitle).toBeFocused();

@@ -1,7 +1,6 @@
 import { basics, groups, vocabulary, characters, words, marked, spellingRules, blends, confusionSets, tonePracticeSounds } from './data.js';
 import { phonicsDefaults } from './phonics-engine.js';
 
-export { loadState } from './storage.js';
 
 export function shuffle(items, random = Math.random) {
   const result = [...items];
@@ -87,8 +86,8 @@ function wordQuestions(mode, wordScope) {
   }));
 }
 
-function soundQuestions(mode, group) {
-  const pool = basics.filter(item => item.group !== 'initial' && item.text !== 'ong' && (group === 'all' || item.group === group));
+function soundQuestions(mode, group, includeInitials = false) {
+  const pool = basics.filter(item => (includeInitials || item.group !== 'initial') && item.text !== 'ong' && (group === 'all' || item.group === group));
   const unique = pool.filter((item, index) => pool.findIndex(other => other.sound === item.sound) === index);
   if (unique.length < 2) return [];
   return unique.map(item => {
@@ -115,6 +114,7 @@ export function questionPool(mode, { group = 'all', wordScope = 'all', confusion
   if (mode === 'mistakes') return mistakes.map(entry => entry.question);
   if (mode === 'hanzi' || mode === 'pinyin') return wordQuestions(mode, wordScope);
   if (mode === 'listen' || mode === 'audio') return soundQuestions(mode, group);
+  if (mode === 'section-practice') return soundQuestions('listen', group, true);
   if (mode === 'rules') return spellingRules.map(rule => ({ ...rule, kind: 'rules', id: `rule:${rule.id}`, audio: rule.word ? { word: rule.word } : { sound: rule.sound } }));
   if (mode === 'confusing') return confusionSets[confusion].pairs.flatMap(pair => pair.map(sound => ({
     id: `confusing:${sound}`, kind: 'listen', prompt: '仔细听，选出这个音节', display: '',

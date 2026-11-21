@@ -1,9 +1,9 @@
 import { hanziCategories, hanziLessons, hanziQuestions, hanziQuestionById } from './hanzi-data.js';
 import { shuffle, recordAnswer, roundStats } from './engine.js';
-import { practiceLengths, selectPractice } from './chinese-practice.js';
+import { practiceLengths, restorePracticeRounds, selectPractice, switchPracticeRound } from './chinese-practice.js';
 
 export function createHanziState() {
-  return { category: 'strokes', lessonId: hanziLessons[0].id, view: 'learn', strokeStep: 0, known: [], mistakes: [], round: null, showPinyin: true, practiceLength: 10, practiceSeen: [] };
+  return { category: 'strokes', lessonId: hanziLessons[0].id, view: 'learn', strokeStep: 0, known: [], mistakes: [], round: null, rounds: {}, showPinyin: true, practiceLength: 10, practiceSeen: [] };
 }
 
 export function normalizeHanziState(saved) {
@@ -18,10 +18,17 @@ export function normalizeHanziState(saved) {
   state.strokeStep = Number.isInteger(saved.strokeStep) ? Math.max(0, Math.min(lesson.strokes?.length || 0, saved.strokeStep)) : 0;
   state.known = [...new Set(Array.isArray(saved.known) ? saved.known.filter(id => hanziLessons.some(item => item.id === id)) : [])];
   state.mistakes = [...new Set(Array.isArray(saved.mistakes) ? saved.mistakes.filter(id => hanziQuestionById.has(id)) : [])];
-  const round = saved.round;
+  state.round = normalizeHanziRound(saved.round);
+  restorePracticeRounds(state, saved, normalizeHanziRound,
+    scope => scope === 'all' ? hanziQuestions.length : hanziQuestions.filter(question => question.category === scope).length);
+  if (saved.view === 'quiz' && state.round) state.view = 'quiz';
+  return state;
+}
+
+function normalizeHanziRound(round) {
   if (round && ['all', 'review', ...hanziCategories.map(item => item.id)].includes(round.scope) &&
       Array.isArray(round.questions) && round.questions.length > 0 && round.questions.length <= 30 &&
-      round.questions.every(item => hanziQuestionById.has(item?.id)) &&
+      round.questions.every(item => hanziQuestionById.has(item?.id) && (['all', 'review'].includes(round.scope) || hanziQuestionById.get(item.id).category === round.scope)) &&
       new Set(round.questions.map(item => item.id)).size === round.questions.length &&
       Number.isInteger(round.index) && round.index >= 0 && round.index < round.questions.length &&
       Array.isArray(round.responses)) {
@@ -36,24 +43,23 @@ export function normalizeHanziState(saved) {
       return response && (response.answer === null || item.options.includes(response.answer))
         ? { answer: response.answer, correct: response.answer === item.answer, skipped: response.answer === null } : null;
     });
-    if (responses.slice(0, round.index).some(response => !response)) return state;
+    if (responses.slice(0, round.index).some(response => !response)) return null;
     const selected = questions[round.index].options.includes(round.selected) ? round.selected : null;
     const revealed = Boolean(responses[round.index] && round.revealed && (selected === questions[round.index].answer || round.selected === null));
-    state.round = { scope: round.scope, questions, responses, index: round.index, selected, revealed, finished: Boolean(round.finished && revealed && responses.every(Boolean)) };
-    if (saved.view === 'quiz') state.view = 'quiz';
+    return { scope: round.scope, questions, responses, index: round.index, selected, revealed, finished: Boolean(round.finished && round.index === questions.length - 1 && revealed && responses.every(Boolean)) };
   }
-  return state;
+  return null;
 }
 
-export function startHanziRound(state, scope, length = state.practiceLength || 10) {
+export function startHanziRound(state, scope, length = state.practiceLength || 10, restart = true) {
   if (!['all', 'review', ...hanziCategories.map(item => item.id)].includes(scope)) return false;
   const pool = hanziQuestions.filter(item => scope === 'all' || (scope === 'review' ? state.mistakes.includes(item.id) : item.category === scope));
   if (!pool.length) return false;
-  const selection = selectPractice(pool, scope === 'all' ? hanziCategories.map(item => item.id) : [], length, state.practiceSeen || [], shuffle);
-  if (scope !== 'review') state.practiceSeen = selection.seenIds;
-  state.round = { scope, questions: selection.questions.map(item => ({ ...item, options: shuffle(item.options) })), index: 0, responses: [], selected: null, revealed: false, finished: false };
-  state.view = 'quiz';
-  return true;
+  return switchPracticeRound(state, scope, length, () => {
+    const selection = selectPractice(pool, scope === 'all' ? hanziCategories.map(item => item.id) : [], length, state.practiceSeen || [], shuffle);
+    if (scope !== 'review') state.practiceSeen = selection.seenIds;
+    return { scope, questions: selection.questions.map(item => ({ ...item, options: shuffle(item.options) })), index: 0, responses: [], selected: null, revealed: false, finished: false };
+  }, restart);
 }
 
 export function answerHanzi(state, answer) {

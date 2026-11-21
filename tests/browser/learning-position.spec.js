@@ -4,7 +4,7 @@ import { mathTopics } from '../../src/math-topics.js';
 import { groups } from '../../src/data.js';
 import { hanziCategories, hanziLessons } from '../../src/hanzi-data.js';
 import { phonicsLessons } from '../../src/phonics-data.js';
-import { chooseMode, openMyMenu, selectTopic, stored } from './helpers.js';
+import { chooseLearningCategory, chooseMode, openMyMenu, selectTopic, stored } from './helpers.js';
 
 async function expectPosition(page, index, total, practice = false) {
   const position = page.locator('#main-content .learning-position');
@@ -23,18 +23,18 @@ for (const subject of [{ id: 'chinese', topics: chineseTopics }, { id: 'math', t
       if (subject.id !== 'chinese') await page.locator(`.subjects [data-id="${subject.id}"]`).click();
       await selectTopic(page, topic.name, subject.id);
       for (const category of topic.categories) {
-        await page.locator(`[data-action="ct-category"][data-id="${category.id}"]`).click();
+        await chooseLearningCategory(page, 'ct', category.id);
         const lessons = topic.lessons.filter(lesson => lesson.category === category.id);
         await expectPosition(page, 0, lessons.length);
         await expect(page.locator('[data-action="ct-previous"]')).toBeDisabled();
         await page.locator(`[data-action="ct-lesson"][data-id="${lessons.at(-1).id}"]`).click();
         await expectPosition(page, lessons.length - 1, lessons.length);
-        await expect(page.locator('[data-action="ct-next"]')).toBeDisabled();
+        await expect(page.locator('.card-navigation [data-action="ct-start"]')).toHaveText('本节练习');
         if (lessons.length > 1) {
           await page.locator('[data-action="ct-previous"]').click();
           await expectPosition(page, lessons.length - 2, lessons.length);
         }
-        await page.locator(`[data-action="ct-start"][data-id="${category.id}"]`).click();
+        await page.locator('.section-practice-shortcut').click();
         const round = (await stored(page)).topics[topic.id].round;
         await expectPosition(page, 0, round.questions.length, true);
       }
@@ -77,13 +77,13 @@ test('汉字所有小分类的学习和练习位置使用公共显示', async ({
   await page.goto('/');
   await selectTopic(page, '汉字笔画与结构');
   for (const category of hanziCategories) {
-    await page.locator(`[data-action="hz-category"][data-id="${category.id}"]`).click();
+    await chooseLearningCategory(page, 'hz', category.id);
     const lessons = hanziLessons.filter(lesson => lesson.category === category.id);
     await expectPosition(page, 0, lessons.length);
     await page.locator('[data-action="hz-lesson"]').last().click();
     await expectPosition(page, lessons.length - 1, lessons.length);
-    await expect(page.locator('[data-action="hz-next"]')).toBeDisabled();
-    await page.locator(`[data-action="hz-start"][data-id="${category.id}"]`).click();
+    await expect(page.locator('.card-navigation [data-action="hz-start"]')).toHaveText('本节练习');
+    await page.locator('.section-practice-shortcut').click();
     await expectPosition(page, 0, (await stored(page)).hanzi.round.questions.length, true);
   }
 });
@@ -105,7 +105,7 @@ test('英语全部课程的词卡位置及练习位置统一，保留题目跳�
   await page.reload();
   const total = phonicsLessons.at(-1).words.length;
   await expectPosition(page, total - 1, total);
-  await page.locator('.ph-modes [data-id="rules"]').click();
+  await page.locator('.ph-rule .section-practice-shortcut').click();
   await expect(page.locator('.learning-position')).toHaveText(/第 1 \/ \d+ 题/);
   await page.locator('[data-action="ph-question"]').last().click();
   const count = await page.locator('[data-action="ph-question"]').count();

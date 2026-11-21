@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { chineseTopics } from '../../src/chinese-topics.js';
 import { mathTopics } from '../../src/math-topics.js';
 import { hanziCategories } from '../../src/hanzi-data.js';
-import { selectTopic, setLearningPreference } from './helpers.js';
+import { chooseLearningCategory, selectTopic, setLearningPreference } from './helpers.js';
 
 const fontSizes = locator => locator.evaluateAll(elements => [...new Set(elements.map(element => getComputedStyle(element).fontSize))]);
 
@@ -34,7 +34,7 @@ for (const width of [1440, 820, 390, 320]) {
       for (const topic of subject.topics) {
         await selectTopic(page, topic.name, subject.id);
         for (const category of topic.categories) {
-          await page.locator(`[data-action="ct-category"][data-id="${category.id}"]`).click();
+          await chooseLearningCategory(page, 'ct', category.id);
           const label = `${topic.name} / ${category.name}`;
           expect(await fontSizes(page.locator('[data-action="ct-lesson"]')), label).toEqual([cardSize]);
           await expect(page.locator('.ct-lesson-intro h3'), label).toHaveCSS('font-size', width <= 600 ? '22px' : '24px');
@@ -43,7 +43,7 @@ for (const width of [1440, 820, 390, 320]) {
           if (topic.id === 'word-relations' && category.id === 'context') {
             await page.locator('.ct-lesson-list').screenshot({ path: testInfo.outputPath('context-cards.png') });
           }
-          await page.locator(`[data-action="ct-start"][data-id="${category.id}"]`).click();
+          await page.locator('.section-practice-shortcut').click();
           expect(await fontSizes(page.locator('[data-action="ct-answer"]')), label).toEqual([answerSize]);
           expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), label).toBe(false);
         }
@@ -52,14 +52,15 @@ for (const width of [1440, 820, 390, 320]) {
     await chooseSubject(page, 'chinese');
     await selectTopic(page, '汉字笔画与结构');
     for (const category of hanziCategories) {
-      await page.locator(`[data-action="hz-category"][data-id="${category.id}"]`).click();
+      await chooseLearningCategory(page, 'hz', category.id);
       expect(await fontSizes(page.locator('[data-action="hz-lesson"]')), category.name).toEqual([cardSize]);
-      await page.locator(`[data-action="hz-start"][data-id="${category.id}"]`).click();
+      await page.locator('.section-practice-shortcut').click();
       expect(await fontSizes(page.locator('[data-action="hz-answer"]')), category.name).toEqual([answerSize]);
     }
     await chooseSubject(page, 'english');
     expect(await fontSizes(page.locator('.ph-word-tile'))).toEqual([cardSize]);
-    await page.locator('.ph-modes [data-id="rules"]').click();
+    await page.locator('[data-action="ph-area"][data-id="practice"]').click();
+    await page.locator('[data-action="ph-practice"][data-id="meaning"]').click();
     expect(await fontSizes(page.locator('.ph-option'))).toEqual([answerSize]);
   });
 }

@@ -80,3 +80,18 @@
 }
 
 .mobile-open .sidebar { overflow-y: auto; overscroll-behavior: contain; }
+
+.curriculum-navigation.mode-navigation.play-selector {
+  display: grid;
+  height: auto;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+.curriculum-areas {
+  display: flex;
+  gap: 8px;
+  padding: 0 6px 8px;
+  border-bottom: 1px solid var(--ui-card-border);
+}
+.curriculum-navigation .nav-rail { display: flex; }
+.curriculum-navigation .nav-rail.nav-fits .nav-scroll { visibility: hidden; }

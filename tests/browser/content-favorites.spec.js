@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { chineseTopics } from '../../src/chinese-topics.js';
 import { mathTopics } from '../../src/math-topics.js';
-import { chooseMode, openMyMenu, selectTopic, stored } from './helpers.js';
+import { phonicsStories } from '../../src/phonics-data.js';
+import { chooseMode, choosePhonicsMode, openMyMenu, selectTopic, stored } from './helpers.js';
 
 test('英语的课、词卡、练习与故事可分别收藏，不覆盖原有词卡记录', async ({ page }) => {
   await page.goto('/');
@@ -9,14 +10,16 @@ test('英语的课、词卡、练习与故事可分别收藏，不覆盖原有�
   await page.locator('.ph-rule .learning-favorite').click();
   await page.locator('.ph-word-card .learning-favorite').click();
   for (const mode of ['meaning', 'reading']) {
-    await page.locator(`.ph-modes [data-id="${mode}"]`).click();
+    await choosePhonicsMode(page, mode);
     await page.locator('.ph-main .learning-favorite').click();
   }
   await page.reload();
   await openMyMenu(page, '[data-id="favorites"]');
   await expect(page.locator('.review-items li')).toHaveCount(4);
   await expect(page.locator('.review-items li').filter({ hasText: 'map' }).last()).toContainText('学习卡');
-  await page.locator('.review-items button').first().click();
+  const story = (await stored(page)).phonics.lessonId;
+  const favoriteStory = phonicsStories.find(entry => entry.lessonId === story);
+  await page.getByRole('button', { name: new RegExp(favoriteStory.title, 'u') }).click();
   const dialog = page.getByRole('dialog', { name: '收藏回看' });
   await expect(dialog.locator('.ph-reading')).toBeVisible();
   await dialog.getByRole('button', { name: '去这一节' }).click();
@@ -44,7 +47,7 @@ for (const [subject, topics] of [['chinese', [{ name: '汉字笔画与结构', i
       const lesson = page.locator('.study-card .learning-favorite');
       await lesson.click();
       await expect(lesson).toHaveAttribute('aria-pressed', 'true');
-      await page.locator('.mastery-actions [data-id]').click();
+      await page.locator('.section-practice-shortcut').click();
       await page.locator('.quiz-card .learning-favorite').click();
       await page.reload();
       await expect(page.locator('.quiz-card .learning-favorite')).toHaveAttribute('aria-pressed', 'true');

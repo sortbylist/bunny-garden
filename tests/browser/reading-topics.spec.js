@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { chineseTopics } from '../../src/chinese-topics.js';
 import { paragraphEntries } from '../../src/reading-paragraphs-data.js';
-import { openMyMenu, stored, selectTopic, setLearningPreference } from './helpers.js';
+import { openMyMenu, stored, selectTopic, setLearningPreference, startCombinedPractice } from './helpers.js';
 
 const topics = chineseTopics.filter(topic => topic.id.startsWith('reading-'));
 
@@ -35,7 +35,7 @@ for (const topic of topics) {
     const root = await stored(page);
     expect(root.rewards.events).toEqual([]);
     expect(root.topics[topic.id].known).toEqual([]);
-    await page.locator('[data-action="ct-start"][data-id="all"]').click();
+    await startCombinedPractice(page);
     const round = (await stored(page)).topics[topic.id].round;
     const question = round.questions[0];
     await expect(page.locator('.ct-reading-passage h4')).toHaveText(question.passage.title);
@@ -110,7 +110,7 @@ for (const width of [320, 820, 1440]) {
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await page.locator('[data-action="ct-activity-evidence"]').click();
       await page.screenshot({ path: `artifacts/${topic.id}-${width}.png`, fullPage: true });
-      await page.locator('[data-action="ct-start"][data-id="all"]').click();
+      await startCombinedPractice(page);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await setLearningPreference(page, 'showPinyin', true);
       await expect(page.locator('.ct-reading-passage')).toBeVisible();

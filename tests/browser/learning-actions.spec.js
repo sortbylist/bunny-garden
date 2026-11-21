@@ -25,7 +25,7 @@ for (const [topic, prefix] of [['查字典', 'ct'], ['汉字笔画与结构', 'h
     await page.locator(`[data-action="${prefix}-previous"]`).click();
     await expect(known).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator(`[data-action="${prefix}-previous"]`)).toBeDisabled();
-    await page.locator(`.mastery-actions [data-action="${prefix}-start"]`).click();
+    await page.locator(`.card-topline [data-action="${prefix}-start"]`).click();
     await expect(page.locator(prefix === 'ct' ? '.ct-quiz' : '.hz-quiz')).toBeVisible();
   });
 }
@@ -40,18 +40,15 @@ async function checkActions(page, prefix, reference, label) {
   const actions = page.locator('.hz-card > .mastery-actions');
   const navigation = page.locator('.hz-card > .card-navigation');
   await expect(actions, label).toHaveCount(1);
-  await expect(actions.locator('button'), label).toHaveCount(2);
-  const practice = actions.locator(`[data-action="${prefix}-start"]`);
-  await expect(practice, label).toHaveText('开始本节练习');
+  await expect(actions.locator('button'), label).toHaveCount(1);
+  const practice = page.locator(`.card-topline [data-action="${prefix}-start"]`);
+  await expect(practice, label).toHaveText('本节练习');
   await expect(known.locator('.icon'), label).toHaveCount(1);
   await expect(practice.locator('.icon'), label).toHaveCount(1);
   expect(await paint(known), label).toEqual(reference.known);
   expect(await paint(practice), label).toEqual(reference.practice);
   const knownBounds = await known.boundingBox();
-  const practiceBounds = await practice.boundingBox();
-  expect(Math.abs(knownBounds.y - practiceBounds.y), label).toBeLessThan(1);
-  expect(Math.abs(knownBounds.height - practiceBounds.height), label).toBeLessThan(1);
-  expect(practiceBounds.x, label).toBeGreaterThan(knownBounds.x + knownBounds.width);
+  expect((await practice.boundingBox()).y, label).toBeLessThan(knownBounds.y);
   await expect(navigation, label).toHaveCSS('border-top-style', 'dashed');
   await expect(navigation.locator('button'), label).toHaveCount(2);
   await expect(navigation.locator('.icon'), label).toHaveCount(2);
@@ -67,7 +64,7 @@ for (const width of [1440, 820, 320]) {
     await selectTopic(page, '句式积累与仿写');
     const reference = {
       known: await paint(page.locator('[data-action="ct-known"]')),
-      practice: await paint(page.locator('.mastery-actions [data-action="ct-start"]')),
+      practice: await paint(page.locator('.card-topline [data-action="ct-start"]')),
     };
     for (const [subject, topics] of [['chinese', chineseTopics], ['math', mathTopics]]) {
       if (subject === 'math') await chooseSubject(page, subject);

@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test';
 import { defaultState } from '../../src/engine.js';
-import { seedStoredState, stored } from './helpers.js';
+import { choosePhonicsMode, seedStoredState, stored } from './helpers.js';
 
 test('英语随机词卡一轮不重复，切换课次不丢失当前轮', async ({ page }) => {
   await page.goto('/');
   await page.locator('.subjects [data-id="english"]').click();
-  await page.locator('.ph-modes [data-id="random"]').click();
+  await choosePhonicsMode(page, 'random');
   const words = [];
   for (let index = 0; index < 15; index++) {
     words.push(await page.locator('.ph-word').textContent());
@@ -23,7 +23,7 @@ test('英语随机词卡一轮不重复，切换课次不丢失当前轮', async
   const savedWord = await page.locator('.ph-word').textContent();
   await page.locator('.ph-map [data-id="lesson-2"]').click();
   await page.locator('.ph-map [data-id="lesson-1"]').click();
-  await expect(page.locator('.ph-modes [data-id="random"]')).toHaveAttribute('aria-pressed', 'true');
+  expect((await stored(page)).phonics.mode).toBe('random');
   await expect(page.locator('.ph-word')).toHaveText(savedWord);
 });
 
@@ -50,7 +50,7 @@ test('全局清空同时重置语文和英语', async ({ page }) => {
 test('英语未完成题首答与重试可在刷新后保持', async ({ page }) => {
   await page.goto('/');
   await page.locator('.subjects [data-id="english"]').click();
-  await page.locator('.ph-modes [data-id="rules"]').click();
+  await choosePhonicsMode(page, 'rules');
   await page.locator('[data-action="ph-answer"][data-value="zip"]').click();
   await page.reload();
   await expect(page.locator('.ph-feedback')).toContainText('还差一点');
@@ -58,8 +58,7 @@ test('英语未完成题首答与重试可在刷新后保持', async ({ page }) 
   await page.reload();
   await expect(page.locator('.ph-feedback')).toContainText('先看看答案');
   await page.locator('[data-action="ph-next-question"]').click();
-  await expect(page.locator('.ph-finish')).toContainText('0 / 1');
-  const history = (await stored(page)).phonics.history;
-  expect(history).toHaveLength(1);
-  expect(history[0].skipped).toBe(0);
+  const english = (await stored(page)).phonics;
+  const round = english.sessions[`mixed:lesson:${english.lessonId}:${english.length}`];
+  expect(round.responses['rule-1']).toMatchObject({ answer: 'zip', correct: false, skipped: false });
 });

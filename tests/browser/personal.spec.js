@@ -6,8 +6,8 @@ async function stars(page) { return page.locator('.topbar .star-counter b').text
 test('拼音玩法按分类单行显示，保存选择，常用复习入口及字号可见', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('.play-selector')).not.toContainText('今天，想怎么玩？');
-  await expect(page.locator('.mode-navigation .nav-group-picker summary')).toHaveText('认识拼音');
-  await expect(page.locator('.mode-navigation .nav-tabs .play-mode')).toHaveCount(3);
+  await expect(page.locator('[data-action="pinyin-area"][data-id="learn"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.mode-navigation .nav-tabs .play-mode')).toHaveCount(7);
   await expect(page.locator('[data-action="toggle-modes"]')).toHaveCount(0);
   await expect(page.locator('.play-selector')).not.toContainText('声母学习');
   await page.locator('.my-menu-toggle').click();
@@ -17,16 +17,16 @@ test('拼音玩法按分类单行显示，保存选择，常用复习入口及�
   await expect(page.locator('.review-library')).toContainText('练习记录');
   await page.locator('[data-action="library-exit"]').click();
   await page.reload();
-  await expect(page.locator('.mode-navigation .nav-group-picker summary')).toHaveText('认识拼音');
+  await expect(page.locator('[data-action="pinyin-area"][data-id="learn"]')).toHaveAttribute('aria-pressed', 'true');
   await chooseMode(page, 'hanzi');
-  await expect(page.locator('.play-selector .selected')).toContainText('看字选拼音');
+  await expect(page.locator('.play-selector .nav-tabs .selected')).toContainText('看字选拼音');
   await page.reload();
-  await expect(page.locator('.mode-navigation .nav-group-picker summary')).toHaveText('趣味练习');
-  await expect(page.locator('.play-selector .selected')).toContainText('看字选拼音');
+  await expect(page.locator('[data-action="pinyin-area"][data-id="practice"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.play-selector .nav-tabs .selected')).toContainText('看字选拼音');
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(page.locator('.mode-navigation .nav-catalog-picker summary')).toContainText('看字选拼音');
+  await expect(page.locator('.mode-navigation .nav-tabs .selected')).toContainText('看字选拼音');
   await chooseMode(page, 'sequence');
-  await expect(page.locator('.mode-navigation .nav-group-picker summary')).toHaveText('认识拼音');
+  await expect(page.locator('[data-action="pinyin-area"][data-id="learn"]')).toHaveAttribute('aria-pressed', 'true');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
@@ -123,16 +123,17 @@ test('答错重试可收获新题星，完成有效练习每日加星，错题�
   await expect(page.locator('.garden-display')).toContainText('窗边小树苗');
 });
 
-test('末项发奖在完成弹窗中可见，减少动态效果生效，清空记录包含奖励昵称', async ({ page }) => {
+test('末项发奖和本节练习同时可见，减少动态效果生效，清空记录包含奖励昵称', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   await page.locator('[data-action="map-group"][data-id="single"]').click();
   await page.locator('.pinyin-map [data-index="5"]').click();
   await page.locator('[data-action="known"]').click();
-  await expect(page.locator('dialog .reward-notice')).toContainText('出发小兔');
-  const animation = await page.locator('dialog .reward-notice').evaluate(element => getComputedStyle(element).animationName);
+  await expect(page.locator('.card-navigation [data-action="pinyin-section-practice"]')).toBeVisible();
+  await expect(page.locator('.reward-notice')).toContainText('出发小兔');
+  const animation = await page.locator('.reward-notice').evaluate(element => getComputedStyle(element).animationName);
   expect(animation).toBe('none');
-  await page.locator('[data-action="close-dialog"]').click();
+  await page.locator('.reward-notice-ack').click();
   await page.locator('[data-action="settings"]').click();
   await page.locator('input[data-setting="animations"]').uncheck();
   await page.locator('[data-action="reset-confirm"]').click();
@@ -146,8 +147,8 @@ test('末项发奖在完成弹窗中可见，减少动态效果生效，清空�
 test('手机个人中心、奖励收藏册可操作且没有横向溢出', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await expect(page.locator('.mode-navigation .nav-mobile-label')).toHaveText('顺序学习');
-  await expect(page.locator('.mode-navigation .nav-rail')).toBeHidden();
+  await expect(page.locator('[data-action="pinyin-area"][data-id="learn"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.mode-navigation .nav-rail')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.locator('.my-menu-toggle').click();
   await page.locator('.my-menu [data-action="profile"]').click();

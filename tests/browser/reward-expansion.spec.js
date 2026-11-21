@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { defaultState } from '../../src/engine.js';
 import { initializeRewards, grantRewards } from '../../src/rewards.js';
 import { phonicsQuestionById } from '../../src/phonics-engine.js';
-import { openMyMenu, selectTopic, seedStoredState as seed, stored } from './helpers.js';
+import { openMyMenu, selectTopic, seedStoredState as seed, setRoundLength, stored } from './helpers.js';
 
 function fresh() { const state = defaultState(); initializeRewards(state); return state; }
 
@@ -165,29 +165,29 @@ test('金牌居中颁奖、主动收下后继续队列，支持手机与减少�
   expect((await stored(page)).rewards.pending).toEqual(['garden-golden-flower']);
 });
 
-test('数学学习确认加五题独立达标，刷新后保留小节成果', async ({ page }) => {
+test('数学普通本节练习自动判定完成，刷新后保留小节成果', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: '数学', exact: true }).click();
   await selectTopic(page, '数的认识', 'math');
   await page.locator('[data-action="ct-known"]').click();
   await page.locator('[data-action="ct-next"]').click();
   await page.locator('[data-action="ct-known"]').click();
-  await expect(page.locator('.section-reward-panel')).toContainText('学习确认 2 / 2');
-  const sectionId = await page.locator('[data-action="section-assessment"]').getAttribute('data-id');
-  await page.locator('[data-action="section-assessment"]').click();
+  const shortcut = page.locator('.section-practice-shortcut');
+  const sectionId = `math-numbers/${await shortcut.getAttribute('data-id')}`;
+  await shortcut.click();
   const questions = (await stored(page)).topics['math-numbers'].round.questions;
-  expect(questions).toHaveLength(5);
+  expect(questions).toHaveLength(10);
   for (const [index, question] of questions.entries()) {
     if (index === 0) await page.getByRole('button', { name: question.options.find(option => option !== question.answer), exact: true }).click();
     await page.getByRole('button', { name: question.answer, exact: true }).click();
     await page.locator('[data-action="ct-advance"]').click();
   }
-  await expect(page.locator('.section-reward-panel')).toContainText('本小节完成啦');
+  await expect(page.locator('.section-reward-panel')).toHaveCount(0);
   const saved = await stored(page);
-  expect(saved.rewards.mastery[sectionId].correctIds).toHaveLength(4);
+  expect(saved.rewards.mastery[sectionId].correctIds).toHaveLength(9);
   expect(saved.rewards.unlocks['sections-1']).toBeTruthy();
   await page.reload();
-  await expect(page.locator('.section-reward-panel')).toContainText('本小节完成啦');
+  expect((await stored(page)).rewards.mastery[sectionId].correctIds).toHaveLength(9);
 });
 
 test('英语认读与五题达标接入统一奖励，科目间共享每日星星', async ({ page }) => {
@@ -195,10 +195,11 @@ test('英语认读与五题达标接入统一奖励，科目间共享每日星�
   await page.getByRole('button', { name: '英语', exact: true }).click();
   await page.locator('[data-action="ph-known"]').click();
   expect((await stored(page)).rewards.events.some(event => event.id.startsWith('learn:english:'))).toBe(true);
-  await page.locator('[data-action="section-assessment"]').click();
+  await page.locator('.ph-rule .section-practice-shortcut').click();
+  await setRoundLength(page, 5);
   for (let index = 0; index < 5; index++) {
     const english = (await stored(page)).phonics;
-    const round = english.sessions[`assessment:lesson:${english.lessonId}:5`];
+    const round = english.sessions[`mixed:lesson:${english.lessonId}:5`];
     const identifier = round.ids[round.index];
     const question = phonicsQuestionById.get(identifier);
     if (question.kind === 'spelling') {

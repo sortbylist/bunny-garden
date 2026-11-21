@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { basics, modes, playModes, modeSections } from '../src/data.js';
-import { defaultState, loadState } from '../src/engine.js';
+import { defaultState } from '../src/engine.js';
+import { loadState } from '../src/storage.js';
 import { encodeLearningData } from '../src/learning-data.js';
 import { initializeRewards, grantRewards, rewardStats, equipReward, normalizeNickname, localDay } from '../src/rewards.js';
 

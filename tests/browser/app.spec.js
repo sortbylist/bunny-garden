@@ -46,7 +46,7 @@ test('所有练习方式可进入，随机范围不重复', async ({ page }) => 
     if (index < 5) await page.locator('[data-action="next"]').click();
   }
   expect([...seen].sort()).toEqual(['a', 'e', 'i', 'o', 'u', 'ü']);
-  await expect(page.locator('[data-action="finish-study"]')).toBeVisible();
+  await expect(page.locator('.card-navigation [data-action="pinyin-section-practice"]')).toBeVisible();
 });
 
 test('答错后重试，查看答案，完成一轮和错题复习', async ({ page }) => {
@@ -195,7 +195,7 @@ test('桌面、平板和手机没有横向溢出，生成预览截图', async ({
 test('声调听辨可答题并显示声调解释', async ({ page }) => {
   await page.goto('/');
   await chooseMode(page, 'tones');
-  await page.locator('[data-action="toggle-tones"]').click();
+  await page.locator('[data-action="pinyin-section-practice"][data-id="tones"]').click();
   const value = (await stored(page)).sessions['tonequiz:all:all:retroflex:10'];
   await page.locator('[data-action="answer"]').filter({ hasText: value.questions[0].answer }).click();
   await expect(page.locator('.answer-feedback')).toContainText('音高的变化');

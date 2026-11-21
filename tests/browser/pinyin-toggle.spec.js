@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { selectTopic, setLearningPreference, stored } from './helpers.js';
+import { selectTopic, setLearningPreference, startCombinedPractice, stored } from './helpers.js';
 
 test('拼音辅助只在学习设置中显示，关闭后跨主题生效并支持刷新恢复', async ({ page }) => {
   await page.goto('/');
@@ -14,7 +14,7 @@ test('拼音辅助只在学习设置中显示，关闭后跨主题生效并支�
   await page.reload();
   await expect(page.locator('.chinese-topic ruby')).toHaveCount(0);
   expect((await stored(page)).settings.showPinyin).toBe(false);
-  await page.locator('[data-action="ct-start"][data-id="all"]').click();
+  await startCombinedPractice(page);
   const questions = (await stored(page)).topics['word-categories'].round.questions;
   await setLearningPreference(page, 'showPinyin', true);
   expect((await stored(page)).topics['word-categories'].round.questions).toEqual(questions);

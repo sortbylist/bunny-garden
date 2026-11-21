@@ -69,11 +69,12 @@ export const modes = [
   { id: 'confusing', name: '易混专项', icon: 'compare', group: '巩固提高', description: '把长得像、读得像的分清楚' },
   { id: 'rules', name: '标调与拼写', icon: 'pen', group: '巩固提高', description: '声调应该戴在哪个字母上' },
   { id: 'challenge', name: '综合闯关', icon: 'flag', group: '巩固提高', description: '用一组小挑战检验收获' },
+  { id: 'section-practice', name: '本节练习', icon: 'pen', group: '卡内练习' },
   { id: 'mistakes', name: '错题本', icon: 'notebook', group: '我的复习', description: '再练一次，每次都有进步' },
   { id: 'favorites', name: '我的收藏', icon: 'heart', group: '我的复习', description: '把不熟悉的朋友再认一认' },
 ];
 
-export const playModes = modes.filter(mode => mode.group !== '我的复习');
+export const playModes = modes.filter(mode => mode.group !== '我的复习' && mode.group !== '卡内练习');
 export const modeSections = ['认识拼音', '趣味练习', '巩固提高'];
 
 export const spellingRules = [

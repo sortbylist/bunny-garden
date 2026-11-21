@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { mkdir, readFile } from 'node:fs/promises';
-import { openMyMenu, stored } from './helpers.js';
+import { choosePhonicsMode as mode, openMyMenu, stored } from './helpers.js';
 import { appStorageKey } from '../../src/storage.js';
 
 async function openEnglish(page) {
@@ -10,10 +10,8 @@ async function openEnglish(page) {
 }
 
 async function englishState(page) { return (await stored(page)).phonics; }
-async function mode(page, id) {
-  await page.locator(`.ph-modes [data-id="${id}"]`).click();
-}
 async function section(page, id) {
+  if (!(await page.locator('.ph-map').count())) await mode(page, 'learn');
   const toggle = page.locator('.ph-map-toggle');
   if (await toggle.isVisible() && await toggle.getAttribute('aria-expanded') === 'false') await toggle.click();
   const button = page.locator(`.ph-map [data-id="${id}"]`);
@@ -21,7 +19,10 @@ async function section(page, id) {
   if (await group.getAttribute('open') === null) await group.locator('summary').click();
   await button.click();
 }
-function currentRound(state) { return state.sessions[`${state.mode}:${state.scope}:${state.lessonId}:${state.length}`]; }
+function currentRound(state) {
+  const lesson = state.scope === 'all' && ['mixed', 'meaning', 'spelling', 'listen'].includes(state.mode) ? 'lesson-1' : state.lessonId;
+  return state.sessions[`${state.mode}:${state.scope}:${lesson}:${state.length}`];
+}
 
 test('自然拼读入口、48 课地图、自评前进、收藏与刷新恢复不影响语文', async ({ page }) => {
   const errors = [];
@@ -63,20 +64,20 @@ test('自然拼读入口、48 课地图、自评前进、收藏与刷新恢复�
 test('规律答错重试保留首次结果、查看答案与新轮复习', async ({ page }) => {
   await openEnglish(page);
   await mode(page, 'rules');
-  await expect(page.locator('.ph-quiz')).toContainText('按实际数量练习');
+  await expect(page.locator('.ph-quiz')).toContainText('本节练习');
   await page.locator('.ph-option').filter({ hasText: 'zip' }).click();
   await expect(page.locator('.ph-feedback')).toContainText('还差一点');
   await page.locator('.ph-option').filter({ hasText: 'zed' }).click();
   await expect(page.locator('.ph-feedback')).toContainText('答对啦');
   await page.locator('[data-action="ph-next-question"]').click();
-  await expect(page.locator('.ph-finish')).toContainText('0 / 1');
+  expect(currentRound(await englishState(page)).responses['rule-1'].correct).toBe(false);
   await openMyMenu(page, '[data-id="mistakes"]');
   await page.locator('[data-action="library-review-group"][data-id="phonics"]').click();
   await page.locator('.ph-option').filter({ hasText: 'zed' }).click();
   await page.locator('[data-action="library-next"]').click();
   expect((await englishState(page)).mistakes).toEqual([]);
   await openMyMenu(page, '[data-id="records"]');
-  await expect(page.locator('.history-list li')).toHaveCount(2);
+  await expect(page.locator('.history-list li')).toHaveCount(1);
 });
 
 test('拼词支持点选字母、直接输入、Enter 提交及未完成输入恢复', async ({ page }) => {
@@ -128,7 +129,7 @@ test('全部玩法、共读答案、课次跳转和缺失语音状态可用', as
   await section(page, 'lesson-14');
   await expect(page.locator('.ph-feedback')).toHaveText('读一读故事，再选择答案。');
   await expect(page.locator('.ph-feedback')).not.toHaveClass(/success|warning/);
-  await expect(page.locator('.ph-modes [data-id="reading"]')).toHaveAttribute('aria-pressed', 'true');
+  expect((await englishState(page)).mode).toBe('reading');
   await section(page, 'lesson-29');
   await mode(page, 'learn');
   await expect(page.locator('.ph-rule')).toContainText('/kɑː/');
@@ -162,7 +163,7 @@ test('听词练习使用对应音频，完整播放后才允许作答', async ({
   await expect(page.locator('[data-action="ph-answer"]:enabled')).toHaveCount(4);
 });
 
-test('音频清单延迟时短 a 听词题自动出现，刷新后保留首答和题目顺序', async ({ page }) => {
+test('音频清单延迟时全课程听词题自动出现，刷新后保留首答和题目顺序', async ({ page }) => {
   const manifest = JSON.parse(await readFile('public/audio/phonics/manifest.json', 'utf8'));
   let releaseManifest;
   await page.route('**/audio/phonics/manifest.json', async route => {
@@ -181,8 +182,8 @@ test('音频清单延迟时短 a 听词题自动出现，刷新后保留首答�
     };
   });
   await openEnglish(page);
-  await mode(page, 'listen');
   await section(page, 'lesson-4');
+  await mode(page, 'listen');
   await expect.poll(() => Boolean(releaseManifest)).toBe(true);
   releaseManifest();
   await expect(page.locator('[data-action="ph-play"]')).toBeVisible();
@@ -247,17 +248,14 @@ test('播放按钮使用呼吸动画，加载、播放、结束和失败不移�
   expect(await card.boundingBox()).toEqual(originalBounds);
 });
 
-test('顶部玩法与小节地图分层，切换小节保留玩法、范围和刷新位置同步', async ({ page }) => {
+test('固定专项使用全课程且独立于学习地图，故事位置可刷新恢复', async ({ page }) => {
   await openEnglish(page);
-  for (const id of ['random', 'meaning', 'spelling', 'rules', 'listen']) {
-    await mode(page, id);
-    await page.locator('.ph-map [data-action="ph-scope"]').click();
-    await expect(page.locator('.ph-map [data-action="ph-scope"]')).toHaveAttribute('aria-current', 'true');
-    await expect(page.locator('.ph-map [data-action="ph-lesson"][aria-current]')).toHaveCount(0);
+  for (const id of ['mixed', 'meaning', 'spelling', 'listen']) {
     await section(page, 'lesson-4');
-    await expect(page.locator('.ph-modes [data-id="' + id + '"]')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('.ph-map [aria-current="step"]')).toHaveAttribute('data-id', 'lesson-4');
-    expect((await englishState(page)).scope).toBe('lesson');
+    await mode(page, id);
+    await expect(page.locator('.ph-map')).toHaveCount(0);
+    await expect(page.locator(`[data-action="ph-practice"][data-id="${id}"]`)).toHaveAttribute('aria-pressed', 'true');
+    expect((await englishState(page)).scope).toBe('all');
   }
   await mode(page, 'reading');
   await section(page, 'lesson-29');

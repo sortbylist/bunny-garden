@@ -2,14 +2,14 @@ import './style.css';
 import './personal.css';
 import './learning-ui.css';
 import { observeReadingRows } from './reading-layout.js';
-import { basics, groups, modes, playModes, modeSections, subjects, featureGroups, vocabulary, marked, confusionSets, toneExamples, neutralToneExamples } from './data.js';
+import { basics, groups, modes, playModes, subjects, featureGroups, vocabulary, marked, confusionSets, toneExamples, neutralToneExamples } from './data.js';
 import { shuffle, studyPool, learningGroups, nextStudyGroup, visitQuestion, nextUnfinishedQuestion, createRound, recordAnswer, roundStats, selectMatch, defaultState } from './engine.js';
 import { icon, bunny } from './icons.js';
 import { playAudio, stopAudio, onAudioStatus, chime, hasAudio } from './audio.js';
 import { createPoetryAudio } from './poetry-audio.js';
 import { initializeRewards, grantRewards, rewardStats, rewardCatalog, rewardProgress, equipReward, normalizeNickname } from './rewards.js';
 import { rewardArt, rewardStamp } from './reward-art.js';
-import { rewardStages, rewardSections, curriculumProgress, sectionProgress } from './reward-curriculum.js';
+import { rewardStages, curriculumProgress } from './reward-curriculum.js';
 import { rewardHelp } from './reward-help.js';
 import { createRewardCelebration } from './reward-celebration.js';
 import { rewardViewer, mountRewardViewer } from './reward-viewer.js';
@@ -27,8 +27,8 @@ import { renderTopic, handleTopicAction, topicLearningCard, topicQuizCard, dicti
 import { readingText } from './chinese-reading.js';
 import { createPhonicsView } from './phonics.js';
 import { createPhonicsRound, answerPhonics, editPhonicsDraft } from './phonics-engine.js';
-import { createNavigation } from './navigation.js';
-import { favoriteButton, learningPosition, learningTokenClass, roundSettings, reviewShortcut, focusLearningActivity } from './learning-ui.js';
+import { createNavigation, renderCurriculum } from './navigation.js';
+import { favoriteButton, learningPosition, learningTokenClass, practiceMenu, roundSettings, reviewShortcut, focusLearningActivity, sectionPracticeButton } from './learning-ui.js';
 import { practiceLengths } from './chinese-practice.js';
 import './ui-theme.css';
 import { backupFilename, createBackup, parseBackup, restoreBackup, maxBackupBytes } from './backup.js';
@@ -46,6 +46,7 @@ const topicById = id => learningTopics.find(topic => topic.id === id);
 const activeTopic = () => topicById(state.features[state.subject]);
 const isPhonics = () => state.subject === 'english' && state.features.english === 'phonics';
 let storageAvailable = loaded.available;
+let storageReadFailed = !loaded.available;
 let mobileMenu = false;
 let toastTimer;
 let pendingBackup = null;
@@ -63,6 +64,7 @@ let libraryPage = pageFromHash();
 let libraryFilters = defaultLibraryFilters();
 let libraryDetail = null;
 let pinyinLearningMode = 'sequence';
+let pinyinPracticeMenu = false;
 const studyModes = ['sequence', 'random', 'favorites'];
 let rewardFilter = 'all';
 let rewardHelpReturn = null;
@@ -88,6 +90,7 @@ if (!confusionSets[state.confusion]) state.confusion = 'retroflex';
 const englishAudio = createEnglishAudio();
 const phonics = createPhonicsView({
   state: state.phonics, persist, cardFavorite, slowPlayback: () => state.settings.slow,
+  renderNavigation: options => renderCurriculum(navigation, options),
   redraw: render, notify: toast, renderGarden: progressCard, redrawPreview: () => {
     if (libraryDetail?.items[libraryDetail.index]?.feature === 'phonics') refreshLibraryDetail();
   },
@@ -110,7 +113,7 @@ const navigation = createNavigation((action, id) => {
 });
 
 function persist() {
-  if (backupCommitted) return;
+  if (backupCommitted || storageReadFailed) return;
   try { saveState(localStorage, state); }
   catch {
     if (storageAvailable) toast('暂时无法保存进度，你仍然可以继续练习。');
@@ -213,7 +216,7 @@ function render() {
         <div class="topbar-right"><button class="star-counter" data-action="reward-rules" aria-label="查看星星收获与获取规则">${icon('star')}<b>${rewardStats(state.rewards).stars}</b><span>颗成长星</span>${icon('info')}</button><details class="my-menu"><summary class="my-menu-toggle" aria-label="打开我的菜单"><img src="${bunnyImage}" alt="" width="38" height="38"><span>${escape(state.nickname)}<small>我的 ${icon('down')}</small></span></summary><div class="my-menu-content"><strong>你好，${escape(state.nickname)}</strong>${button('profile', '我的成长空间', 'sprout')}${personalButtons()}${button('reward-collection', '奖励收藏册', 'star')}${button('menu-settings', '学习设置', 'settings')}</div></details></div>
       </header>
       ${libraryPage ? '' : navigation.render({ id: `features-${subject.id}`, label: `${subject.name}主题`, groupLabel: `${subject.name}阶段`, groups: featureGroups(subject), selected: state.features[subject.id], memories: state.navigationSelections, action: 'feature', className: 'feature-navigation' })}
-      <main id="main-content" tabindex="-1">${libraryPage ? renderLibrary(libraryPage, libraryFilters, state, learningTopics, topicById) : topic ? renderTopic(topic, { ...topicState, cardFavorite, heard: englishAudio.heard(topicState.round), showPinyin: topicState.showPinyin && state.settings.showPinyin }, progressCard()) : isHanzi ? renderHanzi({ ...state.hanzi, cardFavorite, showPinyin: state.settings.showPinyin }, progressCard()) : state.subject === 'chinese' ? learningPage() : state.subject === 'english' ? phonics.render() : comingSoon(subject)}</main>
+      <main id="main-content" tabindex="-1">${libraryPage ? renderLibrary(libraryPage, libraryFilters, state, learningTopics, topicById) : topic ? renderTopic(topic, { ...topicState, cardFavorite, heard: englishAudio.heard(topicState.round), showPinyin: topicState.showPinyin && state.settings.showPinyin }, progressCard(), navigation) : isHanzi ? renderHanzi({ ...state.hanzi, cardFavorite, showPinyin: state.settings.showPinyin }, progressCard(), navigation) : state.subject === 'chinese' ? learningPage() : state.subject === 'english' ? phonics.render() : comingSoon(subject)}</main>
       <footer>用一点好奇心，收获一点新知识。${icon('heart')}<span>小兔陪你慢慢学</span></footer>
     </div>`;
   disposeReadingRows = observeReadingRows(app);
@@ -232,33 +235,35 @@ function render() {
 function learningPage() {
   const mode = currentMode();
   const value = session();
-  if (studyModes.includes(state.mode)) {
+  if (!pinyinPracticeMenu && studyModes.includes(state.mode)) {
     const item = currentItem();
     if (item && !state.seen.includes(item.id)) state.seen.push(item.id);
   }
   return `<section class="page-heading"><div><div class="eyebrow"><span></span>语文的第一站 · PINYIN GARDEN</div><h1>和拼音交个朋友吧<span class="heading-flower">✿</span></h1><p>听一听，读一读。每认识一个拼音，都是小小的进步！</p></div><div class="heading-sticker">${icon('sprout')}<span>今天也要<br><b>快乐生长</b></span></div></section>
     ${modePicker()}
     <div class="learning-layout"><div class="learning-main" role="region" aria-label="${mode.name}">
-      ${studyModes.includes(state.mode) ? studyCard(value) : state.mode === 'tones' && !state.tonePractice ? tonesCard() : state.mode === 'match' ? matchCard(value) : quizCard(value)}
-      ${state.mode === 'favorites' && value.ids.length ? `<div class="controls">${button('shuffle-favorites', '打乱顺序复习', 'shuffle', 'text-button')}</div>` : ''}
-      ${value?.questions ? roundSettings('pinyin', state.length, [5, 10, 20]) : ''}
-      ${studyModes.includes(state.mode) ? studyGrid(value) : '<div class="gentle-note">' + icon('leaf') + '答错也没关系，再听一次、再试一次，就是进步。</div>'}
-    </div><aside class="learning-aside">${progressCard()}${mapCard()}<div class="help-note">${icon('headphones')}<div><strong>小耳朵，准备好了吗？</strong><p>点击 ${icon('sound')} 就能听读音<br>听完以后，也试着读一读吧。</p></div></div></aside></div>`;
+      ${pinyinPracticeMenu ? practiceMenu() : studyModes.includes(state.mode) ? studyCard(value) : state.mode === 'tones' && !state.tonePractice ? tonesCard() : state.mode === 'match' ? matchCard(value) : quizCard(value)}
+      ${!pinyinPracticeMenu && state.mode === 'favorites' && value.ids.length ? `<div class="controls">${button('shuffle-favorites', '打乱顺序复习', 'shuffle', 'text-button')}</div>` : ''}
+      ${!pinyinPracticeMenu && value?.questions ? roundSettings('pinyin', state.length, [5, 10, 20], previousPinyinLength()) : ''}
+      ${!pinyinPracticeMenu && studyModes.includes(state.mode) ? studyGrid(value) : ''}
+    </div><aside class="learning-aside">${progressCard()}${pinyinPracticeMenu ? '' : mapCard()}<div class="help-note">${icon('headphones')}<div><strong>小耳朵，准备好了吗？</strong><p>点击 ${icon('sound')} 就能听读音<br>听完以后，也试着读一读吧。</p></div></div></aside></div>`;
+}
+
+function previousPinyinLength() {
+  return [5, 10, 20].find(length => {
+    const round = state.sessions[`${key().split(':').slice(0, -1).join(':')}:${length}`];
+    return length !== state.length && round && !round.finished && round.responses?.some(Boolean);
+  });
 }
 
 function modePicker() {
-  return navigation.render({ id: 'pinyin-modes', label: '拼音玩法', groupLabel: '拼音玩法分类', groups: modeSections.map(section => ({ id: section, name: section, items: playModes.filter(mode => mode.group === section) })), selected: state.mode, memories: state.navigationSelections, action: 'mode', className: 'play-selector mode-navigation' });
-}
-
-function sectionRewardPanel() {
-  const topic = activeTopic();
-  const sectionId = topic ? `${topic.id}/${state.topics[topic.id].category}`
-    : isPhonics() ? `english/${state.phonics.lessonId}`
-    : state.features.chinese === 'hanzi-structure' ? `hanzi-structure/${state.hanzi.category}` : null;
-  const section = rewardSections.get(sectionId);
-  if (!section) return '';
-  const progress = sectionProgress(state.rewards, section);
-  return `<div class="section-reward-panel"><strong>${progress.complete ? '本小节完成啦 ✓' : '本小节成长目标'}</strong><p>学习确认 ${progress.learned} / ${progress.total}<br>独立练习：${progress.passed ? '已达标 ✓' : '等待达标'}</p>${button('section-assessment', '小节达标练习 · 最多5题', 'pen', 'outline-button', `data-id="${section.id}"`)}<small>全部学习确认＋一次练习至少80%独立答对</small></div>`;
+  const learning = studyModes.includes(state.mode) || state.mode === 'tones' && !state.tonePractice;
+  return renderCurriculum(navigation, {
+    id: 'pinyin-modes', areaAction: 'pinyin-area', area: !pinyinPracticeMenu && learning ? 'learn' : 'practice',
+    selected: pinyinPracticeMenu ? null : learning && state.mode !== 'tones' ? state.group : state.mode,
+    learning: [...groups.map(group => ({ ...group, action: 'pinyin-category' })), { ...modes.find(mode => mode.id === 'tones'), action: 'mode' }],
+    practice: playModes.filter(mode => mode.group !== '认识拼音').map(mode => ({ ...mode, action: 'mode' })),
+  });
 }
 
 function personalButtons() {
@@ -594,13 +599,13 @@ function studyCard(value, item = currentItem(), preview = null) {
   const favorite = state.favorites.includes(item.id);
   const known = state.known.includes(item.id);
   const isLast = value.index === value.ids.length - 1;
-  return `<section class="study-card ${item.type === 'word' ? 'word-card' : ''}"><div class="card-topline"><h2 class="category-badge" data-activity-heading tabindex="-1">${icon('flower')}学习 · ${item.type === 'word' ? '常见字词' : groupName(item.group)}</h2>${preview || learningPosition(value.index, value.ids.length) + favoriteButton('favorite', favorite)}</div>
+  return `<section class="study-card ${item.type === 'word' ? 'word-card' : ''}"><div class="card-topline"><h2 class="category-badge" data-activity-heading tabindex="-1">${icon('flower')}学习 · ${item.type === 'word' ? '常见字词' : groupName(item.group)}</h2>${preview || learningPosition(value.index, value.ids.length) + favoriteButton('favorite', favorite) + (item.type === 'basic' ? sectionPracticeButton('pinyin-section-practice', item.group) : '')}</div>
     <div class="pinyin-stage"><span class="stage-spark spark-one">✦</span><span class="stage-spark spark-two">✧</span><div class="writing-lines"></div><button class="pinyin-display ${item.text.length > 4 ? 'long' : ''}" data-action="play-current" aria-label="听 ${escape(item.text)} 的读音">${escape(item.type === 'word' ? item.pinyin : item.text)}</button>${item.type === 'word' ? `<div class="word-under">${item.text}</div>` : ''}</div>
     <div class="sound-row">${button('play-current', '<span>听一听</span>', 'sound', 'sound-button primary-audio')}${preview ? '' : button('continuous', state.settings.continuous ? '停止连播' : '连续听读', state.settings.continuous ? 'pause' : 'play', 'continuous-button', `aria-pressed="${state.settings.continuous}"`)}</div>
     <p class="audio-hint">${audioNote(item)}</p>
     <div class="memory-tip"><span class="tip-icon">${icon('sprout')}</span><div><span class="tip-label">${item.type === 'word' ? '读一读，记一记' : '小兔的记忆提示'}</span><p>${escape(item.tip || `${item.text}，读作 ${item.pinyin}。`)}</p></div>${item.type === 'basic' && item.group !== 'initial' && !['e', 'ü', 'ang', 'eng'].includes(item.text) ? `<span class="example-tag">${item.example}</span>` : ''}</div>
-    ${preview ? '' : `<div class="mastery-actions">${button('practice-later', '还要练一练', 'refresh', 'soft-button')}${button('known', known ? '已经认识啦' : '我认识啦', 'check', `soft-button mint ${known ? 'is-known' : ''}`, `aria-pressed="${known}"`)}</div>
-    <div class="card-navigation">${button('previous', '上一个', 'chevron', 'outline-button previous', value.index === 0 ? 'disabled' : '')}${button(isLast ? 'finish-study' : 'next', isLast ? '完成这一轮' : '下一个', 'chevron', 'solid-button next')}</div>`}
+    ${preview ? '' : `<div class="mastery-actions">${button('practice-later', '还要练一练', 'refresh', 'soft-button')}${button('known', known ? '已经认识啦' : '我认识啦', 'check', `soft-button mint ${known ? 'is-known' : ''}`, `aria-pressed="${known}"`)}${state.mode !== 'favorites' ? button('pinyin-order', state.mode === 'random' ? '顺序学习' : '随机认读', 'shuffle', 'text-button') : ''}</div>
+    <div class="card-navigation">${button('previous', '上一个', 'chevron', 'outline-button previous', value.index === 0 ? 'disabled' : '')}${isLast && item.type === 'basic' ? sectionPracticeButton('pinyin-section-practice', item.group, true) : button(isLast ? 'finish-study' : 'next', isLast ? '完成这一轮' : '下一个', 'chevron', 'solid-button next')}</div>`}
   </section>`;
 }
 
@@ -616,7 +621,7 @@ function progressCard() {
     : state.features.chinese === 'hanzi-structure' ? { learned: state.hanzi.known.length, total: hanziLessons.length, label: '项汉字内容自评认识' }
     : { learned: state.known.filter(id => basics.some(item => item.id === id)).length, total: basics.length, label: '个拼音自评认识', seen: state.seen.filter(id => basics.some(item => item.id === id)).length };
   const displayedRewards = equippedRewards({ inGarden: true });
-  return `<section class="growth-card"><div class="growth-top">${icon('sprout')}我的成长花园<span>慢慢来，也很棒</span></div>${bunny()}<h3>${escape(state.nickname)}，又长大一点</h3><p>每一次认真尝试，都值得被看见。</p>${displayedRewards ? `<div class="garden-display">${displayedRewards}</div>` : ''}<div class="growth-stat"><strong>${progress.learned}<small> / ${progress.total}</small></strong><span>${progress.label}</span></div><div class="progress-track" role="progressbar" aria-label="${progress.label}" aria-valuenow="${progress.learned}" aria-valuemin="0" aria-valuemax="${progress.total}"><span style="width:${progress.learned / progress.total * 100}%"></span></div><div class="growth-bottom">${progress.seen !== undefined ? `<span>已浏览 ${progress.seen} 个</span>` : ''}${button('profile', '我的成长空间', 'chevron', 'text-button')}</div>${sectionRewardPanel()}</section>`;
+  return `<section class="growth-card"><div class="growth-top">${icon('sprout')}我的成长花园<span>慢慢来，也很棒</span></div>${bunny()}<h3>${escape(state.nickname)}，又长大一点</h3><p>每一次认真尝试，都值得被看见。</p>${displayedRewards ? `<div class="garden-display">${displayedRewards}</div>` : ''}<div class="growth-stat"><strong>${progress.learned}<small> / ${progress.total}</small></strong><span>${progress.label}</span></div><div class="progress-track" role="progressbar" aria-label="${progress.label}" aria-valuenow="${progress.learned}" aria-valuemin="0" aria-valuemax="${progress.total}"><span style="width:${progress.learned / progress.total * 100}%"></span></div><div class="growth-bottom">${progress.seen !== undefined ? `<span>已浏览 ${progress.seen} 个</span>` : ''}${button('profile', '我的成长空间', 'chevron', 'text-button')}</div></section>`;
 }
 
 function mapCard() {
@@ -641,7 +646,7 @@ function tonesCard(preview = null) {
   const examples = toneExamples.map(group => `<section class="tone-example" aria-label="${group.syllable} 的四声示例"><h4>${group.items.map(item => item.text).join(' · ')}</h4><p class="muted">${group.tip}</p><div class="tone-grid">${group.items.map((item, index) => `<button class="tone-tile tone-${index}" data-action="sound" data-sound="${item.sound}" aria-label="${item.text} · ${item.character} · ${item.label}"><span class="tone-contour">${['→', '↗', '∨', '↘'][index]}</span><b>${item.text}</b><span class="tone-character">${item.character}</span><span>${item.label}</span>${icon('sound')}</button>`).join('')}</div></section>`).join('');
   return `<section class="quiz-card tones-card"><div class="quiz-top"><h2 class="category-badge" data-activity-heading tabindex="-1">${icon('wave')}学习 · 声音也会走楼梯</h2>${preview || cardFavorite('tones', 'four')}</div>
     <h3>跟着 mā má mǎ mà，听四声</h3><p class="muted">点一点，听四组示例。每组从一声读到四声，对比同一个音节的高低变化。</p>${examples}<div class="tone-note"><h4>轻声：轻轻地、短短地</h4><p>“妈妈”的第二个“妈”不标声调，读得轻而短。听一听下面词语里读轻声的第二个字。</p><div class="neutral-tone-examples">${neutralToneExamples.map(item => button('word-sound', `${item.pinyin} · ${item.text}`, 'sound', 'soft-button', `data-word="${item.text}"`)).join('')}</div></div><details class="lesson-details"><summary>再学一点：变调的小秘密</summary><p>两个三声音节连在一起时，前一个通常读成接近二声，例如“你好”。书面拼音仍标作 nǐ hǎo。</p><p>“一”单读时读 yī，在四声前通常读 yí（如“一定”），在一、二、三声前通常读 yì（如“一天”）。</p><p>“不”单读时读 bù，在四声前通常读 bú（如“不是”）。变调是实际读音的变化，要放进词语和句子里学习。</p></details>
-    ${preview ? '' : `<div class="quiz-actions">${button('toggle-tones', '听音选声调', 'headphones', 'outline-button')}${button('mode', '去练标调与拼写', 'pen', 'solid-button', 'data-id="rules"')}</div>`}</section>`;
+    ${preview ? '' : `<div class="quiz-actions">${sectionPracticeButton('pinyin-section-practice', 'tones', true)}${button('mode', '去练标调与拼写', 'pen', 'outline-button', 'data-id="rules"')}</div>`}</section>`;
 }
 
 function quizCard(round, preview = null) {
@@ -652,8 +657,8 @@ function quizCard(round, preview = null) {
   const answered = round.revealed;
   const favorite = preview ? preview.favorite : cardFavorite('question', question.id, question);
   const disabled = answered || preview?.passive;
-  const title = preview?.label || (state.mode === 'tones' ? '听音辨声调' : currentMode().name);
-  return `<section class="quiz-card"><div class="quiz-top"><h2 class="category-badge" data-activity-heading tabindex="-1">${icon('flag')}练习 · ${escape(title)}</h2>${learningPosition(round.index, round.questions.length, { practice: true })}${favorite}</div><div class="quiz-progress">${round.questions.map((item, index) => `<i class="${round.responses[index]?.correct ? 'correct' : round.responses[index] ? 'miss' : ''} ${index === round.index ? 'current' : ''}"></i>`).join('')}</div>${!preview && round.available < state.length ? `<p class="small-note">这个范围共有 ${round.available} 题，这轮全部练一遍。</p>` : ''}<h3 class="question-prompt">${escape(question.prompt)}</h3>
+  const title = preview?.label || (state.mode === 'tones' ? '听音辨声调' : state.mode === 'section-practice' ? groupName(state.group) : currentMode().name);
+  return `<section class="quiz-card"><div class="quiz-top"><h2 class="category-badge" data-activity-heading tabindex="-1">${icon('flag')}练习 · ${escape(title)}</h2>${learningPosition(round.index, round.questions.length, { practice: true })}${favorite}</div><div class="quiz-progress">${round.questions.map((item, index) => `<i class="${round.responses[index]?.correct ? 'correct' : round.responses[index] ? 'miss' : ''} ${index === round.index ? 'current' : ''}"></i>`).join('')}</div><h3 class="question-prompt">${escape(question.prompt)}</h3>
     ${question.display ? `<div class="question-display ${question.kind === 'hanzi' ? 'hanzi' : ''}">${escape(question.display)}</div>` : ''}
     ${question.kind === 'listen' ? button('play-question', '再听一遍', 'sound', 'sound-button question-audio primary-audio') : ''}
     ${question.kind === 'blend' ? `<div class="blend-controls">${button('play-parts', '听分解', 'sound', 'soft-button')}${answered ? button('play-question', '听完整拼读', 'sound', 'soft-button') : ''}</div>` : ''}
@@ -761,7 +766,7 @@ function showSettings() {
     ${settingsAction('export-backup', '导出全部数据')}
     ${settingsAction('choose-backup', '导入备份文件')}
     <input id="backup-file" type="file" accept=".json,application/json" hidden><p id="backup-error" class="storage-warning" role="alert"></p>
-    <p>导入会替换当前数据，不会合并。建议先导出一份；旧备份缺少的新设置会使用默认值。</p>
+    <p>导入会替换当前数据。建议先导出一份。同版本备份缺少的新课程或新设置会使用默认值。</p>
   </section>
   <section class="settings-group" aria-labelledby="cleanup-heading"><h3 id="cleanup-heading">数据清理</h3>
     <p>学习记录仅保存在当前浏览器，不会跨设备同步。清空后无法恢复。</p>
@@ -1012,8 +1017,9 @@ function showAbout() {
   openDialog('关于小兔学习乐园', `<p class="dialog-intro">专为小学生准备的一方学习小天地。没有广告，不需要注册，按照自己的节奏慢慢学。</p><h3>关于拼音和读音</h3><p>内容包含 23 个声母、24 个韵母和 16 个整体认读音节，采用小学常见分类。</p><p>真人录音来自 audio-cmn：音节由 Chen Wang 录制，词语由 Yue Tan 录制，Hugo Lopez 与 Nicolas Vion 参与整理和技术支持，采用上游声明的 CC BY-SA 许可。</p><p>部分韵母借助完整音节示范，ong 使用 dōng 的例音，学习卡片上会明确提示。录音尚待普通话教师逐项试听审核。</p><p><a href="${publicAsset('/audio/ATTRIBUTION.md')}" target="_blank" rel="noopener">查看音频来源与署名说明</a></p><h3>使用小提醒</h3><p>首次听音需要点击喇叭。跟着录音自己读一读即可，本应用不会录音，也不会自动评价你的发音。</p><p>页面风格参考 Bunny Math，插画与练习界面为本项目绘制。</p>`);
 }
 
-function changeMode(id) {
+function changeMode(id, group) {
   if (!modes.some(mode => mode.id === id)) return;
+  pinyinPracticeMenu = false;
   if (id !== 'favorites' && (studyModes.includes(id) || id === 'tones')) pinyinLearningMode = id;
   if (id === 'mistakes' && !state.mistakes.length) return;
   halt();
@@ -1022,7 +1028,7 @@ function changeMode(id) {
   state.mode = id;
   state.subject = 'chinese';
   state.features.chinese = 'pinyin';
-  state.group = state.modeGroups[id] || 'all';
+  state.group = group || state.modeGroups[id] || 'all';
   if (id === 'tones') state.tonePractice = false;
   state.settings.continuous = false;
   if (id === 'mistakes' && state.sessions[key()]?.finished) delete state.sessions[key()];
@@ -1103,7 +1109,11 @@ function finishStudy() {
 function advanceStudy() {
   const value = session();
   halt();
-  if (value.index === value.ids.length - 1) { finishStudy(); return; }
+  if (value.index === value.ids.length - 1) {
+    if (currentItem()?.type === 'basic') { state.settings.continuous = false; render(); }
+    else finishStudy();
+    return;
+  }
   value.index++;
   render();
   if (state.settings.continuous) playCurrent(true);
@@ -1202,7 +1212,8 @@ function handleAction(event) {
     halt();
     const result = handleTopicAction(state, topic, action, target.dataset);
     render();
-    if (['ct-start', 'ct-learn', 'ct-resume'].includes(action)) focusLearningActivity();
+    if (['ct-start', 'ct-learn'].includes(action)) focusLearningActivity();
+    if (action === 'ct-area') app.querySelector(`[data-action="ct-area"][data-id="${target.dataset.id}"]`)?.focus({ preventScroll: true });
     if (result.correct) chime(state.settings.effects);
     celebrateReward(result.reward);
     return;
@@ -1212,7 +1223,8 @@ function handleAction(event) {
     halt();
     const result = handleHanziAction(state, action, target.dataset);
     render();
-    if (['hz-start', 'hz-learn', 'hz-resume'].includes(action)) focusLearningActivity();
+    if (['hz-start', 'hz-learn'].includes(action)) focusLearningActivity();
+    if (action === 'hz-area') app.querySelector(`[data-action="hz-area"][data-id="${target.dataset.id}"]`)?.focus({ preventScroll: true });
     if (result.correct) chime(state.settings.effects);
     celebrateReward(result.reward);
     return;
@@ -1239,13 +1251,10 @@ function handleAction(event) {
   if (action === 'reward-help') { showRewardHelp(target.dataset.id, target.dataset.rewardId); return; }
   if (action === 'reward-help-back') { returnFromRewardHelp(); return; }
   if (action === 'reward-help-previous') { returnToPreviousRewardHelp(); return; }
-  if (action === 'section-assessment') {
-    const section = rewardSections.get(target.dataset.id);
-    if (!section) return;
-    halt();
-    if (isPhonics() && section.id.startsWith('english/')) phonics.assess();
-    else if (section.topicId === 'hanzi-structure') { startHanziRound(state.hanzi, state.hanzi.category, 5); render(); }
-    else { const topic = topicById(section.topicId); startTopicRound(topic, state.topics[topic.id], state.topics[topic.id].category, 5); render(); }
+  if (action === 'resume-round-length') {
+    const select = target.closest('.round-settings').querySelector('select');
+    select.value = target.dataset.length;
+    select.dispatchEvent(new Event('change', { bubbles: true }));
     return;
   }
   if (action === 'reward-detail') { showRewardDetail(target.dataset.id); return; }
@@ -1254,6 +1263,32 @@ function handleAction(event) {
   if (action === 'replay-reward') { const reward = rewardCatalog.find(item => item.id === target.dataset.id && state.rewards.unlocks[item.id]); if (reward) celebrateReward({ stars: 0, unlocked: [reward.id], reasons: [], replay: true }); return; }
   if (action === 'dismiss-reward') { celebrations.dismiss(); return; }
   if (action === 'mode') { changeMode(target.dataset.id); return; }
+  if (action === 'pinyin-area') {
+    if (target.dataset.id === 'learn') {
+      if (pinyinPracticeMenu || !studyModes.includes(state.mode) && !(state.mode === 'tones' && !state.tonePractice)) changeMode(pinyinLearningMode);
+    } else if (studyModes.includes(state.mode) || state.mode === 'tones' && !state.tonePractice) {
+      halt();
+      pinyinPracticeMenu = true;
+      state.settings.continuous = false;
+      render();
+    }
+    app.querySelector(`[data-action="pinyin-area"][data-id="${target.dataset.id}"]`)?.focus({ preventScroll: true });
+    return;
+  }
+  if (action === 'pinyin-category') {
+    changeMode(pinyinLearningMode === 'random' ? 'random' : 'sequence', target.dataset.id);
+    return;
+  }
+  if (action === 'pinyin-order') { changeMode(state.mode === 'random' ? 'sequence' : 'random', state.group); return; }
+  if (action === 'pinyin-section-practice') {
+    if (target.dataset.id === 'tones') {
+      halt();
+      state.tonePractice = true;
+      render();
+    } else changeMode('section-practice', target.dataset.id);
+    focusLearningActivity();
+    return;
+  }
   if (action === 'pinyin-learn') { changeMode(pinyinLearningMode); focusLearningActivity(); return; }
   if (action === 'toggle-tones') { halt(); state.tonePractice = !state.tonePractice; render(); focusLearningActivity(); return; }
   if (action === 'shuffle-favorites') { halt(); const value = session(); value.ids = shuffle(value.ids); value.index = 0; render(); toast('顺序打乱啦，来看看还认识谁。'); return; }
@@ -1281,7 +1316,7 @@ function handleAction(event) {
   }
   if (action === 'restart-now') { restart(); return; }
   if (action === 'reset-confirm') { showResetConfirmation(); return; }
-  if (action === 'reset-all') { halt(); celebrations.reset(); state = defaultState(); phonics.reset(state.phonics); state.features.english = 'phonics'; initializeRewards(state); closeDialog(); render(); toast('记录已清空，可以重新出发啦。'); return; }
+  if (action === 'reset-all') { halt(); celebrations.reset(); state = defaultState(); phonics.reset(state.phonics); state.features.english = 'phonics'; initializeRewards(state); storageReadFailed = false; closeDialog(); render(); toast('记录已清空，可以重新出发啦。'); return; }
   if (action === 'sound') { continuousToken++; playAudio({ sound: target.dataset.sound }, state.settings.slow); return; }
   if (action === 'word-sound') { continuousToken++; const item = vocabulary.find(entry => entry.text === target.dataset.word); playAudio({ word: target.dataset.word, sounds: item?.sounds }, state.settings.slow); return; }
   if (studyModes.includes(state.mode)) {
@@ -1384,8 +1419,15 @@ document.addEventListener('change', event => {
   if (lengthScope) {
     const length = Number(event.target.value);
     if (lengthScope === 'pinyin' && [5, 10, 20].includes(length)) { halt(); state.length = length; }
-    else if (lengthScope === 'ct' && activeTopic() && practiceLengths.includes(length)) state.topics[activeTopic().id].practiceLength = length;
-    else if (lengthScope === 'hz' && practiceLengths.includes(length)) state.hanzi.practiceLength = length;
+    else if (lengthScope === 'ct' && activeTopic() && practiceLengths.includes(length)) {
+      const topic = activeTopic();
+      const progress = state.topics[topic.id];
+      halt();
+      if (progress.round && startTopicRound(topic, progress, progress.round.scope, length, false)) progress.practiceLength = length;
+    } else if (lengthScope === 'hz' && practiceLengths.includes(length)) {
+      halt();
+      if (state.hanzi.round && startHanziRound(state.hanzi, state.hanzi.round.scope, length, false)) state.hanzi.practiceLength = length;
+    }
     else if (lengthScope !== 'phonics' || state.subject !== 'english' || !phonics.change(event.target)) return;
     if (lengthScope !== 'phonics') render();
     const replacement = app.querySelector(`[data-round-length="${lengthScope}"]`);

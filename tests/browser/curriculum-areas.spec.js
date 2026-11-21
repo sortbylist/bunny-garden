@@ -1,0 +1,71 @@
+import { test, expect } from '@playwright/test';
+import { selectTopic, setRoundLength, stored } from './helpers.js';
+
+test('学习和练习仅列实际分类，综合练习独立于所选小节', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await selectTopic(page, '词语积累与分类');
+  const navigation = page.locator('.curriculum-navigation');
+  const learning = navigation.getByRole('button', { name: '学习', exact: true });
+  const practice = navigation.getByRole('button', { name: '练习', exact: true });
+  const rail = navigation.getByRole('group', { name: '学习分类' });
+  await expect(rail.getByRole('button')).toHaveCount(12);
+  await navigation.getByRole('button', { name: '向右查看课程分类' }).click();
+  await expect.poll(() => rail.evaluate(element => element.scrollLeft)).toBeGreaterThan(0);
+  await rail.getByRole('button').last().click();
+  await expect(rail.getByRole('button').last()).toHaveAttribute('aria-pressed', 'true');
+  const position = await rail.evaluate(element => element.scrollLeft);
+  await practice.click();
+  await expect(navigation.getByRole('group', { name: '练习分类' }).getByRole('button')).toHaveText('综合练习');
+  await expect(page.getByText('我的学习足迹', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('本主题题库')).toHaveCount(0);
+  await navigation.getByRole('button', { name: '综合练习', exact: true }).click();
+  const state = await stored(page);
+  const topic = state.topics['word-categories'];
+  expect(topic.round.scope).toBe('all');
+  expect(new Set(topic.round.questions.map(question => question.category)).size).toBeGreaterThan(1);
+  await learning.click();
+  await expect(rail.getByRole('button').last()).toHaveAttribute('aria-pressed', 'true');
+  expect(await rail.evaluate(element => element.scrollLeft)).toBe(position);
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('本节练习绑定学习卡，切换题量后可从练习设置恢复', async ({ page }) => {
+  await page.goto('/');
+  await selectTopic(page, '查字典');
+  const shortcut = page.locator('.card-topline').getByRole('button', { name: '本节练习', exact: true });
+  const category = await shortcut.getAttribute('data-id');
+  await shortcut.click();
+  const before = (await stored(page)).topics.dictionary.round;
+  await page.locator('[data-action="ct-skip"]').click();
+  await page.locator('[data-action="ct-advance"]').click();
+  await setRoundLength(page, 20);
+  await expect(page.locator('.ct-quiz .learning-position')).toHaveText('第 1 / 20 题');
+  await expect(page.getByRole('group', { name: '练习分类' }).getByText('本节练习')).toHaveCount(0);
+  await page.reload();
+  await page.locator('.round-settings summary').click();
+  await page.getByRole('button', { name: '继续上次练习 · 10 题' }).click();
+  const resumed = (await stored(page)).topics.dictionary.round;
+  expect(resumed.scope).toBe(category);
+  expect(resumed.questions).toEqual(before.questions);
+  expect(resumed.index).toBe(1);
+  expect(resumed.responses[0].skipped).toBe(true);
+});
+
+test('自然拼读的本节练习包含规律题，练习区的分类使用固定全课程范围', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('.subjects [data-id="english"]').click();
+  await page.locator('.curriculum-navigation [data-id="lesson-4"]').click();
+  await page.locator('.ph-rule').getByRole('button', { name: '本节练习', exact: true }).click();
+  const phonics = (await stored(page)).phonics;
+  const round = phonics.sessions['mixed:lesson:lesson-4:10'];
+  expect(round.ids).toHaveLength(10);
+  expect(round.ids).toContain('rule-4');
+  expect(round.ids.some(id => id.startsWith('meaning-') || id.startsWith('spelling-'))).toBe(true);
+  const categories = page.getByRole('group', { name: '练习分类' });
+  await expect(categories.getByRole('button')).toHaveText(['综合练习', '词义选择', '字母拼词', '听音选词']);
+  await categories.getByRole('button', { name: '综合练习' }).click();
+  const all = (await stored(page)).phonics;
+  expect(all.scope).toBe('all');
+  expect(all.sessions['mixed:all:lesson-1:10'].ids).toHaveLength(10);
+});

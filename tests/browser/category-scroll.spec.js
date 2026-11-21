@@ -15,9 +15,8 @@ for (const width of [1280, 390]) {
     await page.setViewportSize({ width, height: 600 });
     await page.goto('/');
     const nav = page.locator('.mode-navigation');
-    if (width === 390) await nav.locator('.nav-catalog-picker summary').click();
-    await clickWithoutJump(page, nav.locator('[data-id="random"]:visible'));
-    await expect(nav.locator('[data-id="random"][aria-pressed="true"]')).toHaveCount(1);
+    await clickWithoutJump(page, nav.locator('[data-id="initial"]'));
+    await expect(nav.locator('[data-id="initial"][aria-pressed="true"]')).toHaveCount(1);
   });
 }
 
@@ -26,7 +25,7 @@ test('语文汉字、语文主题、数学和英语的小分类均保持页面�
   await page.goto('/');
   for (const [subject, topic, action] of [
     ['chinese', '汉字笔画与结构', 'hz-category'], ['chinese', '近义词与反义词', 'ct-category'],
-    ['math', null, 'ct-category'], ['english', null, 'ph-mode'],
+    ['math', null, 'ct-category'], ['english', null, 'ph-category'],
   ]) {
     await page.locator(`.sidebar [data-action="subject"][data-id="${subject}"]`).click();
     if (topic) await selectTopic(page, topic);

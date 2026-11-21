@@ -1,4 +1,4 @@
-import { subjects, featureGroups, modes } from '../../src/data.js';
+import { subjects, featureGroups } from '../../src/data.js';
 import { appStorageKey } from '../../src/storage.js';
 import { decodeLearningData, encodeLearningData } from '../../src/learning-data.js';
 
@@ -22,7 +22,38 @@ export async function chooseMode(page, id) {
     await page.locator('[data-action="library-review-group"][data-id="pinyin"]').click();
     return;
   }
-  await chooseNavigationItem(page, page.locator('.mode-navigation'), id, modes.find(mode => mode.id === id).group);
+  const navigation = page.locator('[data-navigation="pinyin-modes"]');
+  const area = ['sequence', 'random', 'tones', 'favorites'].includes(id) ? 'learn' : 'practice';
+  const tab = navigation.locator(`[data-action="pinyin-area"][data-id="${area}"]`);
+  if (await tab.getAttribute('aria-pressed') !== 'true') await tab.click();
+  if (['sequence', 'random'].includes(id)) {
+    const order = page.locator('[data-action="pinyin-order"]');
+    if (!(await order.count())) await navigation.locator('[data-action="pinyin-category"]').first().click();
+    if (await order.textContent() === (id === 'sequence' ? '顺序学习' : '随机认读')) await order.click();
+  } else if (id === 'favorites') {
+    await openMyMenu(page, '[data-action="library-open"][data-id="favorites"]');
+  } else await navigation.locator(`.nav-tabs [data-action="mode"][data-id="${id}"]`).click();
+}
+
+export async function choosePhonicsMode(page, id) {
+  if (['mixed', 'meaning', 'spelling', 'listen'].includes(id)) {
+    const tab = page.locator('[data-action="ph-area"][data-id="practice"]');
+    if (await tab.getAttribute('aria-pressed') !== 'true') await tab.click();
+    await page.locator(`[data-action="ph-practice"][data-id="${id}"]`).click();
+    return;
+  }
+  if (['learn', 'random', 'reading', 'rules'].includes(id)) {
+    const tab = page.locator('[data-action="ph-area"][data-id="learn"]');
+    if (await tab.getAttribute('aria-pressed') !== 'true') await tab.click();
+    if (!(await page.locator('.ph-rule').count())) await page.locator('[data-action="ph-mode"][data-id="learn"]').click();
+    if (id === 'rules') {
+      await page.locator('.ph-rule .section-practice-shortcut').click();
+      const { phonics } = await stored(page);
+      const round = phonics.sessions[`mixed:lesson:${phonics.lessonId}:${phonics.length}`];
+      const index = round.ids.findIndex(questionId => questionId.startsWith('rule-'));
+      await page.locator(`[data-action="ph-question"][data-index="${index}"]`).click();
+    } else if (id !== 'learn') await page.locator(`.ph-rule [data-action="ph-mode"][data-id="${id}"]`).click();
+  }
 }
 
 export async function openMyMenu(page, selector) {
@@ -67,4 +98,16 @@ export async function selectTopic(page, name, subjectId = 'chinese') {
   const stage = featureGroups(subject).find(group => group.items.some(item => item.name === name));
   const feature = stage.items.find(item => item.name === name);
   await chooseNavigationItem(page, page.locator('.feature-navigation'), feature.id, stage.id);
+}
+
+export async function startCombinedPractice(page, prefix = 'ct') {
+  const tab = page.locator(`[data-action="${prefix}-area"][data-id="practice"]`);
+  if (await tab.getAttribute('aria-pressed') !== 'true') await tab.click();
+  await page.locator(`[data-action="${prefix}-start"][data-id="all"]`).click();
+}
+
+export async function chooseLearningCategory(page, prefix, id) {
+  const tab = page.locator(`[data-action="${prefix}-area"][data-id="learn"]`);
+  if (await tab.getAttribute('aria-pressed') !== 'true') await tab.click();
+  await page.locator(`[data-action="${prefix}-category"][data-id="${id}"]`).click();
 }

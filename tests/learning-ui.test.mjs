@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { favoriteButton, learningCardFooter, learningTokenClass, learningTools, roundSettings } from '../src/learning-ui.js';
+import { favoriteButton, learningCardFooter, learningTokenClass, learningTools, roundSettings, sectionPracticeButton } from '../src/learning-ui.js';
 import { difficultCharacters, contextualCharacters } from '../src/prose-readings-data.js';
 import { chineseTopics } from '../src/chinese-topics.js';
 import { hanziLessons, hanziQuestions } from '../src/hanzi-data.js';
@@ -13,19 +13,18 @@ test('学习卡复用带图标的轻量操作区，翻页独立且保留边界�
       assert.match(actions, /class="hz-actions mastery-actions"/);
       assert.ok(actions.includes(`data-action="${prefix}-known" class="soft-button mint" aria-pressed="${known}"`));
       assert.ok(actions.includes(known ? '已经认识啦 ✓' : '我认识啦'));
-      assert.ok(actions.includes(`data-action="${prefix}-start" data-id="strokes" class="soft-button"`));
-      assert.match(actions, /开始本节练习/);
-      assert.equal((actions.match(/<svg/g) || []).length, 2);
+      assert.doesNotMatch(actions, /本节练习/);
+      assert.equal((actions.match(/<svg/g) || []).length, 1);
       assert.match(navigation, /card-navigation/);
       assert.ok(navigation.includes(`data-action="${prefix}-previous" class="outline-button previous" disabled`));
-      assert.ok(navigation.includes(`data-action="${prefix}-next" class="outline-button" >`));
+      assert.ok(navigation.includes(`data-action="${prefix}-next" class="outline-button">`));
       assert.equal((navigation.match(/<svg/g) || []).length, 2);
     }
     const last = learningCardFooter(prefix, { known: false, category: 'strokes', index: 2, total: 3 });
     assert.ok(last.includes(`data-action="${prefix}-previous" class="outline-button previous" >`));
-    assert.ok(last.includes(`data-action="${prefix}-next" class="outline-button" disabled`));
+    assert.ok(last.includes(sectionPracticeButton(`${prefix}-start`, 'strokes', true)));
     const only = learningCardFooter(prefix, { known: false, category: 'strokes', index: 0, total: 1 });
-    assert.equal((only.match(/disabled/g) || []).length, 2);
+    assert.equal((only.match(/disabled/g) || []).length, 1);
   }
 });
 
@@ -39,17 +38,22 @@ test('短词、单字和单词保留内容标记，长句和说明不标记', ()
   }
 });
 
-test('学习和查字页面隐藏题数设置，练习页保留下一轮设置及已选题数', () => {
+test('练习卡下方提供即时题量设置，只列当前范围的续练记录', () => {
   for (const prefix of ['ct', 'hz']) {
     for (const view of ['learn', 'lookup']) {
       const html = learningTools(prefix, { view, showPinyin: true, practiceLength: 20 });
       assert.equal(html, '');
     }
-    const quiz = learningTools(prefix, { view: 'quiz', showPinyin: false, practiceLength: 20 });
+    const quiz = learningTools(prefix, { view: 'quiz', practiceLength: 20, round: { scope: 'all' }, rounds: {
+      'all:10': { responses: [{ correct: true }] },
+      'other:30': { responses: [{ correct: true }] },
+    } });
     assert.match(quiz, /<details class="lesson-details round-settings">/);
     assert.match(quiz, /每轮题数/);
     assert.match(quiz, /value="20" selected/);
-    assert.match(quiz, /题数用于下一轮/);
+    assert.match(quiz, /切换到对应题量的练习/);
+    assert.match(quiz, /继续上次练习 · 10 题/);
+    assert.doesNotMatch(quiz, /继续上次练习 · 30 题/);
   }
   assert.equal(learningTools('ct', { view: 'learn' }, { math: true }), '');
 });

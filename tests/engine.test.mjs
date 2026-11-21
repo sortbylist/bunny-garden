@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, stat } from 'node:fs/promises';
 import { basics, groups, characters, words, vocabulary, marked, confusionSets } from '../src/data.js';
-import { shuffle, visibleTabs, studyPool, questionPool, createRound, recordAnswer, roundStats, loadState, defaultState } from '../src/engine.js';
+import { shuffle, visibleTabs, studyPool, questionPool, createRound, recordAnswer, roundStats, defaultState } from '../src/engine.js';
+import { loadState } from '../src/storage.js';
 
 test('基础内容分类完整，顺序从 a o e i u ü 开始', () => {
   assert.equal(basics.length, 63);
