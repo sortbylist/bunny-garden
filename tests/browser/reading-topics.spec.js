@@ -146,7 +146,7 @@ test('原有古诗草稿与阅读记录隔离，清空后阅读线索与排序�
 test('阅读主题徽章与第三阶段奖牌显示新增范围', async ({ page }) => {
   await page.goto('/');
   await page.locator('.garden-links [data-action="reward-collection"]').click();
-  await expect(page.locator('.reward-card')).toHaveCount(94);
+  await expect(page.locator('.reward-card')).toHaveCount(100);
   for (const topic of topics) {
     await expect(page.locator(`.reward-card[data-reward="topic-${topic.id}"]`)).toHaveCount(1);
   }

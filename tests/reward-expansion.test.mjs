@@ -19,12 +19,12 @@ function completeSection(rewards, section) {
   recordMastery(rewards, section.topicId || rewardTopics.find(topic => topic.sections.includes(section)).id, questions, questions.map(() => ({ correct: true })), date.getTime(), section.id);
 }
 
-test('目录包含中间里程碑、三科主题与八套奖牌，标识唯一，摘要不超过100字', () => {
-  assert.equal(new Set(rewardCatalog.map(reward => reward.id)).size, 94);
+test('目录包含中间里程碑、三科主题与九套奖牌，标识唯一，摘要不超过100字', () => {
+  assert.equal(new Set(rewardCatalog.map(reward => reward.id)).size, 100);
   assert.deepEqual(rewardCatalog.filter(reward => reward.id.startsWith('solved-')).map(reward => reward.target), [50, 75, 100, 150, 200, 250, 300]);
-  assert.equal(rewardCatalog.filter(reward => reward.type === 'medal').length, 24);
-  assert.equal(rewardStages.filter(stage => stage.subject === 'english').length, 4);
-  assert.equal(rewardSections.size, 157);
+  assert.equal(rewardCatalog.filter(reward => reward.type === 'medal').length, 27);
+  assert.equal(rewardStages.filter(stage => stage.subject === 'english').length, 5);
+  assert.equal(rewardSections.size, 160);
   for (const help of Object.values(rewardHelp)) assert.ok([...help.summary].length <= 100);
 });
 
@@ -45,7 +45,7 @@ test('词语和部首扩充同步登记学习确认、专项练习与阶段范�
 test('所有主题徽章复用学习入口图标，汉字结构用笔，英语模块支持独立图标', () => {
   for (const topic of rewardTopics) {
     const subject = subjects.find(item => item.id === topic.subject);
-    const expected = topic.subject === 'english'
+    const expected = topic.phonics
       ? phonicsModules.find(module => module.id === topic.id).icon || subject.features[0].icon
       : subject.features.find(feature => feature.id === topic.id).icon;
     const reward = rewardCatalog.find(item => item.topicId === topic.id);

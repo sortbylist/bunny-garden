@@ -19,7 +19,7 @@ const stored = page => page.evaluate(() => JSON.parse(localStorage.getItem('bunn
 test('收藏总则、分类和特例帮助支持摘要、全文、返回焦点与未解锁范围', async ({ page }) => {
   await page.goto('/');
   await page.locator('.garden-links [data-action="reward-collection"]').click();
-  await expect(page.locator('.reward-card')).toHaveCount(94);
+  await expect(page.locator('.reward-card')).toHaveCount(100);
   const general = page.getByRole('button', { name: '查看收藏规则', exact: true });
   await general.hover();
   await expect(page.locator('#reward-help-all')).toBeVisible();
@@ -44,7 +44,7 @@ test('收藏总则、分类和特例帮助支持摘要、全文、返回焦点�
   await general.hover();
   await expect(page.locator('#reward-help-all')).toBeVisible();
   await page.locator('[data-action="reward-filter"][data-id="medal"]').click();
-  await expect(page.locator('.reward-card')).toHaveCount(24);
+  await expect(page.locator('.reward-card')).toHaveCount(27);
   await page.getByRole('button', { name: '查看奖牌规则', exact: true }).click();
   await expect(page.locator('.reward-help-content')).toContainText('12个小节');
   await page.getByRole('button', { name: '返回收藏册', exact: true }).click();

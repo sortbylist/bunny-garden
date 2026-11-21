@@ -3,7 +3,7 @@ import { dictionaryLookup } from './dictionary-data.js';
 import { practiceLengths, selectPractice } from './chinese-practice.js';
 
 export function topicDefaults(topic) {
-  return { category: topic.categories[0].id, lessonId: topic.lessons[0].id, view: 'learn', known: [], mistakes: [], round: null, activities: {}, lookup: { method: 'sound', selections: [] }, showPinyin: topic.subject !== 'math', practiceLength: 10, practiceSeen: [] };
+  return { category: topic.categories[0].id, lessonId: topic.lessons[0].id, view: 'learn', known: [], mistakes: [], round: null, activities: {}, lookup: { method: 'sound', selections: [] }, showPinyin: !['math', 'english'].includes(topic.subject), practiceLength: 10, practiceSeen: [] };
 }
 
 export function updateTopicActivity(topic, state, action, value) {
@@ -29,7 +29,7 @@ export function updateTopicActivity(topic, state, action, value) {
 export function normalizeTopic(topic, saved) {
   const state = topicDefaults(topic);
   if (!saved || typeof saved !== 'object') return state;
-  state.showPinyin = topic.subject !== 'math' && saved.showPinyin !== false;
+  state.showPinyin = state.showPinyin && saved.showPinyin !== false;
   if (practiceLengths.includes(saved.practiceLength)) state.practiceLength = saved.practiceLength;
   state.practiceSeen = [...new Set(Array.isArray(saved.practiceSeen) ? saved.practiceSeen.filter(id => topic.questions.some(item => item.id === id)) : [])];
   if (topic.categories.some(item => item.id === saved.category)) state.category = saved.category;
@@ -108,5 +108,5 @@ export function advanceTopic(topic, state) {
   if (round.index < round.questions.length - 1) { round.index++; round.selected = null; round.revealed = false; return null; }
   round.finished = true;
   const stats = roundStats(round);
-  return { time: Date.now(), name: `${topic.name}${round.scope === 'review' ? ' · 错题本' : ''}`, total: stats.total, correct: stats.correct };
+  return { time: Date.now(), name: `${topic.name}${round.scope === 'review' ? ' · 错题本' : ''}`, topicId: topic.id, total: stats.total, correct: stats.correct };
 }

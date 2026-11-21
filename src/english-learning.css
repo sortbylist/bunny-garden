@@ -1,0 +1,37 @@
+.en-illustration {
+  width: 4.75rem;
+  height: 4.625rem;
+  flex: none;
+  stroke: var(--ui-selected-text);
+  fill: var(--ui-selected-background);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.en-illustration .en-drawing-pen,
+.en-illustration .en-drawing-bag {
+  fill: var(--ui-activity-background);
+}
+
+.en-motion { fill: none; }
+.en-study-visual, .en-example, .en-dialogue li, .en-option-picture {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.en-study-visual, .en-audio-actions { justify-content: center; }
+.en-study-visual { margin: 0 0 1rem; }
+.en-study-visual .en-illustration { width: 7.5rem; height: 7.25rem; }
+.en-example, .en-dialogue li { flex-wrap: wrap; justify-content: space-between; }
+.en-example.ct-examples, .en-dialogue.ct-examples { padding-inline: 1rem; }
+.en-example p, .en-dialogue li p { margin: 0; }
+.en-example small, .en-dialogue small { display: block; }
+.en-dialogue { list-style: none; }
+.en-listen { text-align: center; }
+.en-audio-status { min-block-size: 1.5em; }
+.en-option-picture { flex-wrap: wrap; }
+
+@media (max-width: 600px) {
+  .en-option-picture .en-illustration { width: 3.75rem; height: 3.65rem; }
+}

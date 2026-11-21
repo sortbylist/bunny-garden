@@ -28,7 +28,7 @@ test('自然拼读入口、48 课地图、自评前进、收藏与刷新恢复�
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await openEnglish(page);
-  await expect(page.getByRole('tab', { name: '自然拼读' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('[data-navigation="features-english"] .nav-group-picker summary')).toHaveAttribute('aria-label', '选择英语主题分类，当前：自然拼读');
   await expect(page.locator('.ph-map [data-action="ph-lesson"]')).toHaveCount(48);
   await expect(page.locator('#ph-lesson-select')).toHaveCount(0);
   await expect(page.locator('.ph-word')).toHaveText('map');

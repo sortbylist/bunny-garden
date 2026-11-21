@@ -18,7 +18,8 @@ function pinyinQuestion(id) {
 
 function practice(question) {
   if (!question) return null;
-  return { title: [question.prompt, question.display].filter(Boolean).join(' · '), lines: [...(question.passage?.paragraphs || []), `答案：${question.answer}`, question.explanation] };
+  const answer = question.choices?.find(choice => choice.id === question.answer)?.label || question.answer;
+  return { title: [question.prompt, question.display].filter(Boolean).join(' · '), lines: [...(question.passage?.paragraphs || []), question.clip?.text, `答案：${answer}`, question.explanation] };
 }
 
 export function resolveFavorite(ref, topicById) {
@@ -51,5 +52,5 @@ export function resolveFavorite(ref, topicById) {
     return entry && { title: `${entry.text} · ${entry.pinyin}`, lines: entry.meanings.map(pair => pair.join('：')) };
   }
   const lesson = kind === 'lesson' && (hanzi ? hanziLessons : topic.lessons).find(item => item.id === id);
-  return lesson && { title: lesson.title, lines: [lesson.body || lesson.tip || lesson.rule], lesson, feature, hanzi };
+  return lesson && { title: lesson.title, lines: [lesson.body || lesson.tip || lesson.rule, ...(lesson.lines || []).map(item => item.clip.text)], lesson, feature, hanzi };
 }

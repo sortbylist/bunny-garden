@@ -3,6 +3,8 @@ import { rewardTopics, rewardStages, curriculumProgress } from './reward-curricu
 import { phonicsQuestionById } from './phonics-engine.js';
 import { phonicsWordById } from './phonics-data.js';
 
+const topicNames = { chinese: '语文主题', math: '数学主题', english: '英语主题或自然拼读模块' };
+
 export const rewardCatalog = [
   { id: 'hello-bunny', type: 'sticker', name: '出发小兔', art: 'bunny', description: '每一个新朋友，都是一次小小的出发。', metric: 'learned', target: 1, rule: '首次标记认识 1 个学习项目' },
   { id: 'little-sprout', type: 'sticker', name: '芽芽种子', art: 'sprout', description: '你认识的朋友，正在慢慢发芽。', metric: 'learned', target: 6, rule: '累计首次标记认识 6 个不同项目' },
@@ -29,11 +31,11 @@ export const rewardCatalog = [
   ].map(([target, name, art]) => ({ id: `sections-${target}`, type: 'sticker', name, art, metric: 'sections', target, rule: `${target === 1 ? '首次完成一个小节' : `累计完成 ${target} 个不同小节`}。`, description: '一步一步，走出属于你的学习小路。' })),
   ...[
     ['chinese', '故事小书签', 'bookmark'], ['math', '数字小火箭', 'rocket'], ['english', '字母小精灵', 'fairy'],
-  ].map(([subject, name, art]) => ({ id: `first-topic-${subject}`, type: 'sticker', name, art, subject, metric: `topics-${subject}`, target: 1, rule: `获得首枚${{ chinese: '语文主题', math: '数学主题', english: '英语模块' }[subject]}徽章。`, description: '一个新主题，一份值得珍藏的发现。' })),
+  ].map(([subject, name, art]) => ({ id: `first-topic-${subject}`, type: 'sticker', name, art, subject, metric: `topics-${subject}`, target: 1, rule: `获得首枚${topicNames[subject]}徽章。`, description: '一个新主题，一份值得珍藏的发现。' })),
   ...rewardTopics.map(topic => ({
     id: `topic-${topic.id}`, type: 'badge', name: `${topic.name}小能手`, art: `topic-${topic.subject}`,
     topicId: topic.id, subject: topic.subject, icon: topic.icon, metric: 'topic', target: 1,
-    rule: `完成“${topic.name}”${topic.subject === 'english' ? '模块' : '主题'}的全部小节。`,
+    rule: `完成“${topic.name}”${topic.phonics ? '模块' : '主题'}的全部小节。`,
     description: '把一点一滴的练习，连成一份完整的收获。',
   })),
   ...rewardStages.flatMap(stage => [
@@ -48,7 +50,7 @@ export const rewardCatalog = [
     ['chinese', 3, '书香小书架', 'bookshelf'], ['math', 2, '数字积木塔', 'blocks'], ['english', 2, '字母小路牌', 'signpost'],
   ].map(([subject, target, name, art]) => ({
     id: `garden-topics-${subject}`, type: 'decoration', name, art, metric: `topics-${subject}`, target,
-    rule: `获得 ${target} 枚不同的${{ chinese: '语文主题', math: '数学主题', english: '英语模块' }[subject]}徽章。`,
+    rule: `获得 ${target} 枚不同的${topicNames[subject]}徽章。`,
     description: '让学习的收获，在花园里留下小小的纪念。',
   })),
   { id: 'garden-golden-flower', type: 'decoration', name: '金色向日葵', art: 'sunflower', metric: 'gold', target: 1, rule: '获得首枚阶段金牌。', description: '向着阳光，记住这一刻的成长。' },
