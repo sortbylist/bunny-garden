@@ -135,9 +135,10 @@ test('同版本扩课后可读取本机档和导入备份，仅为新增内容�
   const imported = memoryStorage();
   restoreBackup(imported, backup);
   const loaded = loadState(local);
+  const full = loadState(memoryStorage([[appStorageKey, JSON.stringify(JSON.parse(text).data)]]));
   assert.equal(loaded.available, true);
   assert.deepEqual(loadState(imported), loaded);
-  assert.deepEqual(loaded.state.topics[math.id].round, state.topics[math.id].round);
+  assert.deepEqual(loaded.state.topics[math.id].round, full.state.topics[math.id].round);
   assert.deepEqual(loaded.state.topics[writing.id].activities[lesson.id], state.topics[writing.id].activities[lesson.id]);
   assert.deepEqual(loaded.state.rewards, state.rewards);
   assert.equal(loaded.state.settings.animations, false);

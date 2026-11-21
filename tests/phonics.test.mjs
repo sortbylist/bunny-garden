@@ -4,8 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { alphabet, phonicsModules, phonicsLessons, phonicsWords, phonicsStories, phonicsSentences } from '../src/phonics-data.js';
 import { phonicsDefaults, phonicsQuestions, questionPool, createPhonicsRound, answerPhonics, advancePhonicsRound, phonicsStats, normalizePhonicsState, availablePhonicsAudio, shufflePhonics } from '../src/phonics-engine.js';
 import { defaultState } from '../src/engine.js';
-import { loadState } from '../src/storage.js';
-import { appStorageKey, saveState } from '../src/storage.js';
+import { appStorageKey, loadState, saveState } from '../src/storage.js';
 import { encodeLearningData } from '../src/learning-data.js';
 
 test('拼读课程覆盖 12 模块、48 课、600 以上去重词形、36 篇共读与 120 以上短句', () => {
