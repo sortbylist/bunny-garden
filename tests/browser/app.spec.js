@@ -109,7 +109,7 @@ test('分类、主题、学习操作和刷新保持各自选择与进度', async
   await expect(page.locator('.pinyin-display')).toHaveText('o');
 });
 
-test('关于学习乐园提供音频来源、署名、许可、例音和设计参考链接', async ({ page }) => {
+test('关于学习乐园提供音频来源、署名、许可、示范音频和设计参考链接', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: '关于学习乐园' }).click();
   const dialog = page.getByRole('dialog', { name: '关于小兔学习乐园' });
@@ -120,7 +120,9 @@ test('关于学习乐园提供音频来源、署名、许可、例音和设计�
     ['Hugo Lopez', 'https://github.com/hugolpz'],
     ['Nicolas Vion', 'https://github.com/hugolpz/audio-cmn#credits'],
     ['CC BY-SA', 'https://creativecommons.org/cc-licenses/'],
-    ['dōng 的例音', '/audio/dong1.mp3'],
+    ['ong 韵母音频', '/audio/ong-openlearn.wav'],
+    ['Getting started with Chinese 1', 'https://www.open.edu/openlearn/mod/oucontent/view.php?id=106435&section=1.1'],
+    ['CC BY-NC-SA 4.0', 'https://creativecommons.org/licenses/by-nc-sa/4.0/'],
     ['WordAudio', 'https://github.com/mrcraked/WordAudio'],
     ['gTTS', 'https://gtts.readthedocs.io/en/stable/'],
     ['查看音频来源与署名说明', '/audio/ATTRIBUTION.md'],
@@ -132,9 +134,33 @@ test('关于学习乐园提供音频来源、署名、许可、例音和设计�
     await expect(link).toHaveAttribute('target', '_blank');
     await expect(link).toHaveAttribute('rel', 'noopener');
   }
-  const audio = await page.request.get('/audio/dong1.mp3');
+  const audio = await page.request.get('/audio/ong-openlearn.wav');
   expect(audio.ok()).toBe(true);
-  expect(audio.headers()['content-type']).toContain('audio/mpeg');
+  expect(audio.headers()['content-type']).toMatch(/^audio\/(?:x-)?wav/);
+});
+
+test('ong 学习卡和本节听辨均播放独立韵母音频', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('[data-action="map-group"][data-id="back"]').click();
+  await page.getByRole('button', { name: '学习 ong', exact: true }).click();
+  await expect(page.locator('.memory-tip')).toContainText('用后鼻音 ng 收尾');
+  const cardAudio = page.waitForResponse('**/audio/ong-openlearn.wav');
+  await page.getByRole('button', { name: '听 ong 的读音' }).click();
+  expect((await cardAudio).ok()).toBe(true);
+  await expect(page.locator('.primary-audio')).toHaveClass(/playing/);
+  await expect(page.locator('.primary-audio')).not.toHaveClass(/playing/);
+
+  await page.locator('.card-navigation [data-action="pinyin-section-practice"]').click();
+  const round = (await stored(page)).sessions['section-practice:back:all:retroflex:10'];
+  expect(round.questions).toHaveLength(4);
+  for (const question of round.questions) {
+    if (question.answer === 'ong') break;
+    await page.locator(`[data-action="answer"][data-value="${question.answer}"]`).click();
+    await page.locator('[data-action="next-question"]').click();
+  }
+  await expect(page.locator('[data-action="answer"][data-value="ong"]')).toBeVisible();
+  await page.getByRole('button', { name: '再听一遍' }).click();
+  await expect(page.locator('.primary-audio')).toHaveClass(/playing/);
 });
 
 test('设置弹窗、清空确认与键盘关闭', async ({ page }) => {

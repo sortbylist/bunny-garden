@@ -87,7 +87,7 @@ function wordQuestions(mode, wordScope) {
 }
 
 function soundQuestions(mode, group, includeInitials = false) {
-  const pool = basics.filter(item => (includeInitials || item.group !== 'initial') && item.text !== 'ong' && (group === 'all' || item.group === group));
+  const pool = basics.filter(item => (includeInitials || item.group !== 'initial') && (group === 'all' || item.group === group));
   const unique = pool.filter((item, index) => pool.findIndex(other => other.sound === item.sound) === index);
   if (unique.length < 2) return [];
   return unique.map(item => {

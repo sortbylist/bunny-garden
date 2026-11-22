@@ -54,6 +54,16 @@ test('每题只有一个正确选项，听辨不把相同读音当不同选项',
   for (const confusion of Object.keys(confusionSets)) assert.ok(questionPool('confusing', { confusion }).length >= 8);
 });
 
+test('后鼻韵母的两种听辨方式使用 ong 的专用音频', () => {
+  for (const mode of ['listen', 'audio']) {
+    const questions = questionPool(mode, { group: 'back' });
+    assert.equal(questions.length, 4);
+    const ong = questions.find(question => question.itemId === 'back-ong');
+    assert.deepEqual(ong.audio, { sound: 'ong' });
+    if (mode === 'audio') assert.deepEqual(ong.options.find(option => option.value === 'ong'), { value: 'ong', sound: 'ong' });
+  }
+});
+
 test('首次答题统计不被重试和查看答案覆盖', () => {
   const round = createRound('rules', {}, 5);
   const question = round.questions[0];

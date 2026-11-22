@@ -617,7 +617,6 @@ function pinyinReturnToLearning() {
 
 function audioNote(item) {
   if (item.type === 'word') return item.sounds.length > 1 && !hasAudio({ word: item.text }) ? '这个词一个字一个字读，跟着一起拼一拼。' : '听完再读一遍，把字和声音记在一起。';
-  if (item.text === 'ong') return '例音 dōng：注意听后半段 ong（独立读音待补充）。';
   if (item.group === 'initial') return `借助 ${marked(item.sound)} 练习呼读音；拼读时声母要读得轻、短。`;
   if (item.sound.replace(/[1-5]/, '') !== item.text.replace('ü', 'v')) return `借助音节 ${marked(item.sound)} 听读音，注意字母与音节的写法不同。`;
   return '点一下喇叭，让小耳朵也认识它。';
@@ -1053,7 +1052,7 @@ function showAbout() {
       <a href="https://github.com/hugolpz" target="_blank" rel="noopener">Hugo Lopez</a> 负责整理，
       <a href="https://github.com/hugolpz/audio-cmn#credits" target="_blank" rel="noopener">Nicolas Vion</a> 提供录音软件和技术支持。
       录音采用上游声明的 <a href="https://creativecommons.org/cc-licenses/" target="_blank" rel="noopener">CC BY-SA</a> 许可。</p>
-    <p>部分韵母借助完整音节示范，ong 使用 <a href="${publicAsset('/audio/dong1.mp3')}" target="_blank" rel="noopener">dōng 的例音</a>，学习卡片上会明确提示。录音尚待普通话教师逐项试听审核。</p>
+    <p><a href="${publicAsset('/audio/ong-openlearn.wav')}" target="_blank" rel="noopener">ong 韵母音频</a>节选自英国开放大学 OpenLearn 课程 <a href="https://www.open.edu/openlearn/mod/oucontent/view.php?id=106435&amp;section=1.1" target="_blank" rel="noopener">Getting started with Chinese 1</a>，采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a> 许可。部分韵母借助完整音节示范，学习卡片上会提示。录音尚待普通话教师逐项试听审核。</p>
     <p>英语教学音频使用 <a href="https://github.com/mrcraked/WordAudio" target="_blank" rel="noopener">WordAudio</a> 和 <a href="https://gtts.readthedocs.io/en/stable/" target="_blank" rel="noopener">gTTS</a> 生成。</p>
     <p><a href="${publicAsset('/audio/ATTRIBUTION.md')}" target="_blank" rel="noopener">查看音频来源与署名说明</a></p>
     <h3>使用小提醒</h3>
@@ -1136,7 +1135,6 @@ function playQuestionParts(question) {
   if (items.every(Boolean)) { void playAudio({ sounds: items.map(item => item.sound) }, state.settings.slow); return; }
   const finalParts = { ua: ['u', 'a'], uo: ['u', 'o'], iong: ['i', 'ong'] };
   const parts = [question.parts[0], ...(finalParts[question.parts[1]] || [question.parts[1]])];
-  if (parts.includes('ong')) { toast('这个组合先试着自己拼，答完可以听完整音节。'); return; }
   void playAudio({ sounds: parts.map(part => basics.find(item => item.text === part)?.sound) }, state.settings.slow);
 }
 

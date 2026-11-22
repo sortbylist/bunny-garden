@@ -8,5 +8,14 @@
     "license": "CC BY-SA 3.0 US",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/us/",
     "description": "Pronunciation of 麻 (má), replacing the unsuitable ma2 demonstration."
+  },
+  "syllable:ong": {
+    "file": "ong-openlearn.wav",
+    "localOnly": true,
+    "descriptionUrl": "https://www.open.edu/openlearn/mod/oucontent/view.php?id=106435&section=1.1",
+    "project": "Getting started with Chinese 1 (The Open University, OpenLearn)",
+    "license": "CC BY-NC-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+    "description": "The standalone ong demonstration, excerpted from 16.15–17.03 seconds of l197-pronunciation-02.mp3 and converted to mono WAV."
   }
 }

@@ -40,6 +40,12 @@ async function worker() {
         continue;
       }
     } catch {}
+    if (task.localOnly) {
+      delete manifest.files[task.key];
+      manifest.missing.push(task.key);
+      completed++;
+      continue;
+    }
     let downloaded = false;
     for (let attempt = 0; attempt < 3 && !downloaded; attempt++) {
       try {
