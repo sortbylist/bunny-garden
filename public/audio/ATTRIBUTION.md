@@ -10,6 +10,10 @@
 
 `ong-openlearn.wav` 节选自 [Getting started with Chinese 1 · Pronunciation Guide](https://www.open.edu/openlearn/mod/oucontent/view.php?id=106435&section=1.1)，© The Open University，2020。原音轨为 `l197-pronunciation-02.mp3`，逐字稿的最后一项是单独朗读的 `ong`。本项目截取 16.15–17.03 秒，首尾各做 5 毫秒淡化并转为单声道 WAV。按[课程署名说明](https://www.open.edu/openlearn/mod/oucontent/view.php?id=108532&section=__acknowledgements)，此片段采用 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) 许可。
 
+### 慧慧合成录音
+
+白云等 13 个双字词使用 Windows `System.Speech` 的 `Microsoft Huihui Desktop` 普通话语音离线合成，替代原先的逐字播放。文字、路径和 SHA-256 见 [整词清单](review/huihui/manifest.json)。全部 34 张借音卡均有试听候选，对应 32 段合成音节，见 [借音对照清单](review/huihui-borrowed/manifest.json)。正式学习页的借音和拼读使用既有录音。
+
 ### 其余拼音录音
 
 - 音节录音：Chen Wang。

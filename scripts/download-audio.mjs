@@ -13,6 +13,13 @@ const syllables = new Set([
   ...tonePracticeSounds,
 ]);
 const overrides = JSON.parse(await readFile(new URL('overrides.json', root), 'utf8'));
+const huihui = JSON.parse(await readFile(new URL('review/huihui/manifest.json', root), 'utf8'));
+for (const { text, path, sha256 } of Object.values(huihui.files)) {
+  overrides[`word:${text}`] = {
+    file: path.slice('/audio/'.length), localOnly: true, project: huihui.provider,
+    speaker: huihui.voice, synthetic: true, text, sha256,
+  };
+}
 const tasks = [
   ...[...syllables].map(sound => ({ key: `syllable:${sound}`, file: `${sound}.mp3`, source: `64k/syllabs/cmn-${sound}.mp3` })),
   ...vocabulary.filter(item => item.sounds.length > 1).map(item => ({ key: `word:${item.text}`, file: `word-${item.text}.mp3`, source: `64k/hsk/cmn-${item.text}.mp3` })),
@@ -32,7 +39,7 @@ let completed = 0;
 async function worker() {
   while (cursor < tasks.length) {
     const task = tasks[cursor++];
-    const destination = new URL(encodeURIComponent(task.file), root);
+    const destination = new URL(task.file.split('/').map(encodeURIComponent).join('/'), root);
     try {
       if ((await stat(destination)).size > 500) {
         manifest.files[task.key] = `/audio/${task.file}`;

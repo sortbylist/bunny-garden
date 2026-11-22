@@ -10,6 +10,10 @@ function poemLine([text, pinyin], showPinyin) {
     : escapeText(character)).join('');
 }
 
+export function poemLines(lines, showPinyin) {
+  return lines.map(line => `<p>${poemLine(line, showPinyin)}</p>`).join('');
+}
+
 export function literacySupplement(lesson, state) {
   if (lesson.reading) return readingLesson(lesson, state);
   if (lesson.comparison) return `<section class="ct-comparison" aria-label="字形与读音对照">${lesson.comparison.map(item => `<article>
@@ -27,7 +31,7 @@ export function literacySupplement(lesson, state) {
     <p class="hz-caption ct-poem-audio-status" role="status" aria-live="polite">普通话合成语音，点击后播放。</p>
     <div class="ct-poem-lines" id="ct-poem-lines">${hidden
       ? '<p class="ct-recite-hint" role="status">原文已遮住，试着背给自己或家人听。想不起来时，随时打开再读。</p>'
-      : lesson.poem.lines.map(line => `<p>${poemLine(line, state.showPinyin)}</p>`).join('')}</div>
+      : poemLines(lesson.poem.lines, state.showPinyin)}</div>
     <button type="button" class="outline-button" data-action="ct-activity-recite" aria-controls="ct-poem-lines" aria-pressed="${hidden}">${hidden ? '打开原文再读读' : '遮住原文试着背'}</button>
     <p class="hz-caption">先听一听，再自己读一读，也可以请家人领读。背诵是自己的尝试，不自动评分。</p>
     </section>`;

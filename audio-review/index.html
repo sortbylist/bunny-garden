@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <link rel="icon" type="image/svg+xml" href="/bunny.svg" />
+    <title>试听审核 · 小兔学习乐园</title>
+  </head>
+  <body>
+    <main id="audio-review" class="audio-review">
+      <header class="audit-heading">
+        <h1>试听审核</h1>
+        <p>对照学习内容和目标读音，试听后记录审核结果。关闭或刷新页面前，请先导出。</p>
+      </header>
+      <p id="audit-load" role="status">正在载入试听清单……</p>
+      <div id="audit-panel" hidden>
+        <section class="audit-controls" aria-label="选择审核范围">
+          <div class="audit-subjects" role="group" aria-label="学科"></div>
+          <div class="audit-filters">
+            <label>审核批次<select id="audit-batch"></select></label>
+            <label>阶段<select id="audit-stage"></select></label>
+            <label>主题<select id="audit-topic"></select></label>
+            <label>分类<select id="audit-category"></select></label>
+          </div>
+          <p id="audit-guide" class="audit-guide"></p>
+        </section>
+        <section aria-labelledby="audit-list-title">
+          <div class="audit-list-tools">
+            <h2 id="audit-list-title" tabindex="-1">试听清单</h2>
+            <div class="audit-pagination">
+              <label class="audit-page-size">每页数量<select id="audit-page-size">
+                <option value="8">8 项</option>
+                <option value="20" selected>20 项</option>
+                <option value="50">50 项</option>
+                <option value="100">100 项</option>
+              </select></label>
+              <nav class="audit-pages" aria-label="清单顶部分页" hidden>
+                <button type="button" class="outline-button" aria-controls="audit-items" data-audit-previous>上一页</button>
+                <span data-audit-page-number role="status"></span>
+                <button type="button" class="outline-button" aria-controls="audit-items" data-audit-next>下一页</button>
+              </nav>
+            </div>
+          </div>
+          <p id="audit-range"></p>
+          <details class="audit-bulk" id="audit-bulk" hidden>
+            <summary>批量审批当前页</summary>
+            <form id="audit-bulk-form" novalidate>
+              <div class="audit-bulk-options">
+                <label>批量审核结果<select id="audit-bulk-status" required></select></label>
+                <label class="audit-bulk-scope"><input type="checkbox" id="audit-bulk-unreviewed" checked />仅处理未审核项</label>
+              </div>
+              <label class="audit-note">批量备注<textarea id="audit-bulk-note" rows="2" maxlength="3000" aria-describedby="audit-bulk-hint"></textarea></label>
+              <p id="audit-bulk-hint">已有的单项备注会保留。</p>
+              <div class="audit-bulk-actions">
+                <button type="submit" class="solid-button" id="audit-bulk-apply">应用到当前页</button>
+                <p id="audit-bulk-feedback" role="status"></p>
+              </div>
+            </form>
+          </details>
+          <div id="audit-items" class="audit-items"></div>
+          <nav class="audit-pages audit-pages-bottom" aria-label="清单底部分页" hidden>
+            <button type="button" class="outline-button" aria-controls="audit-items" data-audit-previous>上一页</button>
+            <span data-audit-page-number></span>
+            <button type="button" class="outline-button" aria-controls="audit-items" data-audit-next>下一页</button>
+          </nav>
+        </section>
+        <section class="audit-output" aria-label="导出审核结果">
+          <div class="audit-export">
+            <div><p id="audit-progress" role="status"></p><small>导出所选学科的整个批次，含未审核项。</small></div>
+            <button id="audit-download" type="button" class="solid-button">导出审核结果（JSON）</button>
+          </div>
+          <p id="audit-export-error" class="audit-error" role="alert" hidden></p>
+        </section>
+      </div>
+    </main>
+    <script type="module" src="/src/audio-review.js"></script>
+  </body>
+</html>

@@ -7,6 +7,144 @@
   },
   "license": "CC BY-SA (upstream README does not specify a version)",
   "review": "Source and file coverage checked; educational listening review pending.",
+  "overrides": {
+    "syllable:ma2": {
+      "file": "ma2-yue-tan.ogg",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/c/c9/Zh-m%C3%A1.ogg",
+      "descriptionUrl": "https://commons.wikimedia.org/wiki/File:Zh-m%C3%A1.ogg",
+      "speaker": "Yue Tan",
+      "project": "The Shtooka Project",
+      "license": "CC BY-SA 3.0 US",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/us/",
+      "description": "Pronunciation of 麻 (má), replacing the unsuitable ma2 demonstration."
+    },
+    "syllable:ong": {
+      "file": "ong-openlearn.wav",
+      "localOnly": true,
+      "descriptionUrl": "https://www.open.edu/openlearn/mod/oucontent/view.php?id=106435&section=1.1",
+      "project": "Getting started with Chinese 1 (The Open University, OpenLearn)",
+      "license": "CC BY-NC-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+      "description": "The standalone ong demonstration, excerpted from 16.15–17.03 seconds of l197-pronunciation-02.mp3 and converted to mono WAV."
+    },
+    "word:白云": {
+      "file": "review/huihui/baiyun.wav",
+      "localOnly": true,
+      "project": "Windows System.Speech",
+      "speaker": "Microsoft Huihui Desktop",
+      "synthetic": true,
+      "text": "白云",
+      "sha256": "7ea8e0236bf36da9abe47e2a4fda8f662f0f69eff7a9249d2990361669d91d33"
+    },
+    "word:小草": {
+      "file": "review/huihui/xiaocao.wav",
+      "localOnly": true,
+      "project": "Windows System.Speech",
+      "speaker": "Microsoft Huihui Desktop",
+      "synthetic": true,
+      "text": "小草",
+      "sha256": "589278cc0053c1e255073186589f59c24d75b66c84d6f0318ddad1d12a6feb36"
+    },
+    "word:画画": {
+      "file": "review/huihui/huahua.wav",
+      "localOnly": true,
+      "project": "Windows System.Speech",
+      "speaker": "Microsoft Huihui Desktop",
+      "synthetic": true,
+      "text": "画画",
+      "sha256": "0570c67b7f339b5ca7ed0cdf920c13eb9df7b7a30def32ab9299788acb842977"
+    },
+    "word:写字": {
+      "file": "review/huihui/xiezi.wav",
+      "localOnly": true,
+      "project": "Windows System.Speech",
+      "speaker": "Microsoft Huihui Desktop",
+      "synthetic": true,
+      "text": "写字",
+      "sha256": "1440c81454aa99b65d14b3cc3a4da7b08aa9921e72cad47ea23e55f8e3745e53"
+    },
+    "word:蓝天": {
+      "file": "review/huihui/lantian.wav",
+      "localOnly": true,
+      "project": "Windows System.Speech",
+      "speaker": "Microsoft Huihui Desktop",
+      "synthetic": true,
+      "text": "蓝天",
+      "sha256": "c1219f2cf62f7a4b2ae5d77c7bd0c107dfea35425e70d4b230f218f0189b4867"
+    },
+    "word:大树": {
+      "file": "review/huihui/dashu.wav",
+      "localOnly": true,
+      "project": "Windows System.Speech",
+      "speaker": "Microsoft Huihui Desktop",
+      "synthetic": true,
+      "text": "大树",
+      "sha256": "8cf617c3419017ee8c5340d05de756e5a5c743e9dbad4cf54b3f23d279594e6d"
+    },
+    "word:大海": {
+      "file": "review/huihui/dahai.wav",
+      "localOnly": true,
+      "project": "Windows System.Speech",
+      "speaker": "Microsoft Huihui Desktop",
+      "synthetic": true,
+      "text": "大海",
+      "sha256": "7631d1b8ecf9542f249d82ca9ea7dfd85fb72ccaea69210faac7b2ffb0c50117"
+    },
+    "word:河水": {
+      "file": "review/huihui/heshui.wav",
+      "localOnly": true,
+      "project": "Windows System.Speech",
+      "speaker": "Microsoft Huihui Desktop",
+      "synthetic": true,
+      "text": "河水",
+      "sha256": "df7c940c5e2cf496ca34a4449a558e8aaeac5229a84a44ba66a35e1586f63870"
+    },
+    "word:小鸟": {
+      "file": "review/huihui/xiaoniao.wav",
+      "localOnly": true,
+      "project": "Windows System.Speech",
+      "speaker": "Microsoft Huihui Desktop",
+      "synthetic": true,
+      "text": "小鸟",
+      "sha256": "c3d5f55cb011a070828c94cdeb63fd43a45f2da980ee2f49f7a3bf09153e358c"
+    },
+    "word:小鱼": {
+      "file": "review/huihui/xiaoyu.wav",
+      "localOnly": true,
+      "project": "Windows System.Speech",
+      "speaker": "Microsoft Huihui Desktop",
+      "synthetic": true,
+      "text": "小鱼",
+      "sha256": "003aae7d68b51dfe07cf6acf12ef4f2b9838039100348b673f5aa5571f4745eb"
+    },
+    "word:白兔": {
+      "file": "review/huihui/baitu.wav",
+      "localOnly": true,
+      "project": "Windows System.Speech",
+      "speaker": "Microsoft Huihui Desktop",
+      "synthetic": true,
+      "text": "白兔",
+      "sha256": "36248254ac3115189f115f1877e9a163e376aa303946d77e78de804f8b664b66"
+    },
+    "word:山羊": {
+      "file": "review/huihui/shanyang.wav",
+      "localOnly": true,
+      "project": "Windows System.Speech",
+      "speaker": "Microsoft Huihui Desktop",
+      "synthetic": true,
+      "text": "山羊",
+      "sha256": "ea7714c447fb4494fddab31f9ec8bbd87097e8b8fdc926196e58cc1e82bd4980"
+    },
+    "word:黄牛": {
+      "file": "review/huihui/huangniu.wav",
+      "localOnly": true,
+      "project": "Windows System.Speech",
+      "speaker": "Microsoft Huihui Desktop",
+      "synthetic": true,
+      "text": "黄牛",
+      "sha256": "81f60e182510a498ed1b69766f17580b87238d8ee290b97639055de22a2d06f8"
+    }
+  },
   "files": {
     "syllable:o1": "/audio/o1.mp3",
     "syllable:yi1": "/audio/yi1.mp3",
@@ -325,21 +463,20 @@
     "syllable:yi4": "/audio/yi4.mp3",
     "syllable:wu2": "/audio/wu2.mp3",
     "syllable:ba2": "/audio/ba2.mp3",
-    "syllable:wu3": "/audio/wu3.mp3"
+    "syllable:wu3": "/audio/wu3.mp3",
+    "word:写字": "/audio/review/huihui/xiezi.wav",
+    "word:画画": "/audio/review/huihui/huahua.wav",
+    "word:白云": "/audio/review/huihui/baiyun.wav",
+    "word:蓝天": "/audio/review/huihui/lantian.wav",
+    "word:小草": "/audio/review/huihui/xiaocao.wav",
+    "word:大树": "/audio/review/huihui/dashu.wav",
+    "word:河水": "/audio/review/huihui/heshui.wav",
+    "word:大海": "/audio/review/huihui/dahai.wav",
+    "word:小鱼": "/audio/review/huihui/xiaoyu.wav",
+    "word:小鸟": "/audio/review/huihui/xiaoniao.wav",
+    "word:山羊": "/audio/review/huihui/shanyang.wav",
+    "word:白兔": "/audio/review/huihui/baitu.wav",
+    "word:黄牛": "/audio/review/huihui/huangniu.wav"
   },
-  "missing": [
-    "word:写字",
-    "word:大海",
-    "word:画画",
-    "word:小鸟",
-    "word:小鱼",
-    "word:蓝天",
-    "word:白兔",
-    "word:山羊",
-    "word:黄牛",
-    "word:小草",
-    "word:大树",
-    "word:河水",
-    "word:白云"
-  ]
+  "missing": []
 }

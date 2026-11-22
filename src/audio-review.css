@@ -1,0 +1,246 @@
+.audio-review {
+  max-width: 1120px;
+  margin: auto;
+  padding: clamp(18px, 4vw, 46px);
+  color: #493b48;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.audio-review .audit-heading {
+  margin-bottom: 22px;
+}
+
+.audio-review .audit-heading p,
+.audio-review #audit-range {
+  margin: 5px 0 14px;
+}
+
+.audio-review .audit-controls,
+.audio-review .audit-row,
+.audio-review .audit-output {
+  border: 1px solid var(--ui-card-border);
+  border-radius: 18px;
+  background: var(--ui-surface);
+  padding: clamp(14px, 2.5vw, 26px);
+}
+
+.audio-review .audit-controls {
+  margin-bottom: 28px;
+}
+
+.audio-review .audit-subjects,
+.audio-review .audit-export,
+.audio-review .audit-playback,
+.audio-review .audit-list-tools,
+.audio-review .audit-pagination,
+.audio-review .audit-page-size,
+.audio-review .audit-bulk-options,
+.audio-review .audit-bulk-scope,
+.audio-review .audit-bulk-actions,
+.audio-review .audit-pages:not([hidden]) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.audio-review .audit-subjects button[aria-pressed="true"] {
+  background: #efe0ea;
+  border-color: #a97998;
+  color: #56364b;
+}
+
+.audio-review .audit-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+  gap: 12px;
+  margin-top: 17px;
+}
+
+.audio-review .audit-filters label,
+.audio-review .audit-note {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.audio-review select,
+.audio-review textarea {
+  width: 100%;
+  padding: 8px 10px;
+  background: white;
+  color: inherit;
+  border: 1px solid #bfa8b7;
+  border-radius: 8px;
+  font: inherit;
+}
+
+.audio-review textarea {
+  resize: vertical;
+}
+
+.audio-review select:focus-visible,
+.audio-review textarea:focus-visible,
+.audio-review button:focus-visible,
+.audio-review input:focus-visible {
+  outline: 2px solid #87506f;
+  outline-offset: 2px;
+}
+
+.audio-review .audit-guide {
+  margin-top: 12px;
+}
+
+.audio-review .audit-guide:empty {
+  display: none;
+}
+
+.audio-review .audit-export {
+  justify-content: space-between;
+}
+
+.audio-review .audit-list-tools {
+  justify-content: space-between;
+}
+
+.audio-review .audit-page-size select {
+  width: auto;
+}
+
+.audio-review .audit-bulk {
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border: 1px solid var(--ui-card-border);
+  border-radius: 12px;
+  background: var(--ui-surface);
+}
+
+.audio-review .audit-bulk summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.audio-review .audit-bulk form {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.audio-review .audit-bulk-options {
+  align-items: end;
+  gap: 12px;
+}
+
+.audio-review .audit-bulk-scope {
+  min-height: 41px;
+}
+
+.audio-review .audit-output {
+  margin-top: 22px;
+}
+
+.audio-review .audit-items {
+  display: grid;
+  gap: 16px;
+}
+
+.audio-review .audit-row-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: clamp(14px, 3vw, 28px);
+  align-items: start;
+  margin-top: 12px;
+}
+
+.audio-review .audit-location,
+.audio-review .audit-source {
+  color: #705767;
+  font-size: 13px;
+}
+
+.audio-review .audit-preview {
+  min-height: 0;
+  padding: clamp(12px, 2vw, 20px);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.audio-review .audit-preview .pinyin-stage {
+  height: clamp(145px, 24vw, 208px);
+}
+
+.audio-review .audit-preview .pinyin-display {
+  font-size: clamp(62px, 10vw, 110px);
+}
+
+.audio-review .audit-preview.word-card .pinyin-display {
+  font-size: clamp(32px, 5vw, 58px);
+}
+
+.audio-review .audit-preview .memory-tip,
+.audio-review .audit-reference,
+.audio-review .audit-playback {
+  margin-top: 10px;
+}
+
+.audio-review .audit-preview .answer-option {
+  font-size: clamp(14px, 2vw, 19px);
+}
+
+.audio-review .audit-preview .ph-word {
+  margin: 0;
+  font-size: clamp(26px, 5vw, 46px);
+}
+
+.audio-review .audit-preview .ct-poem-lines {
+  padding: 8px;
+}
+
+.audio-review .audit-preview .ct-poem-lines > p {
+  font-size: clamp(20px, 2.2vw, 26px);
+  line-height: 2.4;
+}
+
+.audio-review .audit-decision {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.audio-review .audit-expected {
+  display: block;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.audio-review fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  min-width: 0;
+  border: 1px solid #d9c5d2;
+  border-radius: 8px;
+  padding: 6px 10px 10px;
+}
+
+.audio-review fieldset label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.audio-review .audit-error {
+  color: #8a2f36;
+}
+
+.audio-review .audit-pages-bottom {
+  justify-content: center;
+  margin-top: 22px;
+}
+
+@media (max-width: 740px) {
+  .audio-review .audit-row-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

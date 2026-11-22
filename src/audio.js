@@ -1,4 +1,5 @@
 import { publicAsset } from './public-asset.js';
+import { pinyinAudioPaths } from './pinyin-audio-data.js';
 
 let manifest = { files: {} };
 const ready = fetch(publicAsset('/audio/manifest.json')).then(response => response.ok ? response.json() : manifest).then(data => { manifest = data; }).catch(() => {});
@@ -22,8 +23,7 @@ export async function playAudio(request, slow = false) {
   statusHandler('loading');
   await ready;
   if (token !== generation) return false;
-  const wordPath = request.word && manifest.files[`word:${request.word}`];
-  const paths = wordPath ? [wordPath] : (request.sounds || [request.sound]).map(sound => manifest.files[`syllable:${sound}`]);
+  const paths = pinyinAudioPaths(manifest.files, request);
   if (!paths.length || paths.some(path => !path)) {
     statusHandler('error', '这段读音暂时不可用，请换一个试试。');
     return false;

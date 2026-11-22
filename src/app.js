@@ -37,6 +37,8 @@ import { backupFilename, createBackup, parseBackup, restoreBackup, maxBackupByte
 import { loadState, saveState } from './storage.js';
 import { pinyinPracticeCategory } from './learning-data.js';
 import { publicAsset } from './public-asset.js';
+import { pinyinBlendAudio, pinyinCardAudio } from './pinyin-audio-data.js';
+import { pinyinCardContent } from './pinyin-card.js';
 
 const bunnyImage = publicAsset('/bunny.svg');
 const app = document.querySelector('#app');
@@ -585,7 +587,7 @@ function handleLibraryCardAction(target) {
     if (action === 'ct-poem-play' && item.lesson?.poem) void poetryAudio.play(item.lesson.poem.audioId, state.settings.slow);
     return;
   }
-  if (action === 'play-current') { void playAudio(requestFor(item.word), state.settings.slow); return; }
+  if (action === 'play-current') { void playAudio(pinyinCardAudio(item.word), state.settings.slow); return; }
   if (action === 'play-question') { void playAudio(item.question.audio, state.settings.slow); return; }
   if (action === 'play-parts') { playQuestionParts(item.question); return; }
   if (action === 'sound') { void playAudio({ sound: target.dataset.sound }, state.settings.slow); return; }
@@ -615,23 +617,16 @@ function pinyinReturnToLearning() {
     : button('pinyin-learn', '返回拼音学习', 'book', 'outline-button');
 }
 
-function audioNote(item) {
-  if (item.type === 'word') return item.sounds.length > 1 && !hasAudio({ word: item.text }) ? '这个词一个字一个字读，跟着一起拼一拼。' : '听完再读一遍，把字和声音记在一起。';
-  if (item.group === 'initial') return `借助 ${marked(item.sound)} 练习呼读音；拼读时声母要读得轻、短。`;
-  if (item.sound.replace(/[1-5]/, '') !== item.text.replace('ü', 'v')) return `借助音节 ${marked(item.sound)} 听读音，注意字母与音节的写法不同。`;
-  return '点一下喇叭，让小耳朵也认识它。';
-}
-
 function studyCard(value, item = currentItem(), preview = null) {
   if (!item) return emptyCard(state.mode === 'favorites' ? '收藏夹还在等新朋友' : '这个范围里还没有内容', state.mode === 'favorites' ? '在学习卡片上点一下爱心，就能把它收藏在这里。' : '试着选择“全部拼音”吧。', 'heart');
   const favorite = state.favorites.includes(item.id);
   const known = state.known.includes(item.id);
   const isLast = value.index === value.ids.length - 1;
   return `<section class="study-card ${item.type === 'word' ? 'word-card' : ''}"><div class="card-topline"><h2 class="category-badge" data-activity-heading tabindex="-1">${icon('flower')}学习 · ${item.type === 'word' ? '常见字词' : groupName(item.group)}</h2>${preview || learningPosition(value.index, value.ids.length) + favoriteButton('favorite', favorite)}</div>
-    <div class="pinyin-stage"><span class="stage-spark spark-one">✦</span><span class="stage-spark spark-two">✧</span><div class="writing-lines"></div><button class="pinyin-display ${item.text.length > 4 ? 'long' : ''}" data-action="play-current" aria-label="听 ${escape(item.text)} 的读音">${escape(item.type === 'word' ? item.pinyin : item.text)}</button>${item.type === 'word' ? `<div class="word-under">${item.text}</div>` : ''}</div>
-    <div class="sound-row">${button('play-current', '<span>听一听</span>', 'sound', 'sound-button primary-audio')}${preview ? '' : button('continuous', state.settings.continuous ? '停止连播' : '连续听读', state.settings.continuous ? 'pause' : 'play', 'continuous-button', `aria-pressed="${state.settings.continuous}"`)}</div>
-    <p class="audio-hint">${audioNote(item)}</p>
-    <div class="memory-tip"><span class="tip-icon">${icon('sprout')}</span><div><span class="tip-label">${item.type === 'word' ? '读一读，记一记' : '小兔的记忆提示'}</span><p>${escape(item.tip || `${item.text}，读作 ${item.pinyin}。`)}</p></div>${item.type === 'basic' && item.group !== 'initial' && !['e', 'ü', 'ang', 'eng'].includes(item.text) ? `<span class="example-tag">${item.example}</span>` : ''}</div>
+    ${pinyinCardContent(item, {
+      wholeWord: item.type === 'word' && hasAudio({ word: item.text }),
+      extraControl: preview ? '' : button('continuous', state.settings.continuous ? '停止连播' : '连续听读', state.settings.continuous ? 'pause' : 'play', 'continuous-button', `aria-pressed="${state.settings.continuous}"`),
+    })}
     ${preview ? '' : `<div class="mastery-actions">${button('practice-later', '还要练一练', 'refresh', 'soft-button')}${button('known', known ? '已经认识啦' : '我认识啦', 'check', `soft-button mint ${known ? 'is-known' : ''}`, `aria-pressed="${known}"`)}${state.mode !== 'favorites' ? button('pinyin-order', state.mode === 'random' ? '顺序学习' : '随机认读', 'shuffle', 'text-button') : ''}</div>
     <div class="card-navigation">${button('previous', '上一个', 'chevron', 'outline-button previous', value.index === 0 ? 'disabled' : '')}${isLast && item.type === 'basic' && state.mode !== 'favorites' ? sectionPracticeButton('pinyin-section-practice', state.group, true) : button(isLast ? 'finish-study' : 'next', isLast ? '完成这一轮' : '下一个', 'chevron', 'solid-button next')}</div>`}
   </section>`;
@@ -1052,6 +1047,7 @@ function showAbout() {
       <a href="https://github.com/hugolpz" target="_blank" rel="noopener">Hugo Lopez</a> 负责整理，
       <a href="https://github.com/hugolpz/audio-cmn#credits" target="_blank" rel="noopener">Nicolas Vion</a> 提供录音软件和技术支持。
       录音采用上游声明的 <a href="https://creativecommons.org/cc-licenses/" target="_blank" rel="noopener">CC BY-SA</a> 许可。</p>
+    <p>白云等 13 个双字词使用 Windows 的 Microsoft Huihui Desktop 语音合成整词。</p>
     <p><a href="${publicAsset('/audio/ong-openlearn.wav')}" target="_blank" rel="noopener">ong 韵母音频</a>节选自英国开放大学 OpenLearn 课程 <a href="https://www.open.edu/openlearn/mod/oucontent/view.php?id=106435&amp;section=1.1" target="_blank" rel="noopener">Getting started with Chinese 1</a>，采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a> 许可。部分韵母借助完整音节示范，学习卡片上会提示。录音尚待普通话教师逐项试听审核。</p>
     <p>英语教学音频使用 <a href="https://github.com/mrcraked/WordAudio" target="_blank" rel="noopener">WordAudio</a> 和 <a href="https://gtts.readthedocs.io/en/stable/" target="_blank" rel="noopener">gTTS</a> 生成。</p>
     <p><a href="${publicAsset('/audio/ATTRIBUTION.md')}" target="_blank" rel="noopener">查看音频来源与署名说明</a></p>
@@ -1102,15 +1098,11 @@ function returnToPinyinStudy() {
   } else changeMode(pinyinLearningMode);
 }
 
-function requestFor(item) {
-  return item.type === 'word' ? { word: item.text, sounds: item.sounds } : { sound: item.sound };
-}
-
 async function playCurrent(continuous = false) {
   const item = currentItem();
   if (!item) return;
   const token = ++continuousToken;
-  const success = await playAudio(requestFor(item), state.settings.slow);
+  const success = await playAudio(pinyinCardAudio(item), state.settings.slow);
   if (continuous && success && token === continuousToken && state.settings.continuous) {
     const value = session();
     if (value.index < value.ids.length - 1) {
@@ -1131,11 +1123,7 @@ function addMistake(question) {
 }
 
 function playQuestionParts(question) {
-  const items = question.parts.map(part => basics.find(item => item.text === part));
-  if (items.every(Boolean)) { void playAudio({ sounds: items.map(item => item.sound) }, state.settings.slow); return; }
-  const finalParts = { ua: ['u', 'a'], uo: ['u', 'o'], iong: ['i', 'ong'] };
-  const parts = [question.parts[0], ...(finalParts[question.parts[1]] || [question.parts[1]])];
-  void playAudio({ sounds: parts.map(part => basics.find(item => item.text === part)?.sound) }, state.settings.slow);
+  void playAudio(pinyinBlendAudio(question.parts), state.settings.slow);
 }
 
 function submitAnswer(answer) {
@@ -1404,7 +1392,7 @@ function handleAction(event) {
       }
       else {
         const options = value.right.map(id => allItems.find(entry => entry.id === id).pinyin);
-        addMistake({ id: `match:${item.id}`, kind: 'hanzi', prompt: '给这个字词找到正确的拼音', display: item.text, answer: item.pinyin, options, explanation: `${item.text}，读作 ${item.pinyin}。`, itemId: item.id, audio: requestFor(item) });
+        addMistake({ id: `match:${item.id}`, kind: 'hanzi', prompt: '给这个字词找到正确的拼音', display: item.text, answer: item.pinyin, options, explanation: `${item.text}，读作 ${item.pinyin}。`, itemId: item.id, audio: pinyinCardAudio(item) });
         toast('这两个还不是一对，再找找看。');
       }
       if (value.matched.length === value.pairs.length && !value.finished) {
