@@ -23,6 +23,16 @@ npm run dev
 
 浏览器打开终端显示的地址，默认是 `http://127.0.0.1:5173`。
 
+## 重新生成英语音频
+
+校园英语和自然拼读的音频随站点发布。需要重新生成时，先安装 Python 和 `gTTS`，并确保能访问语音合成服务。在本项目根目录运行以下命令，将 [WordAudio](https://github.com/mrcraked/WordAudio) 克隆到与本项目同级的目录。
+
+```sh
+git clone https://github.com/mrcraked/WordAudio.git ../WordAudio
+```
+
+从本项目根目录运行 `npm run english:audio:generate` 生成校园英语音频，或运行 `npm run phonics:audio:generate` 生成自然拼读音频。两个命令默认从本项目根目录定位 `../WordAudio`。如果 WordAudio 放在其他位置，校园英语命令支持 `-- <Audio.py 路径>`，自然拼读命令支持 `-- --wordaudio=<仓库目录>`。
+
 ## 构建与部署
 
 ```sh
@@ -44,3 +54,7 @@ npm run test:browser
 浏览器测试通过 `playwright.config.js` 启动已安装的 Chrome。多工作区可用 `PLAYWRIGHT_PORT` 指定独立端口，避免复用其他工作区的服务。若 Node 环境代理影响本机连接，可在测试终端设置 `NODE_USE_ENV_PROXY=0`。
 
 开发服务器启动后可运行 `npm run test:audio`，检查浏览器解码与非静音。测试截图与音频报告保存在 `artifacts/`。
+
+## 设计参考
+
+页面风格参考 [Bunny Math](https://bunnyland.app/)。

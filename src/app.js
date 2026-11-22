@@ -1043,7 +1043,22 @@ function celebrateReward(result) {
 }
 
 function showAbout() {
-  openDialog('关于小兔学习乐园', `<p class="dialog-intro">专为小学生准备的一方学习小天地。没有广告，不需要注册，按照自己的节奏慢慢学。</p><h3>关于拼音和读音</h3><p>内容包含 23 个声母、24 个韵母和 16 个整体认读音节，采用小学常见分类。</p><p>真人录音来自 audio-cmn：音节由 Chen Wang 录制，词语由 Yue Tan 录制，Hugo Lopez 与 Nicolas Vion 参与整理和技术支持，采用上游声明的 CC BY-SA 许可。</p><p>部分韵母借助完整音节示范，ong 使用 dōng 的例音，学习卡片上会明确提示。录音尚待普通话教师逐项试听审核。</p><p><a href="${publicAsset('/audio/ATTRIBUTION.md')}" target="_blank" rel="noopener">查看音频来源与署名说明</a></p><h3>使用小提醒</h3><p>首次听音需要点击喇叭。跟着录音自己读一读即可，本应用不会录音，也不会自动评价你的发音。</p><p>页面风格参考 Bunny Math，插画与练习界面为本项目绘制。</p>`);
+  openDialog('关于小兔学习乐园', `
+    <p class="dialog-intro">专为小学生准备的一方学习小天地。没有广告，不需要注册，按照自己的节奏慢慢学。</p>
+    <h3>关于拼音和读音</h3>
+    <p>内容包含 23 个声母、24 个韵母和 16 个整体认读音节，采用小学常见分类。</p>
+    <p>拼音真人录音主要来自 <a href="https://github.com/hugolpz/audio-cmn" target="_blank" rel="noopener">audio-cmn</a>。
+      音节由 <a href="https://github.com/hugolpz/audio-cmn#voices" target="_blank" rel="noopener">Chen Wang</a> 录制，
+      词语由 <a href="https://commons.wikimedia.org/wiki/File:Zh-m%C3%A1.ogg#Summary" target="_blank" rel="noopener">Yue Tan</a> 录制。
+      <a href="https://github.com/hugolpz" target="_blank" rel="noopener">Hugo Lopez</a> 负责整理，
+      <a href="https://github.com/hugolpz/audio-cmn#credits" target="_blank" rel="noopener">Nicolas Vion</a> 提供录音软件和技术支持。
+      录音采用上游声明的 <a href="https://creativecommons.org/cc-licenses/" target="_blank" rel="noopener">CC BY-SA</a> 许可。</p>
+    <p>部分韵母借助完整音节示范，ong 使用 <a href="${publicAsset('/audio/dong1.mp3')}" target="_blank" rel="noopener">dōng 的例音</a>，学习卡片上会明确提示。录音尚待普通话教师逐项试听审核。</p>
+    <p>英语教学音频使用 <a href="https://github.com/mrcraked/WordAudio" target="_blank" rel="noopener">WordAudio</a> 和 <a href="https://gtts.readthedocs.io/en/stable/" target="_blank" rel="noopener">gTTS</a> 生成。</p>
+    <p><a href="${publicAsset('/audio/ATTRIBUTION.md')}" target="_blank" rel="noopener">查看音频来源与署名说明</a></p>
+    <h3>使用小提醒</h3>
+    <p>首次听音需要点击喇叭。跟着录音自己读一读即可，本应用不会录音，也不会自动评价你的发音。</p>
+    <p>页面风格参考 <a href="https://bunnyland.app/" target="_blank" rel="noopener">Bunny Math</a>，插画与练习界面为本项目绘制。</p>`);
 }
 
 function changeMode(id, group) {

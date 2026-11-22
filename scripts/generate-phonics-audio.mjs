@@ -12,7 +12,7 @@ for (const argument of argumentsList) {
   if (!supported.includes(argument.replace(/^--/, '').split('=')[0])) throw new Error(`Unknown option: ${argument}`);
 }
 if (argumentsList.includes('--help')) {
-  console.log('npm run phonics:audio:generate -- [--wordaudio=D:/git/WordAudio] [--output=<MP3 cache>] [--python=python] [--limit=950] [--retries=2] [--timeout=20] [--workers=3] [--offline]');
+  console.log('npm run phonics:audio:generate -- [--wordaudio=../WordAudio] [--output=<MP3 cache>] [--python=python] [--limit=950] [--retries=2] [--timeout=20] [--workers=3] [--offline]');
   process.exit(0);
 }
 const wordAudio = resolve(option('wordaudio', resolve(workspace, '../WordAudio')));

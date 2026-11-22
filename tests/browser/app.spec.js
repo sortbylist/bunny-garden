@@ -109,6 +109,34 @@ test('分类、主题、学习操作和刷新保持各自选择与进度', async
   await expect(page.locator('.pinyin-display')).toHaveText('o');
 });
 
+test('关于学习乐园提供音频来源、署名、许可、例音和设计参考链接', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: '关于学习乐园' }).click();
+  const dialog = page.getByRole('dialog', { name: '关于小兔学习乐园' });
+  for (const [name, url] of [
+    ['audio-cmn', 'https://github.com/hugolpz/audio-cmn'],
+    ['Chen Wang', 'https://github.com/hugolpz/audio-cmn#voices'],
+    ['Yue Tan', 'https://commons.wikimedia.org/wiki/File:Zh-m%C3%A1.ogg#Summary'],
+    ['Hugo Lopez', 'https://github.com/hugolpz'],
+    ['Nicolas Vion', 'https://github.com/hugolpz/audio-cmn#credits'],
+    ['CC BY-SA', 'https://creativecommons.org/cc-licenses/'],
+    ['dōng 的例音', '/audio/dong1.mp3'],
+    ['WordAudio', 'https://github.com/mrcraked/WordAudio'],
+    ['gTTS', 'https://gtts.readthedocs.io/en/stable/'],
+    ['查看音频来源与署名说明', '/audio/ATTRIBUTION.md'],
+    ['Bunny Math', 'https://bunnyland.app/'],
+  ]) {
+    const link = dialog.getByRole('link', { name, exact: true });
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute('href', url);
+    await expect(link).toHaveAttribute('target', '_blank');
+    await expect(link).toHaveAttribute('rel', 'noopener');
+  }
+  const audio = await page.request.get('/audio/dong1.mp3');
+  expect(audio.ok()).toBe(true);
+  expect(audio.headers()['content-type']).toContain('audio/mpeg');
+});
+
 test('设置弹窗、清空确认与键盘关闭', async ({ page }) => {
   await page.goto('/');
   await page.locator('[data-action="known"]').click();

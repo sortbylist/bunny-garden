@@ -24,4 +24,4 @@
 
 ## 校园英语
 
-`english/` 中的 MP3 由 WordAudio 的 `Scripts/Audio.py` 使用 gTTS 的英国英语配置生成，朗读本项目编写的词汇、指令和对话。浏览器从静态资源播放这些文件。
+`english/` 中的 MP3 由 [WordAudio](https://github.com/mrcraked/WordAudio) 的 `Scripts/Audio.py` 使用 gTTS 的英国英语配置生成，朗读本项目编写的词汇、指令和对话。浏览器从静态资源播放这些文件。
