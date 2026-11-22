@@ -35,10 +35,11 @@ test('换学科后仍能查看原收藏和另一科错题，复习后续做原�
   await selectTopic(page, '加减法', 'math');
   const learning = await page.locator('.ct-lesson-intro h3').textContent();
   await page.locator('.ct-lesson .learning-favorite').click();
-  await page.locator('.section-practice-shortcut').click();
+  const practice = page.getByRole('tab', { name: '练习', exact: true });
+  await practice.click();
   const quizTitle = page.locator('.ct-quiz .category-badge');
   await expect(quizTitle).toHaveText(/^练习 · /);
-  await expect(quizTitle).toBeFocused();
+  await expect(practice).toBeFocused();
   await page.locator('[data-action="ct-skip"]').click();
   const before = await stored(page);
   const [topic, progress] = Object.entries(before.topics).find(([, entry]) => entry.mistakes.length);

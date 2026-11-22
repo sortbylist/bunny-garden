@@ -47,7 +47,7 @@ for (const [subject, topics] of [['chinese', [{ name: '汉字笔画与结构', i
       const lesson = page.locator('.study-card .learning-favorite');
       await lesson.click();
       await expect(lesson).toHaveAttribute('aria-pressed', 'true');
-      await page.locator('.section-practice-shortcut').click();
+      await page.getByRole('tab', { name: '练习', exact: true }).click();
       await page.locator('.quiz-card .learning-favorite').click();
       await page.reload();
       await expect(page.locator('.quiz-card .learning-favorite')).toHaveAttribute('aria-pressed', 'true');

@@ -34,23 +34,28 @@ for (const width of [1440, 1050, 1000, 820, 390, 320]) {
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), topic).toBe(true);
     }
     await chooseSubject(page, 'english');
-    expect(await frame(page.locator('.ph-word-card'))).toEqual(reference);
+    const wordCard = page.locator('.ph-word-card');
+    expect(await frame(wordCard)).toEqual({ ...reference, borderRadius: '22px' });
+    await expect(page.locator('.learning-book-panel > .ph-rule')).toHaveCSS('border-top-left-radius', '0px');
     await expect(page.locator('.ph-word-card .ph-badge')).toHaveText(/^学习 · /);
     expect(await columns('.ph-layout')).toBe(expectedColumns);
     await expect(page.locator('.ph-word-navigation .solid-button')).toHaveCount(0);
     await expect(page.locator('[data-action="ph-known"] .icon')).toHaveCount(1);
-    await expect(page.locator('.curriculum-navigation .nav-tabs .play-mode.selected')).toHaveCount(1);
-    if (width <= 1000) {
-      await expect(page.locator('.ph-map-toggle')).toBeVisible();
-      await expect(page.locator('.ph-map')).toBeHidden();
-      await page.locator('.ph-map-toggle').click();
-      await expect(page.locator('.ph-map-toggle')).toHaveAttribute('aria-expanded', 'true');
-      await expect(page.locator('.ph-map')).toBeVisible();
-      await page.locator('.ph-map-toggle').click();
-      await expect(page.locator('.ph-map')).toBeHidden();
+    const picker = page.locator('.curriculum-navigation .course-picker.active');
+    await expect(picker.locator('summary.nav-select')).toContainText('第 1 课');
+    const directory = picker.locator('.course-picker-panel');
+    await expect(directory).toBeHidden();
+    await picker.locator('summary.nav-select').click();
+    await expect(directory).toBeVisible();
+    await picker.locator('summary.nav-select').click();
+    await expect(directory).toBeHidden();
+    const map = page.locator('.ph-learning-map');
+    if (width > 1000) {
+      await expect(map.locator('.ph-map-toggle')).toBeHidden();
+      await expect(map.locator('.ph-course-list')).toBeVisible();
     } else {
-      await expect(page.locator('.ph-map')).toBeVisible();
-      await expect(page.locator('.ph-map-toggle')).toBeHidden();
+      await expect(map.locator('.ph-map-toggle')).toHaveAttribute('aria-expanded', 'false');
+      await expect(map.locator('.ph-course-list')).toBeHidden();
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({ path: testInfo.outputPath('english-learning.png') });
@@ -65,7 +70,7 @@ test('学习辅助、选择题和反馈状态跨模块统一，首次成绩及�
   let referenceTools;
   for (const [topic, prefix] of [['句式积累与仿写', 'ct'], ['查字典', 'ct'], ['汉字笔画与结构', 'hz']]) {
     await selectTopic(page, topic);
-    await page.locator(`.card-topline [data-action="${prefix}-start"]`).click();
+    await page.getByRole('tab', { name: '练习', exact: true }).click();
     await expect(page.locator('.quiz-card .category-badge')).toHaveText(/^练习 · /);
     await expect(page.locator('.answer-feedback + .quiz-actions').getByRole('button', { name: '回到学习' })).toBeVisible();
     const option = page.locator(`[data-action="${prefix}-answer"]`).first();
@@ -94,11 +99,11 @@ test('学习辅助、选择题和反馈状态跨模块统一，首次成绩及�
     await page.screenshot({ path: testInfo.outputPath(`${prefix}-${topic}-feedback.png`) });
   }
   await chooseSubject(page, 'english');
-  await page.locator('.ph-rule .section-practice-shortcut').click();
+  await page.locator('[data-action="ph-page"][data-id="practice"]').click();
   const english = (await stored(page)).phonics;
   const round = english.sessions[`mixed:lesson:${english.lessonId}:${english.length}`];
   await page.locator(`.ph-question-map [data-index="${round.ids.indexOf('rule-1')}"]`).click();
-  await expect(page.locator('.ph-main > .ph-quiz:first-child .ph-badge')).toHaveText(/^练习 · /);
+  await expect(page.locator('.ph-main [role="tabpanel"] .ph-quiz .ph-badge')).toHaveText(/^练习 · /);
   await expect(page.locator('.ph-quiz .answer-feedback + .ph-actions').getByRole('button', { name: '回到课程学习' })).toBeVisible();
   const option = page.locator('.ph-quiz .ph-option').first();
   await expect(option.locator('.option-letter')).toHaveText('A');
@@ -115,7 +120,7 @@ test('学习辅助、选择题和反馈状态跨模块统一，首次成绩及�
 test('拼音配对复用卡内标题，返回按钮在配对题下方', async ({ page }) => {
   await page.goto('/');
   await chooseMode(page, 'match');
-  await expect(page.locator('.learning-main > .match-card:first-child .category-badge')).toHaveText('练习 · 牵起拼音的小手');
+  await expect(page.locator('.learning-main [role="tabpanel"] .match-card .category-badge')).toHaveText('练习 · 牵起拼音的小手');
   const returnToStudy = page.getByRole('button', { name: '返回拼音学习' });
   await expect(returnToStudy).toHaveCount(1);
   await expect(page.locator('.match-card .gentle-note + .quiz-actions').getByRole('button', { name: '返回拼音学习' })).toBeVisible();
@@ -133,21 +138,22 @@ test('本节练习在卡片标明范围，综合练习只高亮固定练习分�
   ]) {
     await chooseSubject(page, subject);
     await selectTopic(page, topic, subject);
-    const categories = page.locator(`[data-action="${prefix}-category"]`);
+    const categories = page.locator(`.nav-tabs [data-action="${prefix}-category"]`);
     const practiceCategory = categories.first();
     const otherCategory = categories.nth(1);
     await practiceCategory.click();
     const name = await practiceCategory.textContent();
-    await page.locator('.section-practice-shortcut').click();
+    await page.getByRole('tab', { name: '练习', exact: true }).click();
     await expect(page.locator('.quiz-card .category-badge')).toContainText(name);
-    await expect(page.getByRole('group', { name: '练习分类' }).locator('.selected')).toHaveCount(0);
-    await page.locator(`[data-action="${prefix}-area"][data-id="learn"]`).click();
+    await expect(practiceCategory).toHaveAttribute('aria-pressed', 'true');
+    await page.getByRole('tab', { name: '学习', exact: true }).click();
     await otherCategory.click();
     await expect(otherCategory).toHaveAttribute('aria-pressed', 'true');
-    await page.locator(`[data-action="${prefix}-area"][data-id="practice"]`).click();
-    const combined = page.getByRole('button', { name: '综合练习', exact: true });
+    const combined = page.locator('.nav-tabs').getByRole('button', { name: '综合练习', exact: true });
     await combined.click();
     await expect(combined).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('tab', { name: '学习', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('tab', { name: '练习', exact: true })).toHaveAttribute('aria-selected', 'true');
   }
 });
 

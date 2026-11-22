@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { defaultState } from '../../src/engine.js';
-import { choosePhonicsMode, seedStoredState, stored } from './helpers.js';
+import { choosePhonicsMode, seedStoredState, selectPhonicsLesson, stored } from './helpers.js';
 
 test('英语随机词卡一轮不重复，切换课次不丢失当前轮', async ({ page }) => {
   await page.goto('/');
@@ -21,8 +21,8 @@ test('英语随机词卡一轮不重复，切换课次不丢失当前轮', async
   await page.locator('[data-action="ph-confirm-restart"]').click();
   await expect(page.locator('.ph-word')).toBeVisible();
   const savedWord = await page.locator('.ph-word').textContent();
-  await page.locator('.ph-map [data-id="lesson-2"]').click();
-  await page.locator('.ph-map [data-id="lesson-1"]').click();
+  await selectPhonicsLesson(page, 'lesson-2');
+  await selectPhonicsLesson(page, 'lesson-1');
   expect((await stored(page)).phonics.mode).toBe('random');
   await expect(page.locator('.ph-word')).toHaveText(savedWord);
 });

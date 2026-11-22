@@ -88,7 +88,7 @@ for (const width of [390, 1440]) {
       await page.goto('/');
       await selectTopic(page, topic);
       if (topic === '词语搭配与辨析') {
-        await page.locator('[data-action="ct-category"][data-id="de"]').click();
+        await page.locator('.nav-tabs [data-action="ct-category"][data-id="de"]').click();
       }
       await page.evaluate(() => document.fonts.ready);
       const cards = page.locator('.hz-item-list .hz-chip');

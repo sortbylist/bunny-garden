@@ -9,7 +9,7 @@ import { mathVisual } from './math-visuals.js';
 import { icon, bunny } from './icons.js';
 import { literacySupplement } from './chinese-literacy.js';
 import { readingPassage } from './reading-view.js';
-import { learningAnswerLabel, learningCardFooter, learningPosition, learningTokenClass, learningTools, practiceMenu, reviewShortcut, sectionPracticeButton } from './learning-ui.js';
+import { learningAnswerLabel, learningBook, learningCardFooter, learningPosition, learningTokenClass, learningTools, reviewShortcut } from './learning-ui.js';
 import { renderCurriculum } from './navigation.js';
 import { englishLessonBody, englishActivity, englishQuizAudio, englishChoice, englishText } from './english-learning.js';
 
@@ -51,11 +51,11 @@ export function topicLearningCard(topic, state) {
   const english = topic.subject === 'english';
   const title = item => english && !item.lines ? englishText(item.title) : read(item.title);
   const picker = `<div class="hz-item-list ct-lesson-list" aria-label="选择学习内容">${lessons.map(item => control('lesson', `${title(item)}${state.known.includes(item.id) ? ' ✓' : ''}`, `data-id="${item.id}" ${english && !item.lines ? 'lang="en"' : ''} aria-label="${escape(item.title)}" aria-pressed="${state.lessonId === item.id}"`, `hz-chip${learningTokenClass(item.title)}`)).join('')}</div>`;
-  const heading = `<div class="card-topline"><h2 class="category-badge" data-activity-heading tabindex="-1">${icon(category.icon || 'flower')}学习 · ${escape(category.name)}</h2>${learningPosition(index, lessons.length)}${state.cardFavorite('lesson', lesson.id)}${state.preview ? '' : sectionPracticeButton('ct-start', category.id)}</div>`;
+  const heading = `<div class="card-topline"><h2 class="category-badge" data-activity-heading tabindex="-1">${icon(category.icon || 'flower')}学习 · ${escape(category.name)}</h2>${learningPosition(index, lessons.length)}${state.cardFavorite('lesson', lesson.id)}</div>`;
   if (english) return `<section class="hz-card ct-lesson study-card ct-sentence-card" aria-label="${topic.name}学习卡">${heading}
     <div class="ct-lesson-intro"><h3 class="${learningTokenClass(lesson.title).trim()}">${title(lesson)}</h3><p>${read(lesson.body)}</p></div>
     ${englishLessonBody(lesson)}${englishActivity(lesson)}
-    ${state.preview ? '' : learningCardFooter('ct', { known: state.known.includes(lesson.id), category: state.category, index, total: lessons.length,
+    ${state.preview ? '' : learningCardFooter('ct', { known: state.known.includes(lesson.id), category: state.category, index, total: lessons.length, hasPractice: topic.questions.some(question => question.category === state.category),
       ...(lesson.lines ? { knownLabel: '我能说啦', confirmedLabel: '已自评能说 ✓' } : lesson.clip ? { knownLabel: '我能听懂啦', confirmedLabel: '已自评听懂 ✓' } : {}) })}</section>
     ${state.preview ? '' : `<section class="pinyin-map ct-sentence-lessons learning-lesson-map" aria-label="本节学习卡"><div class="section-title"><h2>${icon('grid')}本节学习卡</h2></div>${picker}</section>`}`;
   return `<section class="hz-card ct-lesson study-card ct-sentence-card" aria-label="${topic.name}学习卡">${heading}
@@ -64,7 +64,7 @@ export function topicLearningCard(topic, state) {
     ${!literacy ? `<div class="section-title ct-example-heading"><h4>${icon('book')}${isMathTopic(topic) ? '看一看算例' : '读一读例句'}</h4><span>${isMathTopic(topic) ? '想清方法，再动笔算' : '读出意思，也读出语气'}</span></div>` : ''}
     <ul class="ct-examples">${lesson.examples.map(example => `<li>${read(example)}</li>`).join('')}</ul>
     <div class="hz-note ct-activity"><strong class="ct-activity-heading">${icon('pen')}说一说，试一试</strong><p>${read(lesson.task)}</p>${activityCard(lesson, state)}</div>
-    ${state.preview ? '' : learningCardFooter('ct', { known: state.known.includes(lesson.id), category: state.category, index, total: lessons.length })}</section>
+    ${state.preview ? '' : learningCardFooter('ct', { known: state.known.includes(lesson.id), category: state.category, index, total: lessons.length, hasPractice: topic.questions.some(question => question.category === state.category) })}</section>
     ${state.preview ? '' : `<section class="pinyin-map ct-sentence-lessons learning-lesson-map" aria-label="本节学习卡"><div class="section-title"><h2>${icon('grid')}本节学习卡</h2><span>每一张都可以直接开始</span></div>${picker}</section>`}`;
 }
 
@@ -123,15 +123,19 @@ export function renderTopic(topic, state, garden, navigation) {
   const math = isMathTopic(topic);
   const english = topic.subject === 'english';
   const tools = learningTools('ct', state);
+  const practicing = state.view === 'quiz';
+  const category = practicing ? state.round.scope : state.category;
+  const paired = state.view !== 'lookup' && topic.questions.some(question => question.category === category);
+  const content = practicing ? topicQuizCard(topic, state) : state.view === 'lookup' ? lookupCard(state) : topicLearningCard(topic, state);
+  const book = learningBook({ action: 'ct-page', category, page: practicing ? 'practice' : 'learn', paired, content });
   const sticker = `<div class="heading-sticker">${icon('sprout')}<span>今天也要<br><b>快乐生长</b></span></div>`;
   return `<section class="${topicClassName(topic)}" data-topic="${topic.id}"><div class="page-heading ${math ? '' : 'learning-heading'}"><div class="${math ? '' : 'learning-heading-copy'}"><div class="eyebrow"><span></span>${escape(topic.stage)}</div><h1>${topic.name}<span class="heading-flower">✿</span></h1><p>${topic.description}</p></div>${math ? sticker : `<div class="learning-heading-actions">${sticker}</div>`}</div>
-    ${renderCurriculum(navigation, { id: `curriculum-${topic.id}`, areaAction: 'ct-area',
-      area: ['quiz', 'practice'].includes(state.view) ? 'practice' : 'learn',
-      selected: state.view === 'quiz' ? state.round.scope : state.view === 'learn' ? state.category : null,
+    ${renderCurriculum(navigation, { id: `curriculum-${topic.id}`,
+      selected: category === 'review' ? null : category,
       learning: topic.categories.map(category => ({ ...category, action: 'ct-category' })),
-      practice: [{ id: 'all', name: topic.categories.length > 1 ? '综合练习' : `${topic.name}练习`, icon: 'pen', action: 'ct-start' }],
+      practice: topic.questions.length ? [{ id: 'all', name: topic.categories.length > 1 ? '综合练习' : `${topic.name}练习`, icon: 'pen', action: 'ct-start' }] : [],
     })}
-    <div class="learning-layout"><div class="learning-main" role="region" aria-label="${escape(topic.name)}">${state.view === 'quiz' ? topicQuizCard(topic, state) : state.view === 'practice' ? practiceMenu() : state.view === 'lookup' ? lookupCard(state) : topicLearningCard(topic, state)}${tools}
+    <div class="learning-layout"><div class="learning-main" role="region" aria-label="${escape(topic.name)}">${book}${tools}
     ${topic.id === 'dictionary' && state.view === 'learn' ? `<div class="hz-actions">${control('lookup', '查字小实验')}</div>` : ''}</div><aside class="learning-aside">
     ${garden}
     <section class="hz-card hz-note"><h2>按自己的节奏学</h2><p>每一小节都能直接开始，不必依次通关。</p><p>${math ? '可以摆小棒、画图或在纸上列竖式，也试着说说自己的计算方法。' : english ? '找出身边的物品做一做，也可以和家人轮流说。' : '也可以穿插读古诗、朗读、说一句话或写下今天的小发现。'}</p><p>进度保存在当前浏览器，清空本机记录会一并清除。</p></section></aside></div></section>`;
@@ -153,8 +157,8 @@ export function handleTopicAction(root, topic, action, data) {
     if (!state.known.includes(lesson.id)) state.known.push(lesson.id);
     outcome.reward = grantRewards(root, { type: 'recognize', item: { id: lesson.id, text: `${topic.name} · ${lesson.title}` } });
   }
-  if (action === 'ct-area' && data.id === 'practice' && !['quiz', 'practice'].includes(state.view)) state.view = 'practice';
-  if (action === 'ct-area' && data.id === 'learn' && state.view !== 'lookup') state.view = 'learn';
+  if (action === 'ct-page' && data.id === 'learn') state.view = 'learn';
+  if (action === 'ct-page' && data.id === 'practice') startTopicRound(topic, state, data.category, state.practiceLength, false);
   if (action === 'ct-start') startTopicRound(topic, state, data.id, state.practiceLength, state.view === 'quiz' && state.round.scope === data.id && state.round.finished);
   if (action === 'ct-learn') state.view = 'learn';
   if (['ct-answer', 'ct-skip'].includes(action)) {

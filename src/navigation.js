@@ -17,10 +17,10 @@ export function createNavigation(select) {
   const widths = new WeakMap();
   let observer;
 
-  function render({ id, label, groupLabel, groups, selected, memories = {}, action, className = '', area, areaAction }) {
+  function render({ id, label, groupLabel, groups, selected, memories = {}, action, className = '', leadingPicker = '', catalogName }) {
     if (!groups.length) return `<div class="feature-bar"><span class="feature-placeholder">新的学习冒险，正在准备中</span></div>`;
     const isStage = action === 'feature';
-    const activeGroup = groups.find(group => group.id === area) || groups.find(group => group.items.some(item => item.id === selected))
+    const activeGroup = groups.find(group => group.items.some(item => item.id === selected))
       || groups.find(group => group.id === memories[`${id}:group`]) || groups[0];
     const activeItem = activeGroup.items.find(item => item.id === selected);
     if (activeItem) {
@@ -35,7 +35,7 @@ export function createNavigation(select) {
       return `<span class="nav-group-index nav-group-color-${index % 5 + 1}" data-number="${String(number).padStart(2, '0')}" aria-hidden="true"></span>`;
     };
     const itemButton = (item, catalog = false) => `<button type="button" class="${catalog ? 'nav-catalog-item' : isStage ? 'feature-tab' : 'play-mode'} ${!catalog && item.id === selected ? isStage ? 'active' : 'selected' : ''}" data-action="${item.action || action}" data-id="${escape(item.id)}" ${catalog ? item.id === selected ? 'aria-current="true"' : '' : isStage ? `role="tab" aria-selected="${item.id === selected}"` : `aria-pressed="${item.id === selected}"`} title="${escape(item.description || item.name)}">${item.icon ? icon(item.icon) : ''}<span>${escape(item.name)}</span>${catalog && item.id === selected ? icon('check') : ''}</button>`;
-    const groupPicker = areaAction ? `<div class="curriculum-areas" role="group" aria-label="学习与练习">${groups.map(group => `<button type="button" class="play-mode ${group === activeGroup ? 'selected' : ''}" data-action="${areaAction}" data-id="${group.id}" aria-pressed="${group === activeGroup}">${group.name}</button>`).join('')}</div>` : isStage || groups.length > 1 ? renderNavPicker({
+    const groupPicker = isStage || groups.length > 1 ? renderNavPicker({
       className: 'nav-group-picker',
       summary: `<span class="nav-group-label">${groupBadge(activeGroup)}<span class="nav-group-name">${escape(activeGroup.name)}</span></span>`,
       summaryLabel: `选择${groupLabel}，当前：${[activeGroup.stage, activeGroup.name].filter(Boolean).join(' · ')}`,
@@ -43,30 +43,32 @@ export function createNavigation(select) {
       panelLabel: groupLabel,
       content: `<div class="nav-panel-heading"><strong>选择${isStage ? '阶段' : '分类'}</strong></div>${groups.map(group => `<button type="button" class="nav-group-item" data-action="nav-group" data-id="${escape(group.id)}" ${group.id === activeGroup.id ? 'aria-current="true"' : ''}><span class="nav-group-label">${groupBadge(group)}<span class="nav-group-info"><strong>${escape(group.name)}</strong><small>${group.stage ? `${escape(group.stage)} · ` : ''}${group.items.length} ${isStage ? '个主题' : '种玩法'}</small></span></span>${group.id === activeGroup.id ? icon('check') : icon('chevron')}</button>`).join('')}`,
     }) : '';
-    const catalogPicker = !areaAction && !single && (isStage || groups.length > 1 || activeGroup.items.length > 1) ? renderNavPicker({
+    const catalogLabel = catalogName || (isStage ? '主题目录' : '分类目录');
+    const catalogPicker = !single && (isStage || activeGroup.items.length > 0) ? renderNavPicker({
       className: 'nav-catalog-picker',
-      summary: `<span class="nav-desktop-label">${isStage ? '主题目录' : '本类玩法'} <small>${activeGroup.items.length}</small></span><span class="nav-mobile-label">${escape(activeItem?.name || '选择' + label)}</span>`,
-      summaryLabel: `选择${label}，当前：${activeItem?.name || '请选择'}`,
+      summary: `<span class="nav-desktop-label">${escape(catalogLabel)}${isStage ? ` <small>${activeGroup.items.length}</small>` : ''}</span><span class="nav-mobile-label">${escape(isStage ? activeItem?.name || '选择' + label : catalogLabel)}</span>`,
+      summaryLabel: `选择${catalogName || label}，当前：${activeItem?.name || '请选择'}`,
       panelClass: 'nav-catalog',
-      panelLabel: `${activeGroup.name}${isStage ? '目录' : '玩法'}`,
-      content: `<div class="nav-panel-heading"><strong>${escape(activeGroup.name)}</strong><span>${activeGroup.items.length} ${isStage ? '个主题' : '种玩法'}</span></div>
-        <label class="nav-search">${icon('search')}<input type="search" placeholder="搜索${label}" aria-label="搜索${isStage ? '本阶段' : '本类'}${label}" autocomplete="off"></label>
+      panelLabel: isStage ? `${activeGroup.name}目录` : catalogLabel,
+      content: `<div class="nav-panel-heading"><strong>${escape(isStage ? activeGroup.name : catalogLabel)}</strong>${isStage ? `<span>${activeGroup.items.length} 个主题</span>` : ''}</div>
+        <label class="nav-search">${icon('search')}<input type="search" placeholder="搜索${isStage ? label : '分类'}" aria-label="${isStage ? `搜索本阶段${label}` : '搜索分类'}" autocomplete="off"></label>
         <div class="nav-catalog-list">${activeGroup.items.map(item => itemButton(item, true)).join('')}</div>
         <p class="nav-no-results" role="status" hidden>没有找到匹配的内容，试试其他关键词。</p>`,
     }) : '';
-    return `<nav class="learning-navigation ${className} ${areaAction ? 'curriculum-navigation' : ''} ${single ? 'nav-single' : ''}" data-navigation="${id}" aria-label="${label}">
+    return `<nav class="learning-navigation ${className} ${single ? 'nav-single' : ''}" data-navigation="${id}" aria-label="${label}">
       ${groupPicker}
+      ${leadingPicker}
       <div class="nav-rail" ${single ? 'hidden' : ''}>
-        <button type="button" class="nav-scroll nav-previous" data-action="nav-scroll" data-direction="-1" aria-label="向左查看${label}" disabled>${icon('chevron')}</button>
-        <div class="nav-tabs ${isStage ? 'feature-tabs' : 'play-mode-buttons'}" role="${isStage ? 'tablist' : 'group'}" aria-label="${areaAction ? `${activeGroup.name}分类` : label}" data-scroll-key="${escape(`${id}:${activeGroup.id}`)}">${activeGroup.items.map(item => itemButton(item)).join('')}</div>
-        <button type="button" class="nav-scroll" data-action="nav-scroll" data-direction="1" aria-label="向右查看${label}" disabled>${icon('chevron')}</button>
+        ${isStage ? `<button type="button" class="nav-scroll nav-previous" data-action="nav-scroll" data-direction="-1" aria-label="向左查看${label}" disabled>${icon('chevron')}</button>` : ''}
+        <div class="nav-tabs ${isStage ? 'feature-tabs' : 'play-mode-buttons'}" role="${isStage ? 'tablist' : 'group'}" aria-label="${label}" data-scroll-key="${escape(`${id}:${activeGroup.id}`)}">${activeGroup.items.map(item => itemButton(item)).join('')}</div>
+        ${isStage ? `<button type="button" class="nav-scroll" data-action="nav-scroll" data-direction="1" aria-label="向右查看${label}" disabled>${icon('chevron')}</button>` : ''}
       </div>
       ${catalogPicker}
     </nav>`;
   }
 
   function capture() {
-    document.querySelectorAll('.nav-tabs').forEach(element => {
+    document.querySelectorAll('.feature-navigation .nav-tabs').forEach(element => {
       if (element.clientWidth) positions.set(element.dataset.scrollKey, element.scrollLeft);
     });
   }
@@ -98,7 +100,7 @@ export function createNavigation(select) {
       }
       updateEdges(target.closest('.nav-rail'));
     }));
-    document.querySelectorAll('.learning-navigation').forEach(root => {
+    document.querySelectorAll('.feature-navigation').forEach(root => {
       const config = configurations.get(root.dataset.navigation);
       const tabs = root.querySelector('.nav-tabs');
       if (!tabs || tabs.closest('[hidden]')) return;
@@ -165,12 +167,20 @@ export function createNavigation(select) {
   return { render, capture, bind, click, input, keydown };
 }
 
-export function renderCurriculum(navigation, { id, areaAction, area, selected, learning, practice }) {
+export function renderCurriculum(navigation, { id, selected, learning = [], practice = [], leadingPicker, catalogName }) {
   return navigation.render({
-    id, label: '课程分类', areaAction, area, selected, className: 'play-selector mode-navigation',
-    groups: [
-      { id: 'learn', name: '学习', items: learning },
-      { id: 'practice', name: '练习', items: practice },
-    ],
+    id, label: '课程分类', selected, leadingPicker, catalogName, className: 'play-selector mode-navigation curriculum-navigation',
+    groups: [{ id: 'curriculum', name: '分类目录', items: [...learning, ...practice] }],
+  });
+}
+
+export function renderCoursePicker({ name, active = false, panelLabel = '学习分类', content }) {
+  return renderNavPicker({
+    className: `course-picker${active ? ' active' : ''}`,
+    summary: `<span title="${escape(name)}">${escape(name)}</span>`,
+    summaryLabel: name,
+    panelClass: 'course-picker-panel',
+    panelLabel,
+    content,
   });
 }

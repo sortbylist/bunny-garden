@@ -15,7 +15,7 @@ test('语境分类的长短标题使用相同且适度缩小的字号', async ({
   await page.goto('/');
   const topic = chineseTopics.find(item => item.id === 'word-relations');
   await selectTopic(page, topic.name);
-  await page.locator('[data-action="ct-category"][data-id="context"]').click();
+  await page.locator('.nav-tabs [data-action="ct-category"][data-id="context"]').click();
   await page.locator('.ct-lesson-list').screenshot({ path: testInfo.outputPath('context-cards.png') });
   expect(await fontSizes(page.locator('[data-action="ct-lesson"]'))).toEqual(['18px']);
   await setLearningPreference(page, 'showPinyin', false);
@@ -43,7 +43,8 @@ for (const width of [1440, 820, 390, 320]) {
           if (topic.id === 'word-relations' && category.id === 'context') {
             await page.locator('.ct-lesson-list').screenshot({ path: testInfo.outputPath('context-cards.png') });
           }
-          await page.locator('.section-practice-shortcut').click();
+          await page.getByRole('tab', { name: '练习', exact: true }).click();
+          await expect(page.locator('.ct-quiz')).toBeVisible();
           expect(await fontSizes(page.locator('[data-action="ct-answer"]')), label).toEqual([answerSize]);
           expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), label).toBe(false);
         }
@@ -54,13 +55,13 @@ for (const width of [1440, 820, 390, 320]) {
     for (const category of hanziCategories) {
       await chooseLearningCategory(page, 'hz', category.id);
       expect(await fontSizes(page.locator('[data-action="hz-lesson"]')), category.name).toEqual([cardSize]);
-      await page.locator('.section-practice-shortcut').click();
+      await page.getByRole('tab', { name: '练习', exact: true }).click();
+      await expect(page.locator('.hz-quiz')).toBeVisible();
       expect(await fontSizes(page.locator('[data-action="hz-answer"]')), category.name).toEqual([answerSize]);
     }
     await chooseSubject(page, 'english');
     expect(await fontSizes(page.locator('.ph-word-tile'))).toEqual([cardSize]);
-    await page.locator('[data-action="ph-area"][data-id="practice"]').click();
-    await page.locator('[data-action="ph-practice"][data-id="meaning"]').click();
+    await page.locator('.nav-tabs [data-action="ph-practice"][data-id="meaning"]').click();
     expect(await fontSizes(page.locator('.ph-option'))).toEqual([answerSize]);
   });
 }

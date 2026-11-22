@@ -172,9 +172,10 @@ test('数学普通本节练习自动判定完成，刷新后保留小节成果',
   await page.locator('[data-action="ct-known"]').click();
   await page.locator('[data-action="ct-next"]').click();
   await page.locator('[data-action="ct-known"]').click();
-  const shortcut = page.locator('.section-practice-shortcut');
-  const sectionId = `math-numbers/${await shortcut.getAttribute('data-id')}`;
+  const shortcut = page.getByRole('tab', { name: '练习', exact: true });
+  const sectionId = `math-numbers/${await shortcut.getAttribute('data-category')}`;
   await shortcut.click();
+  await expect(page.locator('.ct-quiz')).toBeVisible();
   const questions = (await stored(page)).topics['math-numbers'].round.questions;
   expect(questions).toHaveLength(10);
   for (const [index, question] of questions.entries()) {
@@ -195,7 +196,7 @@ test('英语认读与五题达标接入统一奖励，科目间共享每日星�
   await page.getByRole('button', { name: '英语', exact: true }).click();
   await page.locator('[data-action="ph-known"]').click();
   expect((await stored(page)).rewards.events.some(event => event.id.startsWith('learn:english:'))).toBe(true);
-  await page.locator('.ph-rule .section-practice-shortcut').click();
+  await page.getByRole('tab', { name: '练习', exact: true }).click();
   await setRoundLength(page, 5);
   for (let index = 0; index < 5; index++) {
     const english = (await stored(page)).phonics;

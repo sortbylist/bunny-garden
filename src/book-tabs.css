@@ -1,0 +1,131 @@
+.learning-book {
+  --book-paper: var(--ui-surface);
+  --book-line: var(--ui-card-border);
+  --book-cover: #f1e5ee;
+  --book-height: 46px;
+  --book-tab-step: 8px;
+  position: relative;
+  isolation: isolate;
+}
+.book-tab-shelf {
+  display: flex;
+  align-items: end;
+  position: relative;
+  z-index: 2;
+}
+.book-tab-track {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  padding-bottom: 1px;
+  margin-bottom: -1px;
+}
+.book-tab-track::-webkit-scrollbar { display: none; }
+.book-tab-row {
+  display: flex;
+  width: max-content;
+  height: var(--book-height);
+}
+.book-tab-row > button {
+  --tab-fill: var(--book-cover);
+  --tab-top: var(--book-tab-step);
+  display: grid;
+  place-items: center;
+  position: relative;
+  min-width: 94px;
+  max-width: 160px;
+  height: 100%;
+  padding: var(--tab-top) 24px 0 12px;
+  background: transparent;
+  border: 0;
+  isolation: isolate;
+  color: #765d70;
+  font-weight: 700;
+  font-size: 14px;
+}
+.book-tab-row > button span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.book-tab-outline {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: calc(100% - var(--tab-top));
+  fill: var(--tab-fill);
+  stroke: var(--book-line);
+  z-index: -1;
+  pointer-events: none;
+}
+.book-tab-outline path { vector-effect: non-scaling-stroke; }
+.book-tab-row > button:hover { --tab-fill: var(--ui-selected-background); }
+.book-tab-row > button:active { transform: none; }
+.book-tab-row > button[aria-selected="true"] {
+  --tab-fill: var(--book-paper);
+  --tab-top: 0px;
+  color: var(--ui-selected-text);
+}
+.book-tab-row > button[aria-selected="true"]::before {
+  content: '';
+  position: absolute;
+  inset: 100% 0 -1px 1px;
+  background: var(--book-paper);
+  z-index: -1;
+}
+.book-tab-row > button:focus-visible { outline: none; }
+.book-tab-row > button:focus-visible span {
+  outline: 2px solid var(--ui-selected-text);
+  outline-offset: 4px;
+  border-radius: 3px;
+}
+.book-tab-scroll:not([hidden]) {
+  display: flex;
+  gap: 2px;
+  padding: 0 0 3px 4px;
+}
+.book-tab-scroll button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--ui-soft-border);
+  border-radius: 8px;
+  background: var(--ui-soft-background);
+  color: var(--ui-button-text);
+}
+.book-tab-scroll button:disabled { opacity: .45; }
+.book-tab-scroll [data-book-scroll="-1"] svg { transform: rotate(180deg); }
+.learning-book-panel > :first-child {
+  border-width: 1px;
+  border-top-left-radius: 0;
+}
+.switching-book { view-transition-name: none; }
+.switching-book .learning-book { view-transition-name: book-page; }
+.switching-book::view-transition { pointer-events: none; }
+.switching-book::view-transition-group(book-page) { animation-duration: 0s; }
+.switching-book::view-transition-old(book-page),
+.switching-book::view-transition-new(book-page) {
+  mix-blend-mode: normal;
+  width: 100%;
+  height: auto;
+}
+.switching-book::view-transition-old(book-page) {
+  animation: book-lift 250ms cubic-bezier(.4,0,.7,1) both;
+}
+.switching-book::view-transition-new(book-page) {
+  animation: book-settle 460ms 190ms cubic-bezier(.2,.65,.3,1) both;
+}
+@keyframes book-lift {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(-16px); opacity: 0; }
+}
+@keyframes book-settle {
+  from { transform: translateY(-16px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}

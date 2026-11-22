@@ -21,10 +21,10 @@ test('独立入口、自由切换、笔顺前后演示与刷新恢复，拼音�
   await page.locator('[data-action="known"]').click();
   await selectTopic(page, '汉字笔画与结构');
   await expect(page).toHaveTitle('汉字笔画与结构 · 小兔学习乐园');
-  await expect(page.locator('[data-action="hz-category"]')).toHaveCount(6);
-  await page.locator('[data-action="hz-category"][data-id="top-bottom"]').click();
+  await expect(page.locator('.nav-tabs [data-action="hz-category"]')).toHaveCount(6);
+  await page.locator('.nav-tabs [data-action="hz-category"][data-id="top-bottom"]').click();
   await expect(page.locator('.hz-parts')).toHaveClass(/top-bottom/);
-  await page.locator('[data-action="hz-category"][data-id="order"]').click();
+  await page.locator('.nav-tabs [data-action="hz-category"][data-id="order"]').click();
   await expect(page.locator('[data-action="hz-stroke-previous"]')).toBeDisabled();
   await page.locator('[data-action="hz-lesson"][data-id="order-日"]').click();
   await page.locator('[data-action="hz-stroke-next"]').click();
@@ -53,14 +53,14 @@ test('自评与奖励去重，所有结构与偏旁示例可直接访问', async
   await page.locator('[data-action="hz-known"]').click();
   expect((await stored(page)).hanzi.known).toEqual(['stroke-horizontal']);
   await expect(page.locator('.star-counter b')).toHaveText('1');
-  await page.locator('[data-action="hz-category"][data-id="radicals"]').click();
+  await page.locator('.nav-tabs [data-action="hz-category"][data-id="radicals"]').click();
   await expect(page.locator('.hz-note').first()).toContainText('不完全相同');
   await expect(page.locator('.hz-examples > span')).toHaveText(['河', '海', '湖', '江', '洋', '清']);
-  await page.locator('[data-action="hz-category"][data-id="single"]').click();
+  await page.locator('.nav-tabs [data-action="hz-category"][data-id="single"]').click();
   await expect(page.locator('.hz-demo')).toContainText('独体字');
-  await page.locator('[data-action="hz-category"][data-id="left-right"]').click();
+  await page.locator('.nav-tabs [data-action="hz-category"][data-id="left-right"]').click();
   await expect(page.locator('.hz-parts')).toContainText('左边日右边月');
-  await page.locator('[data-action="hz-category"][data-id="top-bottom"]').click();
+  await page.locator('.nav-tabs [data-action="hz-category"][data-id="top-bottom"]').click();
   await expect(page.locator('.hz-parts')).toContainText('上面日下面十');
 });
 
@@ -98,14 +98,15 @@ test('答错刷新重试、完成统计、独立错题复习和历史去重', as
 
 test('查看答案保留错题，离开与继续保留题目和首次结果', async ({ page }) => {
   await openHanzi(page);
-  await page.locator('[data-action="hz-start"][data-id="strokes"]').click();
+  await page.getByRole('tab', { name: '练习', exact: true }).click();
+  await expect(page.locator('.hz-quiz')).toBeVisible();
   const question = (await stored(page)).hanzi.round.questions[0];
   await page.locator('[data-action="hz-skip"]').click();
   await expect(page.locator('.hz-feedback')).toContainText('先认识答案');
   await page.locator('[data-action="hz-learn"]').click();
   await selectTopic(page, '拼音学习');
   await selectTopic(page, '汉字笔画与结构');
-  await page.locator('.section-practice-shortcut').click();
+  await page.getByRole('tab', { name: '练习', exact: true }).click();
   await expect(page.locator('.hz-feedback')).toContainText('先认识答案');
   const state = (await stored(page)).hanzi;
   expect(state.round.questions[0].id).toBe(question.id);
@@ -135,7 +136,7 @@ test('本地存储不可用时仍可学习和答题', async ({ page }) => {
   await openHanzi(page);
   await page.locator('[data-action="hz-known"]').click();
   await expect(page.locator('[data-action="hz-known"]')).toContainText('已经认识');
-  await page.locator('[data-action="hz-start"][data-id="strokes"]').click();
+  await page.getByRole('tab', { name: '练习', exact: true }).click();
   await page.locator('[data-action="hz-skip"]').click();
   await expect(page.locator('.hz-feedback')).toContainText('先认识答案');
 });
@@ -143,7 +144,7 @@ test('本地存储不可用时仍可学习和答题', async ({ page }) => {
 test('手机平板桌面无横向溢出，键盘和减少动态效果可用', async ({ page }) => {
   await openHanzi(page);
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.locator('[data-action="hz-category"][data-id="order"]').click();
+  await page.locator('.nav-tabs [data-action="hz-category"][data-id="order"]').click();
   await page.locator('[data-action="hz-stroke-next"]').focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('.hz-step-status')).toHaveText('第 1 / 3 笔：横');
@@ -163,7 +164,7 @@ test('新增笔顺、拼音辅助和30题轮次可保存，切换题量不重置
   await expect(page.locator('.hz-demo h3 ruby rt')).toHaveText('piě');
   await setLearningPreference(page, 'showPinyin', false);
   await expect(page.locator('.hanzi-page ruby')).toHaveCount(0);
-  await page.locator('[data-action="hz-category"][data-id="order"]').click();
+  await page.locator('.nav-tabs [data-action="hz-category"][data-id="order"]').click();
   await page.locator('[data-action="hz-lesson"][data-id="order-山"]').click();
   await page.locator('[data-action="hz-stroke-jump"][data-index="2"]').click();
   await expect(page.locator('.hz-step-status')).toHaveText('第 2 / 3 笔：竖折');

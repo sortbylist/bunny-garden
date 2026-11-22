@@ -51,7 +51,7 @@ for (const topic of chineseTopics.filter(topic => topic.stage.startsWith('第二
     await selectTopic(page, topic.name);
     const lessons = topic.lessons.filter(lesson => lesson.activity.type === 'write');
     const first = lessons[0];
-    await page.locator(`[data-action="ct-category"][data-id="${first.category}"]`).click();
+    await page.locator(`.nav-tabs [data-action="ct-category"][data-id="${first.category}"]`).click();
     await page.locator(`[data-action="ct-lesson"][data-id="${first.id}"]`).click();
     const text = '我在花园里观察蝴蝶。<img src=x onerror=alert(1)>';
     await page.locator('#ct-draft').fill(text);

@@ -61,7 +61,8 @@ for (const topic of mathTopics) {
       await page.locator('[data-action="ct-next"]').click();
       await expect(page.locator('.ct-lesson-intro h3')).toContainText('举一反三');
       await page.locator('[data-action="ct-previous"]').click();
-      await page.locator('.section-practice-shortcut').click();
+      await page.getByRole('tab', { name: '练习', exact: true }).click();
+      await expect(page.locator('.ct-quiz')).toBeVisible();
       const state = await stored(page);
       expect(state.topics[topic.id].round.questions).toHaveLength(12);
       expect(state.topics[topic.id].round.questions.every(question => question.category === category.id)).toBe(true);
@@ -128,7 +129,7 @@ test('数学与语文进度隔离，主题选择恢复，损坏题目恢复原�
   await subject(page, 'math');
   const topic = mathTopics[3];
   await selectTopic(page, topic.name, 'math');
-  await page.locator('[data-action="ct-category"][data-id="zero"]').click();
+  await page.locator('.nav-tabs [data-action="ct-category"][data-id="zero"]').click();
   await page.locator('[data-action="ct-known"]').click();
   await startCombinedPractice(page);
   await page.locator('[data-action="ct-skip"]').click();
@@ -171,7 +172,7 @@ for (const width of [1440, 820, 320]) {
     for (const topic of mathTopics) {
       await selectTopic(page, topic.name, 'math');
       const category = topic.lessons.find(lesson => lesson.visual)?.category;
-      if (category) await page.locator(`[data-action="ct-category"][data-id="${category}"]`).click();
+      if (category) await page.locator(`.nav-tabs [data-action="ct-category"][data-id="${category}"]`).click();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       const card = await page.locator('.ct-lesson').boundingBox();
       const garden = await page.locator('.growth-card').boundingBox();
@@ -186,7 +187,7 @@ for (const width of [1440, 820, 320]) {
       await page.locator('[data-action="ct-learn"]').click();
     }
     await selectTopic(page, '乘法', 'math');
-    await page.locator('[data-action="ct-category"][data-id="double"]').click();
+    await page.locator('.nav-tabs [data-action="ct-category"][data-id="double"]').click();
     await mkdir('artifacts', { recursive: true });
     await page.screenshot({ path: `artifacts/math-learning-${width}.png`, fullPage: true });
     await startCombinedPractice(page);

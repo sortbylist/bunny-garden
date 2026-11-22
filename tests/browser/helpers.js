@@ -23,31 +23,41 @@ export async function chooseMode(page, id) {
     return;
   }
   const navigation = page.locator('[data-navigation="pinyin-modes"]');
-  const area = ['sequence', 'random', 'tones', 'favorites'].includes(id) ? 'learn' : 'practice';
-  const tab = navigation.locator(`[data-action="pinyin-area"][data-id="${area}"]`);
-  if (await tab.getAttribute('aria-pressed') !== 'true') await tab.click();
   if (['sequence', 'random'].includes(id)) {
     const order = page.locator('[data-action="pinyin-order"]');
-    if (!(await order.count())) await navigation.locator('[data-action="pinyin-category"]').first().click();
+    if (!(await order.count())) await choosePinyinCategory(page, 'all');
     if (await order.textContent() === (id === 'sequence' ? '顺序学习' : '随机认读')) await order.click();
+  } else if (id === 'tones') {
+    await choosePinyinCategory(page, id);
   } else if (id === 'favorites') {
     await openMyMenu(page, '[data-action="library-open"][data-id="favorites"]');
   } else await navigation.locator(`.nav-tabs [data-action="mode"][data-id="${id}"]`).click();
 }
 
+export async function choosePinyinCategory(page, id) {
+  const picker = page.locator('[data-navigation="pinyin-modes"] .course-picker');
+  if (await picker.getAttribute('open') === null) await picker.locator('summary.nav-select').click();
+  await picker.locator(`[data-action="pinyin-category"][data-id="${id}"]`).click();
+}
+
+export async function selectPhonicsLesson(page, id) {
+  const picker = page.locator('[data-navigation="phonics-categories"] .course-picker');
+  if (await picker.getAttribute('open') === null) await picker.locator('summary.nav-select').click();
+  const lesson = picker.locator(`.ph-lesson[data-id="${id}"]`);
+  const module = lesson.locator('..');
+  if (await module.getAttribute('open') === null) await module.locator('summary').click();
+  await lesson.click();
+}
+
 export async function choosePhonicsMode(page, id) {
   if (['mixed', 'meaning', 'spelling', 'listen'].includes(id)) {
-    const tab = page.locator('[data-action="ph-area"][data-id="practice"]');
-    if (await tab.getAttribute('aria-pressed') !== 'true') await tab.click();
-    await page.locator(`[data-action="ph-practice"][data-id="${id}"]`).click();
+    await chooseNavigationItem(page, page.locator('[data-navigation="phonics-categories"]'), id);
     return;
   }
   if (['learn', 'random', 'reading', 'rules'].includes(id)) {
-    const tab = page.locator('[data-action="ph-area"][data-id="learn"]');
-    if (await tab.getAttribute('aria-pressed') !== 'true') await tab.click();
     if (!(await page.locator('.ph-rule').count())) await page.locator('[data-action="ph-mode"][data-id="learn"]').click();
     if (id === 'rules') {
-      await page.locator('.ph-rule .section-practice-shortcut').click();
+      await page.locator('[data-action="ph-page"][data-id="practice"]').click();
       const { phonics } = await stored(page);
       const round = phonics.sessions[`mixed:lesson:${phonics.lessonId}:${phonics.length}`];
       const index = round.ids.findIndex(questionId => questionId.startsWith('rule-'));
@@ -101,13 +111,10 @@ export async function selectTopic(page, name, subjectId = 'chinese') {
 }
 
 export async function startCombinedPractice(page, prefix = 'ct') {
-  const tab = page.locator(`[data-action="${prefix}-area"][data-id="practice"]`);
-  if (await tab.getAttribute('aria-pressed') !== 'true') await tab.click();
-  await page.locator(`[data-action="${prefix}-start"][data-id="all"]`).click();
+  await page.locator(`.nav-tabs [data-action="${prefix}-start"][data-id="all"]`).click();
 }
 
 export async function chooseLearningCategory(page, prefix, id) {
-  const tab = page.locator(`[data-action="${prefix}-area"][data-id="learn"]`);
-  if (await tab.getAttribute('aria-pressed') !== 'true') await tab.click();
-  await page.locator(`[data-action="${prefix}-category"][data-id="${id}"]`).click();
+  if (prefix === 'pinyin') return choosePinyinCategory(page, id);
+  await page.locator(`.nav-tabs [data-action="${prefix}-category"][data-id="${id}"]`).click();
 }

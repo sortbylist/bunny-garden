@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { chooseMode, stored } from './helpers.js';
+import { chooseMode, choosePinyinCategory, stored } from './helpers.js';
 
 test('鼠标停在学习小地图标题时，页面仍能上下滚动', async ({ page }) => {
   for (const viewport of [{ width: 1440, height: 800 }, { width: 820, height: 1180 }, { width: 390, height: 844 }]) {
@@ -74,7 +74,7 @@ test('地图保留分组列表，点击分组保持玩法且不再重复显示�
   await page.locator('.learning-map [data-id="single"]').click();
   await expect(page.locator('.learning-map [data-action="map-group"]')).toHaveCount(7);
   await page.locator('.pinyin-map [data-index="5"]').click();
-  await page.locator('.nav-tabs [data-action="pinyin-category"][data-id="initial"]').click();
+  await choosePinyinCategory(page, 'initial');
   expect((await stored(page)).mode).toBe('sequence');
   await chooseMode(page, 'hanzi');
   await expect(page.locator('.learning-map [data-action="map-group"]')).toHaveCount(0);

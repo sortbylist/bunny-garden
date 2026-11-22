@@ -27,10 +27,12 @@ import { renderTopic, handleTopicAction, topicLearningCard, topicQuizCard, dicti
 import { readingText } from './chinese-reading.js';
 import { createPhonicsView } from './phonics.js';
 import { createPhonicsRound, answerPhonics, editPhonicsDraft } from './phonics-engine.js';
-import { createNavigation, renderCurriculum } from './navigation.js';
-import { favoriteButton, learningPosition, learningTokenClass, practiceMenu, roundSettings, reviewShortcut, focusLearningActivity, sectionPracticeButton } from './learning-ui.js';
+import { createNavigation, renderCoursePicker, renderCurriculum } from './navigation.js';
+import { favoriteButton, learningBook, learningPosition, learningTokenClass, roundSettings, reviewShortcut, focusLearningActivity, sectionPracticeButton } from './learning-ui.js';
+import { createBookTabs } from './book-tabs.js';
 import { practiceLengths } from './chinese-practice.js';
 import './ui-theme.css';
+import './book-tabs.css';
 import { backupFilename, createBackup, parseBackup, restoreBackup, maxBackupBytes } from './backup.js';
 import { loadState, saveState } from './storage.js';
 import { pinyinPracticeCategory } from './learning-data.js';
@@ -38,6 +40,7 @@ import { publicAsset } from './public-asset.js';
 
 const bunnyImage = publicAsset('/bunny.svg');
 const app = document.querySelector('#app');
+const bookTabs = createBookTabs(app);
 const dialog = document.querySelector('#dialog');
 const loaded = loadState({ getItem: key => localStorage.getItem(key) });
 let state = loaded.state;
@@ -64,7 +67,6 @@ let libraryPage = pageFromHash();
 let libraryFilters = defaultLibraryFilters();
 let libraryDetail = null;
 let pinyinLearningMode = 'sequence';
-let pinyinPracticeMenu = false;
 const studyModes = ['sequence', 'random', 'favorites'];
 let rewardFilter = 'all';
 let rewardHelpReturn = null;
@@ -178,6 +180,7 @@ function currentItem() {
 
 function render() {
   if (backupCommitted) return;
+  const previousBook = bookTabs.capture();
   disposeReadingRows();
   poetryAudio.stop();
   englishAudio.stop();
@@ -228,6 +231,7 @@ function render() {
     else (app.querySelector('[data-action="ct-advance"]') || app.querySelector('[data-action="ct-answer"]:not(:disabled)') || app.querySelector('[data-action="ct-learn"], [data-action="hz-advance"], [data-action="hz-stroke-previous"]:not(:disabled), [data-action="next-question"]:not(:disabled)'))?.focus({ preventScroll: true });
   }
   navigation.bind();
+  bookTabs.bind(previousBook);
   persist();
   celebrations.resume();
 }
@@ -235,18 +239,28 @@ function render() {
 function learningPage() {
   const mode = currentMode();
   const value = session();
-  if (!pinyinPracticeMenu && studyModes.includes(state.mode)) {
-    const item = currentItem();
+  const studying = studyModes.includes(state.mode);
+  const item = studying ? allItems.find(entry => entry.id === value.ids[value.index]) : null;
+  if (studying) {
     if (item && !state.seen.includes(item.id)) state.seen.push(item.id);
   }
+  const learningTones = state.mode === 'tones' && !state.tonePractice;
+  const paired = state.mode === 'tones' || state.mode === 'section-practice' || studying && state.mode !== 'favorites';
+  const book = learningBook({
+    action: 'pinyin-page',
+    category: pinyinCategory(),
+    page: studying || learningTones ? 'learn' : 'practice',
+    paired,
+    content: studying ? studyCard(value, item)
+      + (state.mode === 'favorites' && value.ids.length ? `<div class="controls">${button('shuffle-favorites', '打乱顺序复习', 'shuffle', 'text-button')}</div>` : '')
+      + studyGrid(value) : learningTones ? tonesCard() : state.mode === 'match' ? matchCard(value) : quizCard(value),
+  });
   return `<section class="page-heading"><div><div class="eyebrow"><span></span>语文的第一站 · PINYIN GARDEN</div><h1>和拼音交个朋友吧<span class="heading-flower">✿</span></h1><p>听一听，读一读。每认识一个拼音，都是小小的进步！</p></div><div class="heading-sticker">${icon('sprout')}<span>今天也要<br><b>快乐生长</b></span></div></section>
     ${modePicker()}
     <div class="learning-layout"><div class="learning-main" role="region" aria-label="${mode.name}">
-      ${pinyinPracticeMenu ? practiceMenu() : studyModes.includes(state.mode) ? studyCard(value) : state.mode === 'tones' && !state.tonePractice ? tonesCard() : state.mode === 'match' ? matchCard(value) : quizCard(value)}
-      ${!pinyinPracticeMenu && state.mode === 'favorites' && value.ids.length ? `<div class="controls">${button('shuffle-favorites', '打乱顺序复习', 'shuffle', 'text-button')}</div>` : ''}
-      ${!pinyinPracticeMenu && value?.questions ? roundSettings('pinyin', state.length, [5, 10, 20], previousPinyinLength()) : ''}
-      ${!pinyinPracticeMenu && studyModes.includes(state.mode) ? studyGrid(value) : ''}
-    </div><aside class="learning-aside">${progressCard()}${pinyinPracticeMenu ? '' : mapCard()}<div class="help-note">${icon('headphones')}<div><strong>小耳朵，准备好了吗？</strong><p>点击 ${icon('sound')} 就能听读音<br>听完以后，也试着读一读吧。</p></div></div></aside></div>`;
+      ${book}
+      ${value?.questions ? roundSettings('pinyin', state.length, [5, 10, 20], previousPinyinLength()) : ''}
+    </div><aside class="learning-aside">${progressCard()}${mapCard()}<div class="help-note">${icon('headphones')}<div><strong>小耳朵，准备好了吗？</strong><p>点击 ${icon('sound')} 就能听读音<br>听完以后，也试着读一读吧。</p></div></aside></div>`;
 }
 
 function previousPinyinLength() {
@@ -256,12 +270,27 @@ function previousPinyinLength() {
   });
 }
 
+function pinyinCategory() {
+  return ['sequence', 'random', 'section-practice'].includes(state.mode) ? state.group : state.mode;
+}
+
 function modePicker() {
-  const learning = studyModes.includes(state.mode) || state.mode === 'tones' && !state.tonePractice;
+  const selected = pinyinCategory();
+  const learning = [
+    { id: 'all', name: '全部拼音', icon: 'book' },
+    ...groups,
+    modes.find(mode => mode.id === 'tones'),
+  ];
+  const category = learning.find(item => item.id === selected);
   return renderCurriculum(navigation, {
-    id: 'pinyin-modes', areaAction: 'pinyin-area', area: !pinyinPracticeMenu && learning ? 'learn' : 'practice',
-    selected: pinyinPracticeMenu ? null : learning && state.mode !== 'tones' ? state.group : state.mode,
-    learning: [...groups.map(group => ({ ...group, action: 'pinyin-category' })), { ...modes.find(mode => mode.id === 'tones'), action: 'mode' }],
+    id: 'pinyin-modes',
+    selected,
+    catalogName: '练习目录',
+    leadingPicker: renderCoursePicker({
+      name: category?.name || '拼音目录',
+      active: Boolean(category),
+      content: `<div class="nav-catalog-list">${learning.map(item => `<button type="button" class="nav-catalog-item" data-action="pinyin-category" data-id="${item.id}" ${item.id === selected ? 'aria-current="true"' : ''}>${icon(item.icon || 'book')}<span>${escape(item.name)}</span>${item.id === selected ? icon('check') : ''}</button>`).join('')}</div>`,
+    }),
     practice: playModes.filter(mode => mode.group !== '认识拼音').map(mode => ({ ...mode, action: 'mode' })),
   });
 }
@@ -599,13 +628,13 @@ function studyCard(value, item = currentItem(), preview = null) {
   const favorite = state.favorites.includes(item.id);
   const known = state.known.includes(item.id);
   const isLast = value.index === value.ids.length - 1;
-  return `<section class="study-card ${item.type === 'word' ? 'word-card' : ''}"><div class="card-topline"><h2 class="category-badge" data-activity-heading tabindex="-1">${icon('flower')}学习 · ${item.type === 'word' ? '常见字词' : groupName(item.group)}</h2>${preview || learningPosition(value.index, value.ids.length) + favoriteButton('favorite', favorite) + (item.type === 'basic' ? sectionPracticeButton('pinyin-section-practice', item.group) : '')}</div>
+  return `<section class="study-card ${item.type === 'word' ? 'word-card' : ''}"><div class="card-topline"><h2 class="category-badge" data-activity-heading tabindex="-1">${icon('flower')}学习 · ${item.type === 'word' ? '常见字词' : groupName(item.group)}</h2>${preview || learningPosition(value.index, value.ids.length) + favoriteButton('favorite', favorite)}</div>
     <div class="pinyin-stage"><span class="stage-spark spark-one">✦</span><span class="stage-spark spark-two">✧</span><div class="writing-lines"></div><button class="pinyin-display ${item.text.length > 4 ? 'long' : ''}" data-action="play-current" aria-label="听 ${escape(item.text)} 的读音">${escape(item.type === 'word' ? item.pinyin : item.text)}</button>${item.type === 'word' ? `<div class="word-under">${item.text}</div>` : ''}</div>
     <div class="sound-row">${button('play-current', '<span>听一听</span>', 'sound', 'sound-button primary-audio')}${preview ? '' : button('continuous', state.settings.continuous ? '停止连播' : '连续听读', state.settings.continuous ? 'pause' : 'play', 'continuous-button', `aria-pressed="${state.settings.continuous}"`)}</div>
     <p class="audio-hint">${audioNote(item)}</p>
     <div class="memory-tip"><span class="tip-icon">${icon('sprout')}</span><div><span class="tip-label">${item.type === 'word' ? '读一读，记一记' : '小兔的记忆提示'}</span><p>${escape(item.tip || `${item.text}，读作 ${item.pinyin}。`)}</p></div>${item.type === 'basic' && item.group !== 'initial' && !['e', 'ü', 'ang', 'eng'].includes(item.text) ? `<span class="example-tag">${item.example}</span>` : ''}</div>
     ${preview ? '' : `<div class="mastery-actions">${button('practice-later', '还要练一练', 'refresh', 'soft-button')}${button('known', known ? '已经认识啦' : '我认识啦', 'check', `soft-button mint ${known ? 'is-known' : ''}`, `aria-pressed="${known}"`)}${state.mode !== 'favorites' ? button('pinyin-order', state.mode === 'random' ? '顺序学习' : '随机认读', 'shuffle', 'text-button') : ''}</div>
-    <div class="card-navigation">${button('previous', '上一个', 'chevron', 'outline-button previous', value.index === 0 ? 'disabled' : '')}${isLast && item.type === 'basic' ? sectionPracticeButton('pinyin-section-practice', item.group, true) : button(isLast ? 'finish-study' : 'next', isLast ? '完成这一轮' : '下一个', 'chevron', 'solid-button next')}</div>`}
+    <div class="card-navigation">${button('previous', '上一个', 'chevron', 'outline-button previous', value.index === 0 ? 'disabled' : '')}${isLast && item.type === 'basic' && state.mode !== 'favorites' ? sectionPracticeButton('pinyin-section-practice', state.group, true) : button(isLast ? 'finish-study' : 'next', isLast ? '完成这一轮' : '下一个', 'chevron', 'solid-button next')}</div>`}
   </section>`;
 }
 
@@ -1019,7 +1048,6 @@ function showAbout() {
 
 function changeMode(id, group) {
   if (!modes.some(mode => mode.id === id)) return;
-  pinyinPracticeMenu = false;
   if (id !== 'favorites' && (studyModes.includes(id) || id === 'tones')) pinyinLearningMode = id;
   if (id === 'mistakes' && !state.mistakes.length) return;
   halt();
@@ -1034,6 +1062,30 @@ function changeMode(id, group) {
   if (id === 'mistakes' && state.sessions[key()]?.finished) delete state.sessions[key()];
   closeDialog();
   render();
+}
+
+function startPinyinSection(category) {
+  if (category === 'tones') {
+    halt();
+    state.tonePractice = true;
+    render();
+    return;
+  }
+  if (state.mode !== 'sequence' && state.mode !== 'random') return;
+  state.modeGroups ||= {};
+  state.modeGroups['section-practice-return'] = state.mode;
+  changeMode('section-practice', category);
+}
+
+function returnToPinyinStudy() {
+  if (state.mode === 'section-practice') {
+    const order = state.modeGroups?.['section-practice-return'];
+    changeMode(order === 'random' ? 'random' : 'sequence', state.group);
+  } else if (state.mode === 'tones') {
+    halt();
+    state.tonePractice = false;
+    render();
+  } else changeMode(pinyinLearningMode);
 }
 
 function requestFor(item) {
@@ -1213,7 +1265,6 @@ function handleAction(event) {
     const result = handleTopicAction(state, topic, action, target.dataset);
     render();
     if (['ct-start', 'ct-learn'].includes(action)) focusLearningActivity();
-    if (action === 'ct-area') app.querySelector(`[data-action="ct-area"][data-id="${target.dataset.id}"]`)?.focus({ preventScroll: true });
     if (result.correct) chime(state.settings.effects);
     celebrateReward(result.reward);
     return;
@@ -1224,7 +1275,6 @@ function handleAction(event) {
     const result = handleHanziAction(state, action, target.dataset);
     render();
     if (['hz-start', 'hz-learn'].includes(action)) focusLearningActivity();
-    if (action === 'hz-area') app.querySelector(`[data-action="hz-area"][data-id="${target.dataset.id}"]`)?.focus({ preventScroll: true });
     if (result.correct) chime(state.settings.effects);
     celebrateReward(result.reward);
     return;
@@ -1263,33 +1313,23 @@ function handleAction(event) {
   if (action === 'replay-reward') { const reward = rewardCatalog.find(item => item.id === target.dataset.id && state.rewards.unlocks[item.id]); if (reward) celebrateReward({ stars: 0, unlocked: [reward.id], reasons: [], replay: true }); return; }
   if (action === 'dismiss-reward') { celebrations.dismiss(); return; }
   if (action === 'mode') { changeMode(target.dataset.id); return; }
-  if (action === 'pinyin-area') {
-    if (target.dataset.id === 'learn') {
-      if (pinyinPracticeMenu || !studyModes.includes(state.mode) && !(state.mode === 'tones' && !state.tonePractice)) changeMode(pinyinLearningMode);
-    } else if (studyModes.includes(state.mode) || state.mode === 'tones' && !state.tonePractice) {
-      halt();
-      pinyinPracticeMenu = true;
-      state.settings.continuous = false;
-      render();
-    }
-    app.querySelector(`[data-action="pinyin-area"][data-id="${target.dataset.id}"]`)?.focus({ preventScroll: true });
+  if (action === 'pinyin-page') {
+    if (target.dataset.id === 'learn') returnToPinyinStudy();
+    else startPinyinSection(target.dataset.category);
     return;
   }
   if (action === 'pinyin-category') {
-    changeMode(pinyinLearningMode === 'random' ? 'random' : 'sequence', target.dataset.id);
+    if (target.dataset.id === 'tones') changeMode('tones');
+    else changeMode(pinyinLearningMode === 'random' ? 'random' : 'sequence', target.dataset.id);
     return;
   }
   if (action === 'pinyin-order') { changeMode(state.mode === 'random' ? 'sequence' : 'random', state.group); return; }
   if (action === 'pinyin-section-practice') {
-    if (target.dataset.id === 'tones') {
-      halt();
-      state.tonePractice = true;
-      render();
-    } else changeMode('section-practice', target.dataset.id);
+    startPinyinSection(target.dataset.id);
     focusLearningActivity();
     return;
   }
-  if (action === 'pinyin-learn') { changeMode(pinyinLearningMode); focusLearningActivity(); return; }
+  if (action === 'pinyin-learn') { returnToPinyinStudy(); focusLearningActivity(); return; }
   if (action === 'toggle-tones') { halt(); state.tonePractice = !state.tonePractice; render(); focusLearningActivity(); return; }
   if (action === 'shuffle-favorites') { halt(); const value = session(); value.ids = shuffle(value.ids); value.index = 0; render(); toast('顺序打乱啦，来看看还认识谁。'); return; }
   if (action === 'subject') {
@@ -1397,7 +1437,21 @@ document.addEventListener('click', event => {
   }
   if (!event.target.closest('.my-menu')) app.querySelector('.my-menu')?.removeAttribute('open');
   else if (event.target.closest('[data-action]')) app.querySelector('.my-menu')?.removeAttribute('open');
-  if (!navigation.click(event)) handleAction(event);
+  const previous = event.target.closest('.learning-book');
+  const tab = previous && event.target.closest('[role="tab"]');
+  const action = event.target.closest('[data-action]');
+  if (action || !previous) bookTabs.cancel();
+  if (navigation.click(event)) return;
+  if (tab?.getAttribute('aria-selected') === 'true') {
+    tab.focus({ preventScroll: true });
+    return;
+  }
+  const changesPage = tab || previous?.querySelectorAll('[role="tab"]').length > 1 && (
+    ['ct-start', 'hz-start', 'ct-learn', 'hz-learn', 'pinyin-section-practice', 'ph-section-practice', 'pinyin-learn', 'toggle-tones'].includes(action?.dataset.action)
+    || previous.dataset.page === 'practice' && action?.dataset.action === 'ph-mode' && action.dataset.id === 'learn'
+  );
+  if (changesPage) bookTabs.turn(previous, { animate: state.settings.animations, update: () => handleAction(event), focusTab: Boolean(tab) });
+  else handleAction(event);
 });
 
 document.addEventListener('input', event => {
@@ -1489,16 +1543,7 @@ document.addEventListener('keydown', event => {
   if (navigation.keydown(event)) return;
   if (event.key === 'Escape' && app.querySelector('.my-menu[open]')) { app.querySelector('.my-menu').removeAttribute('open'); app.querySelector('.my-menu-toggle').focus(); return; }
   if (event.key === 'Escape' && mobileMenu && !dialog.open) { mobileMenu = false; render(); }
-  const tab = event.target.closest('[role="tab"]');
-  if (tab && ['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
-    event.preventDefault();
-    const tabs = [...app.querySelectorAll('[role="tab"]')];
-    const index = tabs.indexOf(tab);
-    const nextIndex = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
-    tabs[nextIndex].focus();
-    tabs[nextIndex].click();
-    return;
-  }
+  if (bookTabs.keydown(event)) return;
   if (dialog.open || libraryPage || event.target.closest('input, select, textarea, button, a, summary')) return;
   if (state.subject === 'chinese' && state.features.chinese !== 'hanzi-structure' && !topicById(state.features.chinese) && studyModes.includes(state.mode) && ['ArrowLeft', 'ArrowRight'].includes(event.key)) {
     const value = session();

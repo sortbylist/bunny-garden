@@ -6,8 +6,8 @@ async function stars(page) { return page.locator('.topbar .star-counter b').text
 test('拼音玩法按分类单行显示，保存选择，常用复习入口及字号可见', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('.play-selector')).not.toContainText('今天，想怎么玩？');
-  await expect(page.locator('[data-action="pinyin-area"][data-id="learn"]')).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('.mode-navigation .nav-tabs .play-mode')).toHaveCount(7);
+  await expect(page.getByRole('tab', { name: '学习', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('.mode-navigation .nav-tabs .play-mode')).toHaveCount(9);
   await expect(page.locator('[data-action="toggle-modes"]')).toHaveCount(0);
   await expect(page.locator('.play-selector')).not.toContainText('声母学习');
   await page.locator('.my-menu-toggle').click();
@@ -17,16 +17,16 @@ test('拼音玩法按分类单行显示，保存选择，常用复习入口及�
   await expect(page.locator('.review-library')).toContainText('练习记录');
   await page.locator('[data-action="library-exit"]').click();
   await page.reload();
-  await expect(page.locator('[data-action="pinyin-area"][data-id="learn"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('tab', { name: '学习', exact: true })).toHaveAttribute('aria-selected', 'true');
   await chooseMode(page, 'hanzi');
   await expect(page.locator('.play-selector .nav-tabs .selected')).toContainText('看字选拼音');
   await page.reload();
-  await expect(page.locator('[data-action="pinyin-area"][data-id="practice"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('tab', { name: '练习', exact: true })).toHaveAttribute('aria-selected', 'true');
   await expect(page.locator('.play-selector .nav-tabs .selected')).toContainText('看字选拼音');
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator('.mode-navigation .nav-tabs .selected')).toContainText('看字选拼音');
   await chooseMode(page, 'sequence');
-  await expect(page.locator('[data-action="pinyin-area"][data-id="learn"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('tab', { name: '学习', exact: true })).toHaveAttribute('aria-selected', 'true');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
@@ -147,7 +147,7 @@ test('末项发奖和本节练习同时可见，减少动态效果生效，清�
 test('手机个人中心、奖励收藏册可操作且没有横向溢出', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await expect(page.locator('[data-action="pinyin-area"][data-id="learn"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('tab', { name: '学习', exact: true })).toHaveAttribute('aria-selected', 'true');
   await expect(page.locator('.mode-navigation .nav-rail')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.locator('.my-menu-toggle').click();

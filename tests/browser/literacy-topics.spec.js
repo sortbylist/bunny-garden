@@ -18,16 +18,16 @@ test('形近字和多音字对照可读，关闭拼音仍保留辨析所需的�
   await expect(page.locator('.learning-aside')).toBeVisible();
   await expect(page.locator('.ct-comparison')).toContainText('眼睛');
   await expect(page.locator('.ct-comparison article')).toHaveCount(3);
-  await page.locator('[data-action="ct-category"][data-id="details"]').click();
+  await page.locator('.nav-tabs [data-action="ct-category"][data-id="details"]').click();
   await expect(page.locator('.ct-comparison')).toContainText('上横长、下横短');
   await selectTopic(page, '同音字与多音字');
-  await page.locator('[data-action="ct-category"][data-id="polyphones"]').click();
+  await page.locator('.nav-tabs [data-action="ct-category"][data-id="polyphones"]').click();
   await page.locator('[data-action="ct-lesson"][data-id$=":de"]').click();
   for (const reading of ['dé', 'děi', 'de']) await expect(page.locator('.ct-comparison')).toContainText(reading);
   await setLearningPreference(page, 'showPinyin', false);
   await expect(page.locator('.ct-comparison ruby')).toHaveCount(0);
   await expect(page.locator('.ct-comparison')).toContainText('在“得到”中读 dé');
-  await page.locator('[data-action="ct-start"][data-id="polyphones"]').click();
+  await page.getByRole('tab', { name: '练习', exact: true }).click();
   await setLearningPreference(page, 'showPinyin', true);
   await expect(page.locator('.ct-comparison')).toHaveCount(0);
   await expect(page.locator('.ct-quiz ruby')).toHaveCount(0);
@@ -80,7 +80,7 @@ test('文化各小节自由进入，古诗草稿和背诵状态随全局清空�
   await page.locator('#ct-draft').fill('白鹅在水中游。');
   await page.locator('[data-action="ct-activity-recite"]').click();
   for (const [category, text] of [['festivals', '农历正月十五'], ['stories', '守株待兔'], ['sayings', '熟能生巧']]) {
-    await page.locator(`[data-action="ct-category"][data-id="${category}"]`).click();
+    await page.locator(`.nav-tabs [data-action="ct-category"][data-id="${category}"]`).click();
     await expect(page.locator('.ct-lesson')).toContainText(text);
     await expect(page.locator('.ct-poem')).toHaveCount(0);
   }
@@ -178,7 +178,7 @@ test('全部古诗录音可以真实解码且有声音，新增课程可直接�
   await page.locator('[data-action="ct-lesson"][data-id$=":orioles"]').click();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: 'artifacts/poetry-audio-mobile.png', fullPage: true });
-  await page.locator('[data-action="ct-category"][data-id="stories"]').click();
+  await page.locator('.nav-tabs [data-action="ct-category"][data-id="stories"]').click();
   await expect(page.locator('.ct-lesson-list [data-action="ct-lesson"]')).toHaveCount(10);
   await page.locator('[data-action="ct-lesson"][data-id$=":cups-snake"]').click();
   await expect(page.locator('.ct-lesson')).toContainText('墙上的弓');

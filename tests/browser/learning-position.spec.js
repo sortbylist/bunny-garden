@@ -4,7 +4,7 @@ import { mathTopics } from '../../src/math-topics.js';
 import { groups } from '../../src/data.js';
 import { hanziCategories, hanziLessons } from '../../src/hanzi-data.js';
 import { phonicsLessons } from '../../src/phonics-data.js';
-import { chooseLearningCategory, chooseMode, openMyMenu, selectTopic, stored } from './helpers.js';
+import { chooseLearningCategory, chooseMode, openMyMenu, selectPhonicsLesson, selectTopic, stored } from './helpers.js';
 
 async function expectPosition(page, index, total, practice = false) {
   const position = page.locator('#main-content .learning-position');
@@ -34,7 +34,8 @@ for (const subject of [{ id: 'chinese', topics: chineseTopics }, { id: 'math', t
           await page.locator('[data-action="ct-previous"]').click();
           await expectPosition(page, lessons.length - 2, lessons.length);
         }
-        await page.locator('.section-practice-shortcut').click();
+        await page.getByRole('tab', { name: '练习', exact: true }).click();
+        await expect(page.locator('.ct-quiz')).toBeVisible();
         const round = (await stored(page)).topics[topic.id].round;
         await expectPosition(page, 0, round.questions.length, true);
       }
@@ -83,7 +84,7 @@ test('汉字所有小分类的学习和练习位置使用公共显示', async ({
     await page.locator('[data-action="hz-lesson"]').last().click();
     await expectPosition(page, lessons.length - 1, lessons.length);
     await expect(page.locator('.card-navigation [data-action="hz-start"]')).toHaveText('本节练习');
-    await page.locator('.section-practice-shortcut').click();
+    await page.locator('.card-navigation [data-action="hz-start"]').click();
     await expectPosition(page, 0, (await stored(page)).hanzi.round.questions.length, true);
   }
 });
@@ -93,10 +94,7 @@ test('英语全部课程的词卡位置及练习位置统一，保留题目跳�
   await page.goto('/');
   await page.locator('.subjects [data-id="english"]').click();
   for (const lesson of phonicsLessons) {
-    const button = page.locator(`.ph-map [data-action="ph-lesson"][data-id="${lesson.id}"]`);
-    const module = button.locator('..');
-    if (await module.getAttribute('open') === null) await module.locator('summary').click();
-    await button.click();
+    await selectPhonicsLesson(page, lesson.id);
     const total = lesson.words.length;
     await expectPosition(page, 0, total);
     await page.locator('[data-action="ph-jump"]').last().click();
@@ -105,7 +103,7 @@ test('英语全部课程的词卡位置及练习位置统一，保留题目跳�
   await page.reload();
   const total = phonicsLessons.at(-1).words.length;
   await expectPosition(page, total - 1, total);
-  await page.locator('.ph-rule .section-practice-shortcut').click();
+  await page.locator('.ph-word-navigation [data-action="ph-section-practice"]').click();
   await expect(page.locator('.learning-position')).toHaveText(/第 1 \/ \d+ 题/);
   await page.locator('[data-action="ph-question"]').last().click();
   const count = await page.locator('[data-action="ph-question"]').count();

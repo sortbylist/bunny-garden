@@ -3,8 +3,9 @@ import { alphabet, phonicsModules, phonicsLessons, phonicsWords, phonicsStories,
 import { shufflePhonics, questionPool, createPhonicsRound, answerPhonics, advancePhonicsRound, phonicsStats, phonicsQuestionById, editPhonicsDraft } from './phonics-engine.js';
 import { createPhonicsAudio } from './phonics-audio.js';
 import { icon } from './icons.js';
-import { favoriteButton, learningAnswerLabel, learningPosition, learningTokenClass, practiceMenu, roundSettings, reviewShortcut, focusLearningActivity, sectionPracticeButton } from './learning-ui.js';
+import { favoriteButton, learningAnswerLabel, learningBook, learningPosition, learningTokenClass, roundSettings, reviewShortcut, focusLearningActivity, sectionPracticeButton } from './learning-ui.js';
 import { phonicsPracticeLesson } from './learning-data.js';
+import { renderCoursePicker } from './navigation.js';
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 const control = (action, label, attributes = '', style = 'ph-button') => `<button type="button" data-action="ph-${action}" class="${style}" ${attributes}>${label}</button>`;
@@ -19,7 +20,6 @@ export function createPhonicsView({ state, persist, redraw, redrawPreview = () =
   let storyResponse = null;
   let currentStoryHint = false;
   let mapExpanded = false;
-  let choosingPractice = false;
   let audioReady = false;
   const audio = createPhonicsAudio((status, message) => {
     document.querySelectorAll('[data-action="ph-play"]').forEach(element => {
@@ -105,19 +105,37 @@ export function createPhonicsView({ state, persist, redraw, redrawPreview = () =
     return { learned: state.known.length, total: phonicsWords.length, label: '个单词自评会读', seen: state.seen.length };
   }
 
-  function courseMap() {
-    if (!lessonModes.includes(state.mode)) return '';
+  function courseModules(active, showDescriptions = false) {
     const reading = state.mode === 'reading';
-    return `<div class="ph-map-panel ${mapExpanded ? 'is-open' : ''}"><button type="button" class="ph-map-toggle outline-button" data-action="ph-toggle-map" aria-expanded="${mapExpanded}" aria-controls="ph-course-map">${icon('grid')}学习目录${icon('chevron')}</button><aside id="ph-course-map" class="ph-map" aria-label="自然拼读学习小地图"><div class="ph-map-heading"><h2>${icon('flag')}学习小地图</h2><span>${reading ? '故事小节 · 36 篇' : '课程小节 · 48 课'}</span></div>
-      ${phonicsModules.map(module => {
-        const entries = phonicsLessons.filter(entry => entry.moduleId === module.id && (!reading || phonicsStories.some(story => story.lessonId === entry.id)));
-        if (!entries.length) return '';
-        return `<details ${module.id === lesson().moduleId ? 'open' : ''}><summary>${module.name}<small>${entries.length} 节</small></summary><p>${module.description}</p>${entries.map(entry => {
-          const selected = entry.id === state.lessonId;
-          const story = reading && phonicsStories.find(item => item.lessonId === entry.id);
-          return control('lesson', `<span>${String(entry.number).padStart(2, '0')}</span><b>${escape(story ? story.title : entry.title)}${story ? `<small>${escape(entry.title)}</small>` : ''}</b>`, `data-id="${entry.id}" ${selected ? 'aria-current="step"' : ''}`, `ph-lesson ${selected ? 'selected' : ''}`);
-        }).join('')}</details>`;
-      }).join('')}<div class="ph-map-note">点一个小节，继续${reading ? '读故事' : '学习'}。</div></aside></div>`;
+    return phonicsModules.map(module => {
+      const entries = phonicsLessons.filter(entry => entry.moduleId === module.id && (!reading || phonicsStories.some(story => story.lessonId === entry.id)));
+      if (!entries.length) return '';
+      const lessons = entries.map(entry => {
+        const selected = active && entry.id === state.lessonId;
+        const story = reading && phonicsStories.find(item => item.lessonId === entry.id);
+        const title = story ? story.title : entry.title;
+        return control('lesson', `<span>${String(entry.number).padStart(2, '0')}</span><b>${escape(title)}${story ? `<small>${escape(entry.title)}</small>` : ''}</b>`, `data-id="${entry.id}" ${selected ? 'aria-current="step"' : ''}`, `ph-lesson ${selected ? 'selected' : ''}`);
+      }).join('');
+      return `<details ${module.id === lesson().moduleId ? 'open' : ''}><summary>${escape(module.name)}<small>${entries.length} 节</small></summary>${showDescriptions ? `<p>${escape(module.description)}</p>` : ''}${lessons}</details>`;
+    }).join('');
+  }
+
+  function coursePicker(active) {
+    const directory = state.mode === 'reading' ? '故事目录' : '课程目录';
+    return renderCoursePicker({
+      name: active ? `第 ${lesson().number} 课 · ${lesson().title}` : directory,
+      active,
+      panelLabel: directory,
+      content: `<div class="ph-course-list">${courseModules(active)}</div>`,
+    });
+  }
+
+  function courseMap() {
+    return `<section class="ph-learning-map ${mapExpanded ? 'is-open' : ''}" aria-label="自然拼读学习小地图">
+      <h2>${icon('flag')}学习小地图</h2>
+      ${control('toggle-map', `${icon('flag')}学习小地图${icon('down')}`, `aria-expanded="${mapExpanded}" aria-controls="ph-course-map"`, 'outline-button ph-map-toggle')}
+      <div id="ph-course-map" class="ph-course-list">${courseModules(true, true)}</div>
+    </section>`;
   }
 
   function learningCard() {
@@ -142,7 +160,7 @@ export function createPhonicsView({ state, persist, redraw, redrawPreview = () =
   function lessonIntro(entry = lesson(), preview = null) {
     return `<section class="ph-rule"><div class="ph-card-top"><span class="ph-badge">学习 · 本课发现</span>${preview ? preview.favorite : cardFavorite('lesson', entry.id)}</div>
       <h2 data-activity-heading tabindex="-1">${entry.title}</h2><p>${entry.tip}</p><div class="ph-pattern" aria-label="单词的字母组合">${entry.parts.map(part => `<span lang="en">${escape(part)}</span>`).join('')}<span class="ph-pattern-arrow">→</span><b lang="en">${escape(entry.parts.join(''))}</b></div><p class="ph-small">看看字母怎样组成单词，再听一听它的声音。</p><details><summary>读音小提示</summary><p>试着读一读：/${escape(entry.sounds.join(' / /'))}/。</p><p>${entry.prerequisite}</p></details>
-      ${preview ? '' : `<div class="ph-actions">${sectionPracticeButton('ph-section-practice', entry.id)}${control('mode', '随机词卡', 'data-id="random"')}${control('mode', '故事共读', 'data-id="reading"')}${entry.number <= 3 ? control('mode', '字母大小写配对', 'data-id="alphabet"') + control('mode', '文字起点检查', 'data-id="diagnostic"') : ''}</div>`}</section>`;
+      ${preview ? '' : `<div class="ph-actions">${control('mode', '随机词卡', 'data-id="random"')}${control('mode', '故事共读', 'data-id="reading"')}${entry.number <= 3 ? control('mode', '字母大小写配对', 'data-id="alphabet"') + control('mode', '文字起点检查', 'data-id="diagnostic"') : ''}</div>`}</section>`;
   }
 
   function answerChoice(action, option, index, { disabled, correct, incorrect }) {
@@ -223,29 +241,38 @@ export function createPhonicsView({ state, persist, redraw, redrawPreview = () =
     }
     const mode = modeName();
     const canChooseLength = quizModes.includes(state.mode) && state.mode !== 'diagnostic';
-    const practice = choosingPractice || quizModes.includes(state.mode);
-    const body = choosingPractice ? practiceMenu() : practice ? quizCard() : state.mode === 'reading' ? readingCard() : state.mode === 'records' ? recordsCard() : learningCard();
+    const practice = quizModes.includes(state.mode);
+    const hasLessonPage = lessonModes.includes(state.mode) || state.mode === 'mixed' && state.scope === 'lesson';
+    const body = practice ? quizCard() : state.mode === 'reading' ? readingCard() : state.mode === 'records' ? recordsCard() : learningCard();
+    const book = learningBook({
+      action: 'ph-page',
+      category: hasLessonPage ? lesson().id : state.mode,
+      page: practice ? 'practice' : 'learn',
+      paired: hasLessonPage,
+      content: (state.mode === 'learn' ? lessonIntro() : '') + body
+        + (lesson().number <= 3 && state.mode === 'learn' ? `<details class="ph-card ph-alphabet"><summary>26 个字母 · 名称参考</summary><p class="ph-small">认识字母的名字，再学它们在单词里的声音。</p><div class="ph-alphabet-grid">${alphabet.map(letter => `<div><b lang="en">${letter.upper} ${letter.letter}</b><small>/${letter.name}/</small></div>`).join('')}</div></details>` : ''),
+    });
     const modeNavigation = renderNavigation({
-      id: 'phonics-categories', areaAction: 'ph-area', area: practice ? 'practice' : 'learn',
-      selected: choosingPractice ? null : practice ? state.scope === 'all' ? state.mode : null : state.lessonId,
-      learning: phonicsLessons.map(entry => ({ id: entry.id, name: `第 ${entry.number} 课 · ${entry.title}`, action: 'ph-category' })),
+      id: 'phonics-categories',
+      selected: practice && state.scope === 'all' ? state.mode : null,
+      leadingPicker: coursePicker(hasLessonPage),
+      catalogName: '练习目录',
       practice: fixedPractice.map(id => ({ ...phonicsModes.find(entry => entry.id === id), action: 'ph-practice' })),
     });
     return `<div class="phonics-page"><section class="ph-hero"><div><div class="eyebrow">ENGLISH GARDEN</div><h1>让字母，变成会读的词<span>✿</span></h1><p>听见声音，发现规律。从一个小词，走进一个小故事。</p><div class="ph-tags"><span>听一听</span><span>拼一拼</span><span>读故事</span></div></div><div class="ph-hero-letters" aria-hidden="true"><span>sh</span><span>ee</span><span>p</span><small>small steps, big discoveries</small></div></section>
       ${modeNavigation}
       <div class="ph-layout"><div class="ph-main" role="region" tabindex="-1" aria-label="${mode}">
-      ${!choosingPractice && state.mode === 'learn' ? lessonIntro() : ''}${body}
-      ${!choosingPractice && ['random', 'reading'].includes(state.mode) ? `<div class="ph-actions">${returnToLearning()}</div>` : ''}
+      ${book}
+      ${['random', 'reading'].includes(state.mode) ? `<div class="ph-actions">${returnToLearning()}</div>` : ''}
       ${confirmRestart ? `<section class="ph-confirm" role="group" aria-label="确认重新开始"><p>重新开始当前轮次？收藏、错题和以往记录会保留。</p><div class="ph-actions">${control('cancel-restart', '保留当前进度')}${control('confirm-restart', '确认重新开始', '', 'ph-button primary')}</div></section>` : ''}
-      ${!choosingPractice && canChooseLength ? roundSettings('phonics', state.length, [5, 10, 20], previousLength()) : ''}
-      ${lesson().number <= 3 && state.mode === 'learn' ? `<details class="ph-card ph-alphabet"><summary>26 个字母 · 名称参考</summary><p class="ph-small">认识字母的名字，再学它们在单词里的声音。</p><div class="ph-alphabet-grid">${alphabet.map(letter => `<div><b lang="en">${letter.upper} ${letter.letter}</b><small>/${letter.name}/</small></div>`).join('')}</div></details>` : ''}
-      <p class="ph-footnote">每天学一点，答错也没关系</p></div><aside class="ph-sidebar">${renderGarden()}${practice ? '' : courseMap()}</aside></div></div>`;
+      ${canChooseLength ? roundSettings('phonics', state.length, [5, 10, 20], previousLength()) : ''}
+      <p class="ph-footnote">每天学一点，答错也没关系</p></div><aside class="ph-sidebar">${renderGarden()}${courseMap()}</aside></div></div>`;
   }
 
   function stop() { audio.stop(); }
   function changeMode(id) {
     if (id === 'rules' || ![...phonicsModes.map(entry => entry.id), 'alphabet', 'diagnostic'].includes(id)) return;
-    stop(); choosingPractice = false; state.mode = id; draft = ''; playedQuestion = null; confirmRestart = false; storyResponse = null; currentStoryHint = false;
+    stop(); state.mode = id; draft = ''; playedQuestion = null; confirmRestart = false; storyResponse = null; currentStoryHint = false;
     if (id === 'review' && state.sessions[sessionKey()]?.finished) delete state.sessions[sessionKey()];
     if (id === 'alphabet') state.scope = 'all';
     if (lessonModes.includes(id)) state.scope = 'lesson';
@@ -264,7 +291,12 @@ export function createPhonicsView({ state, persist, redraw, redrawPreview = () =
   function handle(target) {
     if (!target.dataset.action?.startsWith('ph-')) return false;
     const action = target.dataset.action.slice(3);
-    if (action === 'toggle-map') { mapExpanded = !mapExpanded; redraw(); return true; }
+    if (action === 'toggle-map') {
+      mapExpanded = !mapExpanded;
+      target.closest('.ph-learning-map').classList.toggle('is-open', mapExpanded);
+      target.setAttribute('aria-expanded', String(mapExpanded));
+      return true;
+    }
     if (action === 'play') {
       haltOtherAudio();
       let id = target.dataset.id;
@@ -277,12 +309,9 @@ export function createPhonicsView({ state, persist, redraw, redrawPreview = () =
       return true;
     }
     stop();
-    if (action === 'area') {
-      if (target.dataset.id === 'learn' && (choosingPractice || quizModes.includes(state.mode))) changeMode('learn');
-      else if (target.dataset.id === 'practice' && !quizModes.includes(state.mode)) choosingPractice = true;
-    } else if (action === 'category' && phonicsLessonById.has(target.dataset.id)) {
-      changeMode('learn');
-      state.lessonId = target.dataset.id;
+    if (action === 'page') {
+      if (target.dataset.id === 'learn') changeMode('learn');
+      else if (target.dataset.id === 'practice') { changeMode('mixed'); state.lessonId = target.dataset.category; state.scope = 'lesson'; }
     } else if (action === 'practice' && fixedPractice.includes(target.dataset.id)) {
       changeMode(target.dataset.id);
       state.scope = 'all';
@@ -294,7 +323,8 @@ export function createPhonicsView({ state, persist, redraw, redrawPreview = () =
     else if (action === 'lesson') {
       if (!phonicsLessonById.has(target.dataset.id)) return true;
       if (state.mode === 'reading' && !phonicsStories.some(story => story.lessonId === target.dataset.id)) return true;
-      state.lessonId = target.dataset.id; state.scope = 'lesson'; draft = ''; playedQuestion = null; confirmRestart = false; storyResponse = null; currentStoryHint = false;
+      changeMode(lessonModes.includes(state.mode) ? state.mode : 'learn');
+      state.lessonId = target.dataset.id;
       mapExpanded = false;
     } else if (action === 'restart') confirmRestart = true;
     else if (action === 'cancel-restart') confirmRestart = false;
@@ -319,7 +349,7 @@ export function createPhonicsView({ state, persist, redraw, redrawPreview = () =
       if (!question) return true;
       if (action === 'answer') submit(target.dataset.value);
       if (action === 'skip') submit(null);
-      if (action === 'replace-audio') { changeMode('rules'); notify('已切换到文字练习，音频问题未记为知识错误。'); }
+      if (action === 'replace-audio') { changeMode('spelling'); state.scope = 'lesson'; notify('已切换到文字练习，音频问题未记为知识错误。'); }
       if (action === 'letter' || action === 'erase') {
         draft = editPhonicsDraft(question, document.querySelector('#ph-spelling-input')?.value ?? draft, action, target.dataset.value);
         value.drafts[question.id] = draft;
@@ -351,8 +381,7 @@ export function createPhonicsView({ state, persist, redraw, redrawPreview = () =
       if (action === 'jump') { const index = Number(target.dataset.index); if (Number.isInteger(index) && index >= 0 && index < position.ids.length) { position.index = index; position.finished = false; } }
     }
     redraw();
-    if (['mode', 'practice', 'section-practice', 'category'].includes(action)) focusLearningActivity();
-    else if (action === 'area') document.querySelector(`[data-action="ph-area"][data-id="${target.dataset.id}"]`)?.focus({ preventScroll: true });
+    if (['mode', 'practice', 'section-practice'].includes(action)) focusLearningActivity();
     else if (action === 'restart') document.querySelector('[data-action="ph-cancel-restart"]')?.focus();
     else if (action === 'lesson') document.querySelector('.ph-main')?.focus({ preventScroll: true });
     return true;
@@ -383,7 +412,7 @@ export function createPhonicsView({ state, persist, redraw, redrawPreview = () =
     persist();
   }
 
-  function reset(nextState) { stop(); state = nextState; choosingPractice = false; draft = ''; playedQuestion = null; storyResponse = null; currentStoryHint = false; confirmRestart = false; }
+  function reset(nextState) { stop(); state = nextState; draft = ''; playedQuestion = null; storyResponse = null; currentStoryHint = false; confirmRestart = false; mapExpanded = false; }
   function openLesson(mode, lessonId, wordId) {
     changeMode(mode);
     state.lessonId = lessonId;

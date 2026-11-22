@@ -1,17 +1,22 @@
 import { practiceLengths } from './chinese-practice.js';
 import { icon } from './icons.js';
+import { renderBookTabs } from './book-tabs.js';
 
-export function learningCardFooter(prefix, { known, category, index, total, knownLabel = '我认识啦', confirmedLabel = '已经认识啦 ✓' }) {
+export function learningCardFooter(prefix, { known, category, index, total, hasPractice = true, knownLabel = '我认识啦', confirmedLabel = '已经认识啦 ✓' }) {
   return `<div class="hz-actions mastery-actions"><button type="button" data-action="${prefix}-known" class="soft-button mint" aria-pressed="${known}">${icon('check')}${known ? confirmedLabel : knownLabel}</button></div>
-    <div class="hz-actions hz-card-footer card-navigation"><button type="button" data-action="${prefix}-previous" class="outline-button previous" ${index === 0 ? 'disabled' : ''}>${icon('chevron')}上一个</button>${index === total - 1 ? sectionPracticeButton(`${prefix}-start`, category, true) : `<button type="button" data-action="${prefix}-next" class="outline-button">下一个${icon('chevron')}</button>`}</div>`;
+    <div class="hz-actions hz-card-footer card-navigation"><button type="button" data-action="${prefix}-previous" class="outline-button previous" ${index === 0 ? 'disabled' : ''}>${icon('chevron')}上一个</button>${index === total - 1 ? hasPractice ? sectionPracticeButton(`${prefix}-start`, category, true) : '<span class="card-complete-label">本节完成</span>' : `<button type="button" data-action="${prefix}-next" class="outline-button">下一个${icon('chevron')}</button>`}</div>`;
 }
 
 export function sectionPracticeButton(action, category, primary = false) {
   return `<button type="button" data-action="${action}" data-id="${category}" class="${primary ? 'solid-button next' : 'soft-button section-practice-shortcut'}">${primary ? `本节练习${icon('chevron')}` : `${icon('pen')}本节练习`}</button>`;
 }
 
-export function practiceMenu() {
-  return '<section class="study-card"><h2 class="category-badge" data-activity-heading tabindex="-1">选择练习分类</h2></section>';
+export function learningBook({ action, category, page, paired = false, content }) {
+  const pages = paired ? ['learn', 'practice'] : [page];
+  return renderBookTabs({
+    id: `book-${action}`, category, action, label: '学习与练习', selected: page, content,
+    tabs: pages.map(id => ({ id, label: id === 'learn' ? '学习' : '练习' })),
+  });
 }
 
 export function learningAnswerLabel(index, content) {

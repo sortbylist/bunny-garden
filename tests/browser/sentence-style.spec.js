@@ -12,7 +12,7 @@ const paint = locator => locator.evaluate(element => {
 test('二阶段沿用拼音的布局、卡片、导航和成长花园样式', async ({ page }) => {
   await page.goto('/');
   const card = await paint(page.locator('.study-card'));
-  await page.locator('[data-action="pinyin-category"][data-id="single"]').click();
+  await chooseMode(page, 'listen');
   const mode = await paint(page.locator('.nav-tabs .play-mode.selected'));
   const garden = await paint(page.locator('.growth-card'));
   const layout = await page.locator('.learning-layout').evaluate(element => {
@@ -41,7 +41,7 @@ test('句子练习的选项沿用拼音样式，正确反馈与结果页可操�
   const option = await paint(page.locator('.answer-option').first());
   const topic = topics[0];
   await selectTopic(page, topic.name);
-  await page.locator('[data-action="ct-start"][data-id="order"]').click();
+  await page.getByRole('tab', { name: '练习', exact: true }).click();
   expect(await paint(page.locator('.ct-quiz .answer-option').first())).toEqual(option);
   await expect(page.locator('.ct-quiz .answer-option').first()).toHaveCSS('display', 'flex');
   await expect(page.locator('.ct-quiz .option-letter')).toHaveText(['A', 'B', 'C']);
@@ -72,7 +72,7 @@ for (const width of [1440, 820, 320]) {
       if (width === 1440) expect(garden.x).toBeGreaterThan(card.x + card.width);
       else expect(garden.y).toBeGreaterThan(card.y);
       const firstWrite = topic.lessons.find(lesson => lesson.activity.type === 'write');
-      await page.locator(`[data-action="ct-category"][data-id="${firstWrite.category}"]`).click();
+      await page.locator(`.nav-tabs [data-action="ct-category"][data-id="${firstWrite.category}"]`).click();
       await page.locator(`[data-action="ct-lesson"][data-id="${firstWrite.id}"]`).click();
       await page.locator('#ct-draft').fill('我认真读完了这句话。');
       await expect(page.locator('.round-settings')).toHaveCount(0);

@@ -70,7 +70,7 @@ test('句段排序键盘可操作，错序可撤回，四组顺序与阅读线�
   await page.goto('/');
   await selectTopic(page, '段落理解与顺序整理');
   for (const entry of paragraphEntries.filter(item => item.order)) {
-    await page.locator(`[data-action="ct-category"][data-id="${entry.category}"]`).click();
+    await page.locator(`.nav-tabs [data-action="ct-category"][data-id="${entry.category}"]`).click();
     await page.locator(`[data-action="ct-lesson"][data-id$=":${entry.id}"]`).click();
     await expect(page.locator('[data-action="ct-activity-check"]')).toBeDisabled();
     await expect(page.locator('.ct-order-feedback')).toContainText('每个句段用一次');
@@ -129,7 +129,7 @@ test('原有古诗草稿与阅读记录隔离，清空后阅读线索与排序�
     await page.locator('[data-action="ct-activity-evidence"]').click();
   }
   await selectTopic(page, '段落理解与顺序整理');
-  await page.locator('[data-action="ct-category"][data-id="time"]').click();
+  await page.locator('.nav-tabs [data-action="ct-category"][data-id="time"]').click();
   await page.locator('[data-action="ct-activity-pick"][data-value="1"]').click();
   await page.reload();
   await selectTopic(page, '古诗与传统文化');

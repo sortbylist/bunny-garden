@@ -15,13 +15,13 @@ async function chooseSubject(page, id) {
 test('词语分类新增六类，扩充词卡可学习、自评并恢复进度', async ({ page }) => {
   await page.goto('/');
   await selectTopic(page, '词语积累与分类');
-  await expect(page.locator('[data-action="ct-category"]')).toHaveCount(12);
+  await expect(page.locator('.nav-tabs [data-action="ct-category"]')).toHaveCount(12);
   for (const category of ['people', 'animals', 'plants']) {
-    await page.locator(`[data-action="ct-category"][data-id="${category}"]`).click();
+    await page.locator(`.nav-tabs [data-action="ct-category"][data-id="${category}"]`).click();
     await expect(page.locator('[data-action="ct-lesson"]')).toHaveCount(20);
   }
   for (const category of ['school', 'daily', 'food', 'transport', 'weather', 'places']) {
-    await page.locator(`[data-action="ct-category"][data-id="${category}"]`).click();
+    await page.locator(`.nav-tabs [data-action="ct-category"][data-id="${category}"]`).click();
     await expect(page.locator('[data-action="ct-lesson"]')).toHaveCount(10);
     if (category === 'weather') await expect(page.getByRole('button', { name: '冰雹', exact: true }).locator('rt')).toHaveText('báo');
     await expect(page.locator('.ct-lesson-intro h3')).not.toBeEmpty();
@@ -36,14 +36,15 @@ test('词语分类新增六类，扩充词卡可学习、自评并恢复进度',
 test('三十种偏旁部首均可访问，学习例字与对应练习齐全', async ({ page }) => {
   await page.goto('/');
   await selectTopic(page, '汉字笔画与结构');
-  await page.locator('[data-action="hz-category"][data-id="radicals"]').click();
+  await page.locator('.nav-tabs [data-action="hz-category"][data-id="radicals"]').click();
   await expect(page.locator('[data-action="hz-lesson"]')).toHaveCount(30);
   for (const radical of ['氵', '囗', '钅', '衤', '礻', '⺮', '心']) {
     await page.locator(`[data-action="hz-lesson"][data-id="radical-${radical}"]`).click();
     await expect(page.locator('.hz-examples > span')).toHaveCount(6);
     await expect(page.locator('.hz-character')).toHaveText(radical);
   }
-  await page.locator('.section-practice-shortcut').click();
+  await page.getByRole('tab', { name: '练习', exact: true }).click();
+  await expect(page.locator('.hz-quiz')).toBeVisible();
   const questions = (await stored(page)).hanzi.round.questions;
   expect(questions).toHaveLength(10);
   expect(questions.every(question => question.category === 'radicals')).toBe(true);
@@ -55,7 +56,7 @@ test('语文和数学仅在练习页调整题量，切回题量时恢复原题',
     await selectTopic(page, topic.name);
     await expect(page.locator('.round-settings')).toHaveCount(0);
     await startCombinedPractice(page);
-    await expect(page.locator('.quiz-card + .round-settings')).toBeVisible();
+    await expect(page.locator('.learning-book + .round-settings')).toBeVisible();
     await expect(page.getByLabel('每轮题数')).toBeHidden();
     const before = (await stored(page)).topics[topic.id].round.questions;
     await setRoundLength(page, 20);
@@ -70,7 +71,7 @@ test('语文和数学仅在练习页调整题量，切回题量时恢复原题',
     await selectTopic(page, topic.name, 'math');
     await expect(page.locator('.round-settings')).toHaveCount(0);
     await startCombinedPractice(page);
-    await expect(page.locator('.quiz-card + .round-settings')).toBeVisible();
+    await expect(page.locator('.learning-book + .round-settings')).toBeVisible();
     await expect(page.getByLabel('每轮题数')).toBeHidden();
     await page.locator('[data-action="ct-learn"]').click();
   }
@@ -85,7 +86,7 @@ for (const width of [1440, 820, 390, 320]) {
     const cardSize = width <= 600 ? 16 : 18;
     await selectTopic(page, '词语积累与分类');
     for (const category of ['people', 'animals', 'plants', 'school', 'daily', 'food', 'transport', 'weather', 'places']) {
-      await page.locator(`[data-action="ct-category"][data-id="${category}"]`).click();
+      await page.locator(`.nav-tabs [data-action="ct-category"][data-id="${category}"]`).click();
       const sizes = await page.locator('.ct-lesson-list .hz-chip').evaluateAll(elements => elements.map(element => parseFloat(getComputedStyle(element).fontSize)));
       expect(sizes.length).toBeGreaterThan(0);
       expect([...new Set(sizes)]).toEqual([cardSize]);
@@ -97,15 +98,16 @@ for (const width of [1440, 820, 390, 320]) {
       await page.screenshot({ path: `artifacts/content-expansion/words-${width}.png`, fullPage: true });
     }
     await selectTopic(page, '汉字笔画与结构');
-    await page.locator('[data-action="hz-category"][data-id="radicals"]').click();
+    await page.locator('.nav-tabs [data-action="hz-category"][data-id="radicals"]').click();
     await page.locator('[data-action="hz-lesson"][data-id="radical-鱼"]').click();
     await expect(page.locator('.hz-item-list .hz-chip').first()).toHaveCSS('font-size', `${cardSize}px`);
     expect(await overflow(page)).toBe(false);
     if (width === 1440 || width === 320) await page.screenshot({ path: `artifacts/content-expansion/radicals-${width}.png`, fullPage: true });
     await chooseSubject(page, 'math');
     await selectTopic(page, mathTopics[1].name, 'math');
-    await page.locator('[data-action="ct-category"][data-id="mental"]').click();
-    await page.locator('[data-action="ct-start"][data-id="mental"]').click();
+    await page.locator('.nav-tabs [data-action="ct-category"][data-id="mental"]').click();
+    await page.getByRole('tab', { name: '练习', exact: true }).click();
+    await expect(page.locator('.ct-quiz')).toBeVisible();
     const mathSizes = await page.locator('.ct-quiz .hz-option').evaluateAll(elements => elements.map(element => parseFloat(getComputedStyle(element).fontSize)));
     expect(mathSizes.length).toBeGreaterThan(0);
     expect([...new Set(mathSizes)]).toEqual([width <= 600 ? 16 : 18]);

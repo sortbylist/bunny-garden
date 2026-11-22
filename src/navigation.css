@@ -1,6 +1,6 @@
 .learning-navigation { position: relative; display: flex; align-items: center; gap: 14px; min-width: 0; height: 64px; isolation: isolate; }
 .feature-navigation { padding: 0 40px; background: #fffdfae6; border-bottom: 1px solid #eee5e3; z-index: 20; }
-.mode-navigation.play-selector { padding: 8px 12px; height: 66px; margin-bottom: 28px; z-index: 15; }
+.curriculum-navigation.play-selector { height: auto; align-items: flex-start; gap: 12px; z-index: 15; }
 .nav-picker { flex: 0 0 auto; min-width: 0; }
 .nav-select { display: flex; align-items: center; justify-content: space-between; gap: 10px; height: 42px; padding: 0 13px; border: 1px solid #e6d7df; border-radius: 10px; background: #fffaf8; color: #846577; font-size: 13px; font-weight: 600; cursor: pointer; list-style: none; white-space: nowrap; }
 .nav-select::-webkit-details-marker { display: none; }
@@ -24,8 +24,16 @@
 .learning-navigation .feature-tab { flex: 0 0 auto; height: 100%; font-size: 13px; font-weight: 600; gap: 7px; }
 .learning-navigation .feature-tab > .icon { width: 16px; height: 16px; }
 .learning-navigation .feature-tab.active:after { left: 4px; right: 4px; }
-.learning-navigation .play-mode-buttons { gap: 8px; }
-.learning-navigation .play-mode { flex: 0 0 auto; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.curriculum-navigation .nav-rail { display: flex; height: auto; }
+.curriculum-navigation .nav-tabs { flex-wrap: wrap; height: auto; overflow: visible; gap: 8px; }
+.curriculum-navigation .play-mode { flex: 0 0 auto; max-width: 100%; font-weight: 600; }
+.curriculum-navigation .play-mode > span { min-width: 0; overflow-wrap: anywhere; }
+.course-picker { flex: 0 1 auto; max-width: min(270px, 34%); }
+.course-picker .nav-select > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.course-picker.active > .nav-select { background: var(--ui-selected-background); border-color: var(--ui-selected-border); color: var(--ui-selected-text); }
+.course-picker-panel { left: 0; }
+.curriculum-navigation .nav-select { min-height: 44px; }
+.curriculum-navigation .nav-catalog-picker { width: auto; margin-inline-start: auto; }
 .nav-scroll { width: 28px; height: 36px; flex: 0 0 28px; border-radius: 8px; color: #9b7891; background: #f8eff3; }
 .nav-scroll > .icon { width: 14px; height: 14px; }
 .nav-previous > .icon { rotate: 180deg; }
@@ -74,24 +82,13 @@
   .nav-panel { width: calc(100vw - 32px); max-height: min(520px, 65dvh); padding: 14px; }
   .feature-navigation .nav-groups { left: 16px; }
   .feature-navigation .nav-catalog { right: 16px; }
-  .mode-navigation.play-selector { height: 62px; padding: 8px; margin-bottom: 24px; }
   .mode-navigation .nav-panel { width: min(380px, calc(100vw - 46px)); }
   .feature-navigation > .nav-rail:only-child { display: flex; }
+  .curriculum-navigation.play-selector { flex-wrap: wrap; gap: 9px; }
+  .curriculum-navigation .nav-rail { display: flex; order: 1; flex: 1 0 100%; }
+  .curriculum-navigation .nav-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+  .curriculum-navigation .nav-catalog-picker { flex: 0 0 auto; }
+  .course-picker { flex: 1 1 0; max-width: none; }
 }
 
 .mobile-open .sidebar { overflow-y: auto; overscroll-behavior: contain; }
-
-.curriculum-navigation.mode-navigation.play-selector {
-  display: grid;
-  height: auto;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 8px;
-}
-.curriculum-areas {
-  display: flex;
-  gap: 8px;
-  padding: 0 6px 8px;
-  border-bottom: 1px solid var(--ui-card-border);
-}
-.curriculum-navigation .nav-rail { display: flex; }
-.curriculum-navigation .nav-rail.nav-fits .nav-scroll { visibility: hidden; }

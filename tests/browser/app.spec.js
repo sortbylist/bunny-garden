@@ -35,7 +35,7 @@ test('所有练习方式可进入，随机范围不重复', async ({ page }) => 
     await chooseMode(page, id);
     await expect(page.locator('.learning-main')).toHaveAttribute('aria-label', /.+/);
     await expect(page.locator('.learning-main>.section-title')).toHaveCount(0);
-    await expect(page.locator('.learning-main > section').first()).toBeVisible();
+    await expect(page.locator('.learning-main [role="tabpanel"] > section').first()).toBeVisible();
     await expect(page.locator('dialog')).not.toBeVisible();
   }
   await chooseMode(page, 'random');
@@ -99,7 +99,7 @@ test('分类、主题、学习操作和刷新保持各自选择与进度', async
   await page.locator('[data-action="next"]').click();
   await expect(page.locator('.pinyin-display')).toHaveText('o');
   await selectTopic(page, '近义词与反义词');
-  await expect(page.getByRole('tab')).toHaveCount(7);
+  await expect(page.locator('.feature-navigation').getByRole('tab')).toHaveCount(7);
   await page.reload();
   await expect(page.getByRole('tab', { name: '近义词与反义词', exact: true })).toHaveAttribute('aria-selected', 'true');
   await page.locator('[data-action="subject"][data-id="english"]').click();

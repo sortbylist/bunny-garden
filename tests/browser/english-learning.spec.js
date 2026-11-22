@@ -15,8 +15,9 @@ async function openTopic(page, id) {
 
 test('本地听题音频可播放，揭晓后显示原文并保留首次成绩', async ({ page }) => {
   await openTopic(page, 'english-listening');
-  await page.locator('.section-practice-shortcut').click();
+  await page.getByRole('tab', { name: '练习', exact: true }).click();
   const quiz = page.locator('.en-topic .quiz-card');
+  await expect(quiz).toBeVisible();
   const question = (await topicState(page, 'english-listening')).round.questions[0];
   await expect(quiz.getByText(question.clip.text, { exact: true })).toHaveCount(0);
   await expect(quiz.locator('.answer-option').first()).toBeDisabled();
@@ -41,7 +42,7 @@ test('本地听题音频可播放，揭晓后显示原文并保留首次成绩',
 test('音频失败可转文字学习，口语自评独立记录，320px 无整页溢出', async ({ page }) => {
   await openTopic(page, 'english-listening');
   await page.route('**/audio/english/*.mp3', route => route.abort());
-  await page.locator('.section-practice-shortcut').click();
+  await page.getByRole('tab', { name: '练习', exact: true }).click();
   await page.getByRole('button', { name: '播放题目' }).click();
   await expect(page.locator('[data-en-audio-status]')).toContainText('暂时无法播放');
   await expect(page.locator('.answer-option').first()).toBeDisabled();

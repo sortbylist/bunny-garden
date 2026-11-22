@@ -58,10 +58,10 @@ for (const width of [320, 390, 820, 1440]) {
     await selectTopic(page, '拼音学习');
     await chooseMode(page, 'audio');
     const areas = page.locator('.curriculum-navigation');
-    await expect(areas.getByRole('button', { name: '练习', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('tab', { name: '练习', exact: true })).toHaveAttribute('aria-selected', 'true');
     await expect(areas.locator('.nav-tabs .play-mode.selected')).toHaveText('看拼音选读音');
     await chooseMode(page, 'sequence');
-    await expect(areas.getByRole('button', { name: '学习', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('tab', { name: '学习', exact: true })).toHaveAttribute('aria-selected', 'true');
     await expect(areas.locator('.nav-rail')).toBeVisible();
     expect((await navigation.boundingBox()).height).toBe(original);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -107,7 +107,7 @@ test('四十个额外主题仍是一行，滚动、目录搜索与键盘选择�
 test('手机切回桌面时选中项自动可见，导航方向键不翻学习卡片', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await page.locator('[data-action="pinyin-area"][data-id="learn"]').focus();
+  await page.locator('.course-picker > summary').focus();
   await page.keyboard.press('ArrowRight');
   await expect(page.locator('.pinyin-display')).toHaveText('a');
   await selectTopic(page, '叠词与四字词语');

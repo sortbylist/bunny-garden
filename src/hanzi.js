@@ -1,11 +1,11 @@
 import './hanzi.css';
-import { hanziCategories, hanziLessons, strokes } from './hanzi-data.js';
+import { hanziCategories, hanziLessons, hanziQuestions, strokes } from './hanzi-data.js';
 import { startHanziRound, answerHanzi, advanceHanziRound } from './hanzi-engine.js';
 import { roundStats } from './engine.js';
 import { grantRewards } from './rewards.js';
 import { readingText } from './chinese-reading.js';
 import { icon, bunny } from './icons.js';
-import { learningAnswerLabel, learningCardFooter, learningPosition, learningTokenClass, learningTools, practiceMenu, reviewShortcut, sectionPracticeButton } from './learning-ui.js';
+import { learningAnswerLabel, learningBook, learningCardFooter, learningPosition, learningTokenClass, learningTools, reviewShortcut } from './learning-ui.js';
 import { renderCurriculum } from './navigation.js';
 
 const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
@@ -51,9 +51,9 @@ export function hanziLearningCard(state) {
   const index = items.indexOf(lesson);
   const category = hanziCategories.find(item => item.id === state.category);
   return `<section class="hz-card study-card" aria-label="汉字学习卡">
-    <div class="card-topline"><h2 class="category-badge" data-activity-heading tabindex="-1">${icon(category.icon)}学习 · ${category.name}</h2>${learningPosition(index, items.length)}${state.cardFavorite('lesson', lesson.id)}${state.preview ? '' : sectionPracticeButton('hz-start', category.id)}</div>
+    <div class="card-topline"><h2 class="category-badge" data-activity-heading tabindex="-1">${icon(category.icon)}学习 · ${category.name}</h2>${learningPosition(index, items.length)}${state.cardFavorite('lesson', lesson.id)}</div>
     ${lessonContent(state, lesson)}
-    ${state.preview ? '' : learningCardFooter('hz', { known: state.known.includes(lesson.id), category: state.category, index, total: items.length })}
+    ${state.preview ? '' : learningCardFooter('hz', { known: state.known.includes(lesson.id), category: state.category, index, total: items.length, hasPractice: hanziQuestions.some(question => question.category === state.category) })}
   </section>${state.preview ? '' : `<section class="pinyin-map ct-sentence-lessons learning-lesson-map" aria-label="本节学习卡"><div class="section-title"><h2>${icon('grid')}本节学习卡</h2><span>每一张都可以直接开始</span></div><div class="hz-item-list" aria-label="选择学习内容">${items.map(item => control('lesson', `${escape(item.title)}${state.known.includes(item.id) ? ' ✓' : ''}`, `data-id="${item.id}" aria-pressed="${item.id === lesson.id}"`, `hz-chip${learningTokenClass(item.title)}`)).join('')}</div></section>`}`;
 }
 
@@ -79,14 +79,17 @@ export function hanziQuizCard(state) {
 
 export function renderHanzi(state, garden, navigation) {
   const practicing = state.view === 'quiz' && state.round;
+  const category = practicing ? state.round.scope : state.category;
+  const paired = hanziQuestions.some(question => question.category === category);
+  const content = practicing ? hanziQuizCard(state) : hanziLearningCard(state);
+  const book = learningBook({ action: 'hz-page', category, page: practicing ? 'practice' : 'learn', paired, content });
   return `<section class="hanzi-page"><div class="page-heading"><div><div class="eyebrow"><span></span>字词基础 · 汉字小天地</div><h1>汉字笔画与结构<span class="heading-flower">✿</span></h1><p>认一笔，拆一拆，发现汉字的样子。每个小节都可以直接开始。</p></div></div>
-    ${renderCurriculum(navigation, { id: 'curriculum-hanzi', areaAction: 'hz-area',
-      area: ['quiz', 'practice'].includes(state.view) ? 'practice' : 'learn',
-      selected: practicing ? state.round.scope : state.view === 'learn' ? state.category : null,
+    ${renderCurriculum(navigation, { id: 'curriculum-hanzi',
+      selected: category === 'review' ? null : category,
       learning: hanziCategories.map(category => ({ ...category, action: 'hz-category' })),
       practice: [{ id: 'all', name: '综合练习', icon: 'pen', action: 'hz-start' }],
     })}
-    <div class="hz-layout learning-layout"><div class="learning-main" role="region" aria-label="汉字笔画与结构">${practicing ? hanziQuizCard(state) : state.view === 'practice' ? practiceMenu() : hanziLearningCard(state)}${learningTools('hz', state)}</div><aside class="hz-sidebar learning-aside">
+    <div class="hz-layout learning-layout"><div class="learning-main" role="region" aria-label="汉字笔画与结构">${book}${learningTools('hz', state)}</div><aside class="hz-sidebar learning-aside">
       ${garden}
       <section class="hz-card hz-note"><h2>按自己的节奏学</h2><p>不用先学完拼音，也不用依次通关。可以随时换一节，回头再看看。</p><p>认识字的同时，也可以读一首古诗、说一句话，或写下今天的小发现。</p><p>学习记录保存在当前浏览器。</p></section>
     </aside></div></section>`;
@@ -119,8 +122,8 @@ export function handleHanziAction(root, action, data) {
     if (!state.known.includes(lesson.id)) state.known.push(lesson.id);
     outcome.reward = grantRewards(root, { type: 'recognize', item: { id: `hanzi:${lesson.id}`, text: `汉字学习 · ${lesson.title}` } });
   }
-  if (action === 'hz-area' && data.id === 'practice' && !['quiz', 'practice'].includes(state.view)) state.view = 'practice';
-  if (action === 'hz-area' && data.id === 'learn') state.view = 'learn';
+  if (action === 'hz-page' && data.id === 'learn') state.view = 'learn';
+  if (action === 'hz-page' && data.id === 'practice') startHanziRound(state, data.category, state.practiceLength, false);
   if (action === 'hz-start') startHanziRound(state, data.id, state.practiceLength, state.view === 'quiz' && state.round.scope === data.id && state.round.finished);
   if (action === 'hz-learn') state.view = 'learn';
   if (['hz-answer', 'hz-skip'].includes(action)) {

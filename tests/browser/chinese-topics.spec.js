@@ -25,7 +25,7 @@ for (const topic of chineseTopics) {
     await expect(page.locator('.learning-main > .section-title')).toHaveCount(0);
     await expect(page).toHaveTitle(`${topic.name} · 小兔学习乐园`);
     for (const category of topic.categories) {
-      await page.locator(`[data-action="ct-category"][data-id="${category.id}"]`).click();
+      await page.locator(`.nav-tabs [data-action="ct-category"][data-id="${category.id}"]`).click();
       await expect(page.locator('.ct-lesson')).toContainText(category.name);
     }
     await page.locator('[data-action="ct-known"]').click();
@@ -151,7 +151,7 @@ test('字词主题在浏览器存储不可用时仍能学习、查字和作答',
     await expect(page.locator('.hz-feedback')).toContainText('先认识答案');
   }
   await selectTopic(page, '查字典');
-  await page.locator('[data-action="ct-area"][data-id="learn"]').click();
+  await expect(page.getByRole('tab', { name: '学习', exact: true })).toHaveAttribute('aria-selected', 'true');
   await page.locator('[data-action="ct-lookup"]').click();
   for (const value of ['H', 'he', '河']) await page.locator(`[data-action="ct-lookup-pick"][data-value="${value}"]`).click();
   await expect(page.locator('.ct-entry')).toContainText('天然的大水道');
@@ -200,7 +200,7 @@ test('教学图解和难词拼音在320像素宽度可读，同音节查字能�
   for (const [topicId, category, lessonId] of examples) {
     const topic = chineseTopics.find(item => item.id === topicId);
     await selectTopic(page, topic.name);
-    await page.locator(`[data-action="ct-category"][data-id="${category}"]`).click();
+    await page.locator(`.nav-tabs [data-action="ct-category"][data-id="${category}"]`).click();
     await page.locator(`[data-action="ct-lesson"][data-id="${lessonId}"]`).click();
     await expect(page.locator('.ct-visual')).toBeVisible();
     if (lessonId.endsWith('白雪皑皑')) await expect(page.locator('.ct-lesson-intro h3 rt')).toHaveText(['ái', 'ái']);
