@@ -44,7 +44,7 @@ npm run preview
 
 产物输出到 `dist/`。要部署到 GitHub Pages，在仓库的 **Settings → Pages** 将发布源设为 **GitHub Actions**。`.github/workflows/deploy-pages.yml` 在更新 `main` 时构建并发布，子路径由 Pages 配置提供。可通过 **Actions → Deploy to GitHub Pages** 查看执行结果或手动运行。
 
-本地预览 `/rabbit-garden/` 子路径时使用 `npm run build -- --base /rabbit-garden/` 和 `npm run preview -- --base /rabbit-garden/`。
+本地预览 `/bunny-garden/` 子路径时使用 `npm run build -- --base /bunny-garden/` 和 `npm run preview -- --base /bunny-garden/`。
 
 ## 验证
 
