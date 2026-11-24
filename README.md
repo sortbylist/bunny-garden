@@ -25,7 +25,9 @@ npm run dev
 
 ## 重新生成英语音频
 
-校园英语和自然拼读的音频随站点发布。需要重新生成时，先安装 Python 和 `gTTS`，并确保能访问语音合成服务。在本项目根目录运行以下命令，将 [WordAudio](https://github.com/mrcraked/WordAudio) 克隆到与本项目同级的目录。
+校园英语和自然拼读使用 WordAudio 与 gTTS 合成的英式英语音频，随站点发布。详见[音频来源与署名](public/audio/ATTRIBUTION.md)。
+
+需要重新生成时，先安装 Python 和 `gTTS`，并确保能访问语音合成服务。在本项目根目录运行以下命令，将 [WordAudio](https://github.com/mrcraked/WordAudio) 克隆到与本项目同级的目录。
 
 ```sh
 git clone https://github.com/mrcraked/WordAudio.git ../WordAudio

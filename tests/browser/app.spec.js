@@ -109,20 +109,18 @@ test('分类、主题、学习操作和刷新保持各自选择与进度', async
   await expect(page.locator('.pinyin-display')).toHaveText('o');
 });
 
-test('关于学习乐园提供音频来源、署名、许可、示范音频和设计参考链接', async ({ page }) => {
+test('关于学习乐园概述音频来源并链接到完整署名', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: '关于学习乐园' }).click();
   const dialog = page.getByRole('dialog', { name: '关于小兔学习乐园' });
+  await expect(dialog).toContainText('拼音录音主要来自 audio-cmn');
+  await expect(dialog).toContainText('Wikimedia Commons 和英国开放大学 OpenLearn');
+  await expect(dialog).toContainText('古诗朗读和部分拼音读音由微软慧慧语音合成，英语音频使用 WordAudio 和 gTTS 生成');
   for (const [name, url] of [
     ['audio-cmn', 'https://github.com/hugolpz/audio-cmn'],
-    ['Chen Wang', 'https://github.com/hugolpz/audio-cmn#voices'],
-    ['Yue Tan', 'https://commons.wikimedia.org/wiki/File:Zh-m%C3%A1.ogg#Summary'],
-    ['Hugo Lopez', 'https://github.com/hugolpz'],
-    ['Nicolas Vion', 'https://github.com/hugolpz/audio-cmn#credits'],
-    ['CC BY-SA', 'https://creativecommons.org/cc-licenses/'],
-    ['ong 韵母音频', '/audio/ong-openlearn.wav'],
-    ['Getting started with Chinese 1', 'https://www.open.edu/openlearn/mod/oucontent/view.php?id=106435&section=1.1'],
-    ['CC BY-NC-SA 4.0', 'https://creativecommons.org/licenses/by-nc-sa/4.0/'],
+    ['Wikimedia Commons', 'https://commons.wikimedia.org/wiki/File:Zh-m%C3%A1.ogg'],
+    ['英国开放大学 OpenLearn', 'https://www.open.edu/openlearn/mod/oucontent/view.php?id=106435&section=1.1'],
+    ['微软慧慧', 'https://support.microsoft.com/zh-cn/accessibility/windows/narrator/appendix-a-supported-languages-and-voices'],
     ['WordAudio', 'https://github.com/mrcraked/WordAudio'],
     ['gTTS', 'https://gtts.readthedocs.io/en/stable/'],
     ['查看音频来源与署名说明', '/audio/ATTRIBUTION.md'],
@@ -134,9 +132,12 @@ test('关于学习乐园提供音频来源、署名、许可、示范音频和�
     await expect(link).toHaveAttribute('target', '_blank');
     await expect(link).toHaveAttribute('rel', 'noopener');
   }
-  const audio = await page.request.get('/audio/ong-openlearn.wav');
-  expect(audio.ok()).toBe(true);
-  expect(audio.headers()['content-type']).toMatch(/^audio\/(?:x-)?wav/);
+  const attribution = await page.request.get('/audio/ATTRIBUTION.md');
+  expect(attribution.ok()).toBe(true);
+  const details = await attribution.text();
+  for (const credit of ['Chen Wang', 'Yue Tan', 'Hugo Lopez', 'Nicolas Vion', 'CC BY-SA', 'CC BY-NC-SA 4.0', 'WordAudio', '自然拼读']) {
+    expect(details).toContain(credit);
+  }
 });
 
 test('ong 学习卡和本节听辨均播放独立韵母音频', async ({ page }) => {
@@ -146,7 +147,9 @@ test('ong 学习卡和本节听辨均播放独立韵母音频', async ({ page })
   await expect(page.locator('.memory-tip')).toContainText('用后鼻音 ng 收尾');
   const cardAudio = page.waitForResponse('**/audio/ong-openlearn.wav');
   await page.getByRole('button', { name: '听 ong 的读音' }).click();
-  expect((await cardAudio).ok()).toBe(true);
+  const audio = await cardAudio;
+  expect(audio.ok()).toBe(true);
+  expect(audio.headers()['content-type']).toMatch(/^audio\/(?:x-)?wav/);
   await expect(page.locator('.primary-audio')).toHaveClass(/playing/);
   await expect(page.locator('.primary-audio')).not.toHaveClass(/playing/);
 

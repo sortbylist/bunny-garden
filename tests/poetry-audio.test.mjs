@@ -25,6 +25,22 @@ test('每首古诗的本地录音与原文一致，WAV 完整且未被替换', a
   }
 });
 
+test('诗句修音指定多音字读法，合成文本保留原文', async () => {
+  const { files } = JSON.parse(await readFile(new URL('../public/audio/poetry/manifest.json', import.meta.url), 'utf8'));
+  const readings = {
+    'little-pond': '<phoneme alphabet="sapi" ph="lu 4">露</phoneme>',
+    'quiet-night': '疑是<break time="65ms"/><sub alias="帝">地</sub><break time="65ms"/>上霜',
+    'village-spring': '<phoneme alphabet="sapi" ph="zhang 3">长</phoneme>',
+    orioles: '<phoneme alphabet="sapi" ph="hang 2">行</phoneme>',
+  };
+  assert.deepEqual(Object.keys(files).filter(id => files[id].ssml).sort(), Object.keys(readings).sort());
+  for (const [id, reading] of Object.entries(readings)) {
+    const { ssml, text } = files[id];
+    assert.ok(ssml.includes(reading));
+    assert.equal(ssml.replace(/<[^>]+>/g, ''), text);
+  }
+});
+
 test('新增诗文自动计入原有主题的小节学习与题目范围', () => {
   for (const category of ['nature', 'feelings', 'stories']) {
     const section = rewardSections.get(`poetry-culture/${category}`);

@@ -1,0 +1,149 @@
+{
+    "locale":  "zh-CN",
+    "provider":  "Windows System.Speech",
+    "voice":  "Microsoft Huihui Desktop",
+    "synthetic":  true,
+    "rate":  -1,
+    "files":  {
+                  "chi1":  {
+                               "text":  "吃",
+                               "path":  "/audio/huihui-pinyin/chi1.wav",
+                               "sha256":  "cb87eb45b96489848c5e9d68ed162f7bf2f38c2b23889edc97f2469121127a65",
+                               "keys":  [
+                                            "card:whole-chi",
+                                            "question:confusing:chi1"
+                                        ]
+                           },
+                  "yue1":  {
+                               "text":  "约",
+                               "path":  "/audio/huihui-pinyin/yue1.wav",
+                               "sha256":  "ad4c9aad73ad0b4b9fd270b16c6f9685c5c5781318c335d2712d91471acc39c9",
+                               "prosody":  "-20%",
+                               "keys":  [
+                                            "card:whole-yue"
+                                        ]
+                           },
+                  "yin1":  {
+                               "text":  "音",
+                               "path":  "/audio/huihui-pinyin/yin1.wav",
+                               "sha256":  "95b6ba80323c02c1b4cd61a5bc17b1bd478e2f61ceee671c75b2a237ef655fbe",
+                               "prosody":  "-20%",
+                               "keys":  [
+                                            "syllable:yin1"
+                                        ]
+                           },
+                  "tian2":  {
+                                "text":  "田",
+                                "path":  "/audio/huihui-pinyin/tian2.wav",
+                                "sha256":  "f34e3942431fd5100d93652b624e8df03069f6f1ab3789587af719c4146dc3f6",
+                                "keys":  [
+                                             "syllable:tian2"
+                                         ]
+                            },
+                  "shu4":  {
+                               "text":  "树",
+                               "path":  "/audio/huihui-pinyin/shu4.wav",
+                               "sha256":  "936df86e9ed12cb650897bbe59067bb0ef614bcdf110c12209e4d3405322d8a3",
+                               "keys":  [
+                                            "syllable:shu4"
+                                        ]
+                           },
+                  "zhu2":  {
+                               "text":  "竹",
+                               "path":  "/audio/huihui-pinyin/zhu2.wav",
+                               "sha256":  "75a99a13245d080258d5953980f5cbba76d2d17ad2b51ad32991bf400128c17f",
+                               "keys":  [
+                                            "word:竹"
+                                        ]
+                           },
+                  "yang2":  {
+                                "text":  "羊",
+                                "path":  "/audio/huihui-pinyin/yang2.wav",
+                                "sha256":  "63cea41ca4d96f13b166dae5d6b0ceba38d5b4e35c5615d6a0b5348517d4793b",
+                                "keys":  [
+                                             "syllable:yang2"
+                                         ]
+                            },
+                  "die2":  {
+                               "text":  "蝶",
+                               "path":  "/audio/huihui-pinyin/die2.wav",
+                               "sha256":  "79aed7516e558ac2029709613438ec0152b0265e5ae01b26652642f3dbfb9694",
+                               "keys":  [
+                                            "syllable:die2"
+                                        ]
+                           },
+                  "chuan2":  {
+                                 "text":  "船",
+                                 "path":  "/audio/huihui-pinyin/chuan2.wav",
+                                 "sha256":  "d9ea3fd3419f4730bafac5dea045f32b4e3d7da661a9429fc38c0fda49e77107",
+                                 "keys":  [
+                                              "syllable:chuan2"
+                                          ]
+                             },
+                  "qiao2":  {
+                                "text":  "桥",
+                                "path":  "/audio/huihui-pinyin/qiao2.wav",
+                                "sha256":  "0957cabe23a799486bfd6230d26ffa125f856f67b6838763332842f12614ec3c",
+                                "keys":  [
+                                             "syllable:qiao2"
+                                         ]
+                            },
+                  "mian4":  {
+                                "text":  "面",
+                                "path":  "/audio/huihui-pinyin/mian4.wav",
+                                "sha256":  "e20042cbe2e9f7f403c8fa60c9a7329a30f1144f87bf8af43a75f78f0b6000b9",
+                                "keys":  [
+                                             "syllable:mian4"
+                                         ]
+                            },
+                  "dong1":  {
+                                "text":  "冬",
+                                "path":  "/audio/huihui-pinyin/dong1.wav",
+                                "sha256":  "daaebad5f65f1d7e0bd098d91093fd0205fd7051b89018617101fc03552a930b",
+                                "keys":  [
+                                             "syllable:dong1"
+                                         ]
+                            },
+                  "zha1":  {
+                               "text":  "渣",
+                               "path":  "/audio/huihui-pinyin/zha1.wav",
+                               "sha256":  "43a8107eaec11820784d2e8dd0c09bb2796f0f4221bcd19005c32e10f74f3b76",
+                               "keys":  [
+                                            "syllable:zha1"
+                                        ]
+                           },
+                  "cha1":  {
+                               "text":  "插",
+                               "path":  "/audio/huihui-pinyin/cha1.wav",
+                               "sha256":  "15869a8ac71fe491a3bb47f077a1a3005df6652f9321c8f30118a236e83b82ad",
+                               "keys":  [
+                                            "syllable:cha1"
+                                        ]
+                           },
+                  "sha1":  {
+                               "text":  "纱",
+                               "path":  "/audio/huihui-pinyin/sha1.wav",
+                               "sha256":  "c64fccfab0a8dce231e462bdfe195377d96b812f9304a20d70a1ba4d4dedd6c5",
+                               "keys":  [
+                                            "question:confusing:sha1"
+                                        ]
+                           },
+                  "ta1":  {
+                              "text":  "他",
+                              "path":  "/audio/huihui-pinyin/ta1.wav",
+                              "sha256":  "5f9394507c526622af97ef412ac02cef891a66e33eae4c28431ec0dce60622b9",
+                              "keys":  [
+                                           "syllable:ta1"
+                                       ]
+                          },
+                  "ren4":  {
+                               "text":  "认",
+                               "path":  "/audio/huihui-pinyin/ren4.wav",
+                               "sha256":  "7b8c229a64fc3d2538b3777417d1f579fcb83b8735884401e3e627954693ac65",
+                               "prosody":  "-20%",
+                               "keys":  [
+                                            "syllable:ren4"
+                                        ]
+                           }
+              }
+}

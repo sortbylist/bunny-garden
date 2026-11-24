@@ -21,7 +21,8 @@
                                       "path":  "/audio/poetry/little-pond.wav",
                                       "status":  "ready",
                                       "text":  "小池。宋，杨万里。泉眼无声惜细流，树阴照水爱晴柔。小荷才露尖尖角，早有蜻蜓立上头。",
-                                      "sha256":  "6b17a1a7e861b586ccfedcae405038eee3a29d91e196355c47d188368e00b5a1"
+                                      "sha256":  "83a299d76f34add12a2e9399b8a01a21dd760140ae51ec6ed50371851810f73d",
+                                      "ssml":  "\u003cspeak version=\"1.0\" xmlns=\"http://www.w3.org/2001/10/synthesis\" xml:lang=\"zh-CN\"\u003e小池。宋，杨万里。泉眼无声惜细流，树阴照水爱晴柔。小荷才\u003cprosody rate=\"-25%\"\u003e\u003cphoneme alphabet=\"sapi\" ph=\"lu 4\"\u003e露\u003c/phoneme\u003e\u003c/prosody\u003e尖尖角，早有蜻蜓立上头。\u003c/speak\u003e"
                                   },
                   "river-snow":  {
                                      "path":  "/audio/poetry/river-snow.wav",
@@ -33,7 +34,8 @@
                                       "path":  "/audio/poetry/quiet-night.wav",
                                       "status":  "ready",
                                       "text":  "静夜思。唐，李白。床前明月光，疑是地上霜。举头望明月，低头思故乡。",
-                                      "sha256":  "3fcc8dd7eb33e67b3cac52fa6dc87ffd092cfe9456152bbb74ada11c3945e800"
+                                      "sha256":  "b65add356050cdca0f26397aa322940cf05602eb6a3875f638af4cd070cdcbc7",
+                                      "ssml":  "\u003cspeak version=\"1.0\" xmlns=\"http://www.w3.org/2001/10/synthesis\" xml:lang=\"zh-CN\"\u003e静夜思。唐，李白。床前明月光，疑是\u003cbreak time=\"65ms\"/\u003e\u003csub alias=\"帝\"\u003e地\u003c/sub\u003e\u003cbreak time=\"65ms\"/\u003e上霜。举头望明月，低头思故乡。\u003c/speak\u003e"
                                   },
                   "farmers":  {
                                   "path":  "/audio/poetry/farmers.wav",
@@ -69,7 +71,8 @@
                                          "path":  "/audio/poetry/village-spring.wav",
                                          "status":  "ready",
                                          "text":  "村居。清，高鼎。草长莺飞二月天，拂堤杨柳醉春烟。儿童散学归来早，忙趁东风放纸鸢。",
-                                         "sha256":  "beebb92f196632b1d365f361b25ed2851868bb4b628ef9ef45c4112629e6d4b9"
+                                         "sha256":  "54d684ba2480b34dbc4d7735502642bbf41b571563233621de4db015989c0817",
+                                         "ssml":  "\u003cspeak version=\"1.0\" xmlns=\"http://www.w3.org/2001/10/synthesis\" xml:lang=\"zh-CN\"\u003e村居。清，高鼎。草\u003cphoneme alphabet=\"sapi\" ph=\"zhang 3\"\u003e长\u003c/phoneme\u003e莺飞二月天，拂堤杨柳醉春烟。儿童散学归来早，忙趁东风放纸鸢。\u003c/speak\u003e"
                                      },
                   "what-seen":  {
                                     "path":  "/audio/poetry/what-seen.wav",
@@ -93,7 +96,8 @@
                                   "path":  "/audio/poetry/orioles.wav",
                                   "status":  "ready",
                                   "text":  "绝句（两个黄鹂鸣翠柳）。唐，杜甫。两个黄鹂鸣翠柳，一行白鹭上青天。窗含西岭千秋雪，门泊东吴万里船。",
-                                  "sha256":  "ae5b6463d73f87f704cb78a36871d766daed330b0a5db5a2fa6e2588cf134014"
+                                  "sha256":  "d2d3dc137e433f3f1a6571955e6605df83c849871d5dcfea360d84484dc203d1",
+                                  "ssml":  "\u003cspeak version=\"1.0\" xmlns=\"http://www.w3.org/2001/10/synthesis\" xml:lang=\"zh-CN\"\u003e绝句（两个黄鹂鸣翠柳）。唐，杜甫。两个黄鹂鸣翠柳，一\u003cphoneme alphabet=\"sapi\" ph=\"hang 2\"\u003e行\u003c/phoneme\u003e白鹭上青天。窗含西岭千秋雪，门泊东吴万里船。\u003c/speak\u003e"
                               },
                   "spring-quatrain":  {
                                           "path":  "/audio/poetry/spring-quatrain.wav",

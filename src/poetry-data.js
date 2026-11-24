@@ -69,7 +69,7 @@ export const poems = [
   },
   {
     id: 'farmers', category: 'feelings', title: '悯农（其二）', author: '李绅', dynasty: '唐',
-    lines: [['锄禾日当午，', 'chú hé rì dāng wǔ'], ['汗滴禾下土。', 'hàn dī hé xià tǔ'], ['谁知盘中餐，', 'shéi zhī pán zhōng cān'], ['粒粒皆辛苦。', 'lì lì jiē xīn kǔ']],
+    lines: [['锄禾日当午，', 'chú hé rì dāng wǔ'], ['汗滴禾下土。', 'hàn dī hé xià tǔ'], ['谁知盘中餐，', 'shuí zhī pán zhōng cān'], ['粒粒皆辛苦。', 'lì lì jiē xīn kǔ']],
     meaning: '正午时，农民还在田里锄草，汗水滴进禾苗下的泥土。盘中的每一粒粮食，都包含着劳动者的辛苦。',
     notes: ['“锄禾”指给禾苗锄草。“皆”是都的意思。', '联系田间的劳动，理解珍惜粮食、尊重劳动。'],
     task: '写一件你能做到的珍惜粮食的小事。',

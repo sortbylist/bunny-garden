@@ -7,169 +7,168 @@
     "files":  {
                   "single-i":  {
                                    "text":  "衣",
-                                   "path":  "/audio/review/huihui-borrowed/single-i.wav",
+                                   "path":  "/audio/huihui-borrowed/single-i.wav",
                                    "sha256":  "a285a767f12d21ea5bfbbc8eb5abb1e6f14fcdf8746a3ebfce84497edec20fcf"
                                },
                   "single-u":  {
                                    "text":  "乌",
-                                   "path":  "/audio/review/huihui-borrowed/single-u.wav",
+                                   "path":  "/audio/huihui-borrowed/single-u.wav",
                                    "sha256":  "bd05fcec7b537a888d8aecc792510c978a85bb149f41754d610d8bfaf1d39015"
                                },
                   "single-ü":  {
                                    "text":  "迂",
-                                   "path":  "/audio/review/huihui-borrowed/single-ü.wav",
+                                   "path":  "/audio/huihui-borrowed/single-ü.wav",
                                    "sha256":  "4c856d1426c72da85464dd2b519ff82f45dae80f481eff61e1eaedab366e3a7d"
                                },
                   "initial-b":  {
                                     "text":  "波",
-                                    "path":  "/audio/review/huihui-borrowed/initial-b.wav",
+                                    "path":  "/audio/huihui-borrowed/initial-b.wav",
                                     "sha256":  "f99f20010a07c986ce51af03476f702f5eab0819aef946cd4795e735ec0b0b99"
                                 },
                   "initial-p":  {
                                     "text":  "坡",
-                                    "path":  "/audio/review/huihui-borrowed/initial-p.wav",
+                                    "path":  "/audio/huihui-borrowed/initial-p.wav",
                                     "sha256":  "9b0b37350701b0f1aa3e0e7b11ec2b8a039c8c7dec2a16f57153446a9d78bd2b"
                                 },
                   "initial-m":  {
                                     "text":  "摸",
-                                    "path":  "/audio/review/huihui-borrowed/initial-m.wav",
+                                    "path":  "/audio/huihui-borrowed/initial-m.wav",
                                     "sha256":  "8ae61d33cac9ce48dcd04bdffe5319855984d706645f536d9bc09fb1fa113c26"
                                 },
                   "initial-f":  {
                                     "text":  "佛",
-                                    "path":  "/audio/review/huihui-borrowed/initial-f.wav",
+                                    "path":  "/audio/huihui-borrowed/initial-f.wav",
                                     "sha256":  "7043357da929e57804a5e083e0ab79bbd075cab4b1232e1cf313b41b3a763221",
                                     "phonemes":  "fo 1"
                                 },
                   "initial-d":  {
                                     "text":  "的",
-                                    "path":  "/audio/review/huihui-borrowed/initial-d.wav",
+                                    "path":  "/audio/huihui-borrowed/initial-d.wav",
                                     "sha256":  "7ae9f04b338e1fc3e21660d5a86d78dda9e9288ac470d20070fe3fb18b1bdbc2",
                                     "phonemes":  "de 1"
                                 },
                   "initial-t":  {
                                     "text":  "特",
-                                    "path":  "/audio/review/huihui-borrowed/initial-t.wav",
+                                    "path":  "/audio/huihui-borrowed/initial-t.wav",
                                     "sha256":  "b07dc240a07e9842fe0c73c678aa3eb7d98ea46858f25b8e55280fa75ef8dac5",
                                     "phonemes":  "te 1"
                                 },
                   "initial-n":  {
                                     "text":  "呢",
-                                    "path":  "/audio/review/huihui-borrowed/initial-n.wav",
+                                    "path":  "/audio/huihui-borrowed/initial-n.wav",
                                     "sha256":  "9a2c9958826b803898107ef543543bc5e65ccaba0b16875eee1debf77cc90709",
                                     "phonemes":  "ne 1"
                                 },
                   "initial-l":  {
                                     "text":  "乐",
-                                    "path":  "/audio/review/huihui-borrowed/initial-l.wav",
+                                    "path":  "/audio/huihui-borrowed/initial-l.wav",
                                     "sha256":  "0631fb55f7dd6d5ee71a949ae3dddc64bdf721f00c9a4be967becab6b01ae590",
                                     "phonemes":  "le 1"
                                 },
                   "initial-g":  {
                                     "text":  "哥",
-                                    "path":  "/audio/review/huihui-borrowed/initial-g.wav",
+                                    "path":  "/audio/huihui-borrowed/initial-g.wav",
                                     "sha256":  "adccd5550703d2da85eff6fdd3a7b0013f979a61dd9ad2484d138e11c382c022"
                                 },
                   "initial-k":  {
                                     "text":  "科",
-                                    "path":  "/audio/review/huihui-borrowed/initial-k.wav",
+                                    "path":  "/audio/huihui-borrowed/initial-k.wav",
                                     "sha256":  "0b0aabbd973119265d9673d9e58af700493f194ada946fa562cc7063fddfc942"
                                 },
                   "initial-h":  {
                                     "text":  "喝",
-                                    "path":  "/audio/review/huihui-borrowed/initial-h.wav",
+                                    "path":  "/audio/huihui-borrowed/initial-h.wav",
                                     "sha256":  "76d9e2b21d321054cc08e6711511d83177b1b19f12d9c454ea950503158d53dd"
                                 },
                   "initial-j":  {
                                     "text":  "鸡",
-                                    "path":  "/audio/review/huihui-borrowed/initial-j.wav",
+                                    "path":  "/audio/huihui-borrowed/initial-j.wav",
                                     "sha256":  "6c84376527217be9801884cbbf05c53f04085943e782fc05f25a805e085783f1"
                                 },
                   "initial-q":  {
                                     "text":  "七",
-                                    "path":  "/audio/review/huihui-borrowed/initial-q.wav",
+                                    "path":  "/audio/huihui-borrowed/initial-q.wav",
                                     "sha256":  "d3883647e86d8b939c503499f85811584190221b0d8c42ccb79e047d4a3cd712"
                                 },
                   "initial-x":  {
                                     "text":  "西",
-                                    "path":  "/audio/review/huihui-borrowed/initial-x.wav",
+                                    "path":  "/audio/huihui-borrowed/initial-x.wav",
                                     "sha256":  "2ecd75a49087b3b8d3866960beac7c994e05f62011c361fad52e168196a607ba"
                                 },
                   "initial-zh":  {
                                      "text":  "知",
-                                     "path":  "/audio/review/huihui-borrowed/initial-zh.wav",
+                                     "path":  "/audio/huihui-borrowed/initial-zh.wav",
                                      "sha256":  "9c6152adffb8923edf0863b0b838d67c5d9aef890765548f87516e474ec098ee"
                                  },
                   "initial-ch":  {
                                      "text":  "吃",
-                                     "path":  "/audio/review/huihui-borrowed/initial-ch.wav",
+                                     "path":  "/audio/huihui-borrowed/initial-ch.wav",
                                      "sha256":  "cb87eb45b96489848c5e9d68ed162f7bf2f38c2b23889edc97f2469121127a65"
                                  },
                   "initial-sh":  {
                                      "text":  "诗",
-                                     "path":  "/audio/review/huihui-borrowed/initial-sh.wav",
+                                     "path":  "/audio/huihui-borrowed/initial-sh.wav",
                                      "sha256":  "a9b653af4e0dd4c77f43ce6db8ecd9b9a496ea85b5fc9bcd68049a1e16072866"
                                  },
                   "initial-r":  {
                                     "text":  "日",
-                                    "path":  "/audio/review/huihui-borrowed/initial-r.wav",
+                                    "path":  "/audio/huihui-borrowed/initial-r.wav",
                                     "sha256":  "17bcfb1d0d612934700b07e51b3e897efb2dff9d9614d377fdbbe75881e78edd",
                                     "phonemes":  "ri 1"
                                 },
                   "initial-z":  {
                                     "text":  "资",
-                                    "path":  "/audio/review/huihui-borrowed/initial-z.wav",
+                                    "path":  "/audio/huihui-borrowed/initial-z.wav",
                                     "sha256":  "20b466f51c8cad6e038a55fa2e68cf396e712baee2c9bc6fab268324cd880d4d"
                                 },
                   "initial-c":  {
                                     "text":  "疵",
-                                    "path":  "/audio/review/huihui-borrowed/initial-c.wav",
+                                    "path":  "/audio/huihui-borrowed/initial-c.wav",
                                     "sha256":  "e4e5a0a99e563978958b502e2adf30fb251af390c8a7692ea6c43f598bcd4de3"
                                 },
                   "initial-s":  {
                                     "text":  "丝",
-                                    "path":  "/audio/review/huihui-borrowed/initial-s.wav",
+                                    "path":  "/audio/huihui-borrowed/initial-s.wav",
                                     "sha256":  "7d6e9de86a9e14c550aef4221cdc935022007d151f347f4dc5c06e365efa3988"
                                 },
                   "compound-ui":  {
                                       "text":  "威",
-                                      "path":  "/audio/review/huihui-borrowed/compound-ui.wav",
+                                      "path":  "/audio/huihui-borrowed/compound-ui.wav",
                                       "sha256":  "5aff2b24f959e48762989f12715bbd4da7d2ddd28b2d5fdfc064ce729dc940b9"
                                   },
                   "compound-iu":  {
                                       "text":  "优",
-                                      "path":  "/audio/review/huihui-borrowed/compound-iu.wav",
+                                      "path":  "/audio/huihui-borrowed/compound-iu.wav",
                                       "sha256":  "2722de201f37b0249d6122b8ce71f853d8add88022fde5723c594dc13938fbd8"
                                   },
                   "compound-ie":  {
                                       "text":  "椰",
-                                      "path":  "/audio/review/huihui-borrowed/compound-ie.wav",
+                                      "path":  "/audio/huihui-borrowed/compound-ie.wav",
                                       "sha256":  "8e81d609add0098cd0ebdd6dcffc0f5b0d053f9b533a502bd9528373c0bc704b"
                                   },
                   "compound-üe":  {
                                       "text":  "约",
-                                      "path":  "/audio/review/huihui-borrowed/compound-üe.wav",
+                                      "path":  "/audio/huihui-borrowed/compound-üe.wav",
                                       "sha256":  "e27ca2e2c65192eec12113880b3b2ade9288e5ad2df8989ddf928f706cce951c"
                                   },
                   "front-in":  {
                                    "text":  "音",
-                                   "path":  "/audio/review/huihui-borrowed/front-in.wav",
+                                   "path":  "/audio/huihui-borrowed/front-in.wav",
                                    "sha256":  "c1481d5e890581e29e986c38d3e8d3a61dd80bc78e017c9fe5ffe9627a98ffec"
                                },
                   "front-un":  {
                                    "text":  "温",
-                                   "path":  "/audio/review/huihui-borrowed/front-un.wav",
+                                   "path":  "/audio/huihui-borrowed/front-un.wav",
                                    "sha256":  "c1fa8a9b7496ff9d1c03957723a700675092feee1e8adeaad25b2840ed7fb1c4"
                                },
                   "front-ün":  {
-                                   "text":  "晕",
-                                   "path":  "/audio/review/huihui-borrowed/front-ün.wav",
-                                   "sha256":  "5b74a359226fb359ff85acb42a1726e0ad776305e301c771aa3ec2badf6eb5c2",
-                                   "phonemes":  "yun 1"
+                                   "text":  "氲",
+                                   "path":  "/audio/huihui-borrowed/front-ün.wav",
+                                   "sha256":  "f37a928aefe3eb7b6df9b90294af17b671af0d7bf7455b83ec75e2355b81698c"
                                },
                   "back-ing":  {
                                    "text":  "英",
-                                   "path":  "/audio/review/huihui-borrowed/back-ing.wav",
+                                   "path":  "/audio/huihui-borrowed/back-ing.wav",
                                    "sha256":  "77b0036621d96ad55cb8f77540b630458d9acbf1696145747a5ebb916a2c1c08"
                                }
               }

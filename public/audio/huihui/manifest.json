@@ -7,67 +7,67 @@
     "files":  {
                   "baiyun":  {
                                  "text":  "白云",
-                                 "path":  "/audio/review/huihui/baiyun.wav",
+                                 "path":  "/audio/huihui/baiyun.wav",
                                  "sha256":  "7ea8e0236bf36da9abe47e2a4fda8f662f0f69eff7a9249d2990361669d91d33"
                              },
                   "xiaocao":  {
                                   "text":  "小草",
-                                  "path":  "/audio/review/huihui/xiaocao.wav",
+                                  "path":  "/audio/huihui/xiaocao.wav",
                                   "sha256":  "589278cc0053c1e255073186589f59c24d75b66c84d6f0318ddad1d12a6feb36"
                               },
                   "huahua":  {
                                  "text":  "画画",
-                                 "path":  "/audio/review/huihui/huahua.wav",
+                                 "path":  "/audio/huihui/huahua.wav",
                                  "sha256":  "0570c67b7f339b5ca7ed0cdf920c13eb9df7b7a30def32ab9299788acb842977"
                              },
                   "xiezi":  {
                                 "text":  "写字",
-                                "path":  "/audio/review/huihui/xiezi.wav",
+                                "path":  "/audio/huihui/xiezi.wav",
                                 "sha256":  "1440c81454aa99b65d14b3cc3a4da7b08aa9921e72cad47ea23e55f8e3745e53"
                             },
                   "lantian":  {
                                   "text":  "蓝天",
-                                  "path":  "/audio/review/huihui/lantian.wav",
+                                 "path":  "/audio/huihui/lantian.wav",
                                   "sha256":  "c1219f2cf62f7a4b2ae5d77c7bd0c107dfea35425e70d4b230f218f0189b4867"
                               },
                   "dashu":  {
                                 "text":  "大树",
-                                "path":  "/audio/review/huihui/dashu.wav",
+                                "path":  "/audio/huihui/dashu.wav",
                                 "sha256":  "8cf617c3419017ee8c5340d05de756e5a5c743e9dbad4cf54b3f23d279594e6d"
                             },
                   "dahai":  {
                                 "text":  "大海",
-                                "path":  "/audio/review/huihui/dahai.wav",
+                                "path":  "/audio/huihui/dahai.wav",
                                 "sha256":  "7631d1b8ecf9542f249d82ca9ea7dfd85fb72ccaea69210faac7b2ffb0c50117"
                             },
                   "heshui":  {
                                  "text":  "河水",
-                                 "path":  "/audio/review/huihui/heshui.wav",
+                                 "path":  "/audio/huihui/heshui.wav",
                                  "sha256":  "df7c940c5e2cf496ca34a4449a558e8aaeac5229a84a44ba66a35e1586f63870"
                              },
                   "xiaoniao":  {
                                    "text":  "小鸟",
-                                   "path":  "/audio/review/huihui/xiaoniao.wav",
+                                    "path":  "/audio/huihui/xiaoniao.wav",
                                    "sha256":  "c3d5f55cb011a070828c94cdeb63fd43a45f2da980ee2f49f7a3bf09153e358c"
                                },
                   "xiaoyu":  {
                                  "text":  "小鱼",
-                                 "path":  "/audio/review/huihui/xiaoyu.wav",
+                                 "path":  "/audio/huihui/xiaoyu.wav",
                                  "sha256":  "003aae7d68b51dfe07cf6acf12ef4f2b9838039100348b673f5aa5571f4745eb"
                              },
                   "baitu":  {
                                 "text":  "白兔",
-                                "path":  "/audio/review/huihui/baitu.wav",
+                                "path":  "/audio/huihui/baitu.wav",
                                 "sha256":  "36248254ac3115189f115f1877e9a163e376aa303946d77e78de804f8b664b66"
                             },
                   "shanyang":  {
                                    "text":  "山羊",
-                                   "path":  "/audio/review/huihui/shanyang.wav",
+                                   "path":  "/audio/huihui/shanyang.wav",
                                    "sha256":  "ea7714c447fb4494fddab31f9ec8bbd87097e8b8fdc926196e58cc1e82bd4980"
                                },
                   "huangniu":  {
                                    "text":  "黄牛",
-                                   "path":  "/audio/review/huihui/huangniu.wav",
+                                    "path":  "/audio/huihui/huangniu.wav",
                                    "sha256":  "81f60e182510a498ed1b69766f17580b87238d8ee290b97639055de22a2d06f8"
                                }
               }

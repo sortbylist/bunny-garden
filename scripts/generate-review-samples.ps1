@@ -6,7 +6,7 @@ $voice = 'Microsoft Huihui Desktop'
 $speaker = New-Object System.Speech.Synthesis.SpeechSynthesizer
 
 function Write-Recordings($entries, $folder) {
-    $directory = Join-Path $root "public/audio/review/$folder"
+    $directory = Join-Path $root "public/audio/$folder"
     [System.IO.Directory]::CreateDirectory($directory) | Out-Null
     $manifestPath = Join-Path $directory 'manifest.json'
     $previousManifest = if (Test-Path -LiteralPath $manifestPath) {
@@ -16,13 +16,16 @@ function Write-Recordings($entries, $folder) {
     foreach ($entry in $entries.PSObject.Properties) {
         $name = "$($entry.Name).wav"
         $path = Join-Path $directory $name
-        $publicPath = "/audio/review/$folder/$name"
+        $publicPath = "/audio/$folder/$name"
         $recording = $entry.Value
         $text = if ($recording -is [string]) { $recording } else { $recording.text }
         $phonemes = $recording.phonemes
+        $prosody = $recording.prosody
+        $keys = $recording.keys
         $previous = $previousManifest.files.($entry.Name)
         if ($previous.text -ceq $text -and $previous.path -ceq $publicPath -and
-            $previous.phonemes -ceq $phonemes -and
+            $previous.phonemes -ceq $phonemes -and $previous.prosody -ceq $prosody -and
+            ($previous.keys -join ' ') -ceq ($keys -join ' ') -and
             $previousManifest.voice -eq $voice -and $previousManifest.rate -eq $speaker.Rate -and
             (Test-Path -LiteralPath $path)) {
             $digest = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -32,10 +35,17 @@ function Write-Recordings($entries, $folder) {
             }
         }
         $speaker.SetOutputToWaveFile($path)
-        if ($phonemes) {
-            $escapedText = [Security.SecurityElement]::Escape($text)
-            $escapedPhonemes = [Security.SecurityElement]::Escape($phonemes)
-            $speaker.SpeakSsml("<speak version=`"1.0`" xmlns=`"http://www.w3.org/2001/10/synthesis`" xml:lang=`"zh-CN`"><phoneme alphabet=`"sapi`" ph=`"$escapedPhonemes`">$escapedText</phoneme></speak>")
+        if ($phonemes -or $prosody) {
+            $content = [Security.SecurityElement]::Escape($text)
+            if ($phonemes) {
+                $escapedPhonemes = [Security.SecurityElement]::Escape($phonemes)
+                $content = "<phoneme alphabet=`"sapi`" ph=`"$escapedPhonemes`">$content</phoneme>"
+            }
+            if ($prosody) {
+                $escapedProsody = [Security.SecurityElement]::Escape($prosody)
+                $content = "<prosody rate=`"$escapedProsody`">$content</prosody>"
+            }
+            $speaker.SpeakSsml("<speak version=`"1.0`" xmlns=`"http://www.w3.org/2001/10/synthesis`" xml:lang=`"zh-CN`">$content</speak>")
         } else {
             $speaker.Speak($text)
         }
@@ -49,6 +59,8 @@ function Write-Recordings($entries, $folder) {
             sha256 = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
         }
         if ($phonemes) { $files[$entry.Name]['phonemes'] = $phonemes }
+        if ($prosody) { $files[$entry.Name]['prosody'] = $prosody }
+        if ($keys) { $files[$entry.Name]['keys'] = $keys }
     }
     $manifest = [ordered]@{
         locale = 'zh-CN'
@@ -71,6 +83,7 @@ try {
     $speaker.Volume = 100
     Write-Recordings $inputs.words 'huihui'
     Write-Recordings $inputs.borrowed 'huihui-borrowed'
+    Write-Recordings $inputs.pinyin 'huihui-pinyin'
 } finally {
     $speaker.Dispose()
 }

@@ -14,6 +14,25 @@
     "shanyang": "山羊",
     "huangniu": "黄牛"
   },
+  "pinyin": {
+    "chi1": { "text": "吃", "keys": ["card:whole-chi", "question:confusing:chi1"] },
+    "yue1": { "text": "约", "prosody": "-20%", "keys": ["card:whole-yue"] },
+    "yin1": { "text": "音", "prosody": "-20%", "keys": ["syllable:yin1"] },
+    "tian2": { "text": "田", "keys": ["syllable:tian2"] },
+    "shu4": { "text": "树", "keys": ["syllable:shu4"] },
+    "zhu2": { "text": "竹", "keys": ["word:竹"] },
+    "yang2": { "text": "羊", "keys": ["syllable:yang2"] },
+    "die2": { "text": "蝶", "keys": ["syllable:die2"] },
+    "chuan2": { "text": "船", "keys": ["syllable:chuan2"] },
+    "qiao2": { "text": "桥", "keys": ["syllable:qiao2"] },
+    "mian4": { "text": "面", "keys": ["syllable:mian4"] },
+    "dong1": { "text": "冬", "keys": ["syllable:dong1"] },
+    "zha1": { "text": "渣", "keys": ["syllable:zha1"] },
+    "cha1": { "text": "插", "keys": ["syllable:cha1"] },
+    "sha1": { "text": "纱", "keys": ["question:confusing:sha1"] },
+    "ta1": { "text": "他", "keys": ["syllable:ta1"] },
+    "ren4": { "text": "认", "prosody": "-20%", "keys": ["syllable:ren4"] }
+  },
   "borrowed": {
     "single-i": "衣",
     "single-u": "乌",
@@ -45,7 +64,7 @@
     "compound-üe": "约",
     "front-in": "音",
     "front-un": "温",
-    "front-ün": { "text": "晕", "phonemes": "yun 1" },
+    "front-ün": "氲",
     "back-ing": "英"
   }
 }

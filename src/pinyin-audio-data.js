@@ -1,12 +1,25 @@
 import { basics, marked } from './data.js';
 
 export function pinyinCardAudio(item) {
-  return item.type === 'word' ? { word: item.text, sounds: item.sounds } : { sound: item.sound };
+  if (item.type === 'word') return { word: item.text, sounds: item.sounds };
+  return item.group === 'whole' ? { sound: item.sound, recording: `card:${item.id}` } : { sound: item.sound };
+}
+
+export function pinyinQuestionAudio(question) {
+  const { audio, id, itemId } = question;
+  if (id.startsWith('confusing:')) return { ...audio, recording: `question:${id}` };
+  if (itemId?.startsWith('whole-')) return { ...audio, recording: `card:${itemId}` };
+  return audio;
+}
+
+export function pinyinOptionAudio(option) {
+  const item = basics.find(entry => entry.text === option.value && entry.sound === option.sound);
+  return item ? pinyinCardAudio(item) : option;
 }
 
 export function pinyinAudioPaths(files, request) {
-  const wordPath = request.word && files[`word:${request.word}`];
-  return wordPath ? [wordPath] : (request.sounds || [request.sound]).map(sound => files[`syllable:${sound}`]);
+  const dedicated = files[request.recording] || (request.word && files[`word:${request.word}`]);
+  return dedicated ? [dedicated] : (request.sounds || [request.sound]).map(sound => files[`syllable:${sound}`]);
 }
 
 export function pinyinAudioNote(item, hasWholeWord) {

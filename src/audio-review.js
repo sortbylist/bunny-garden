@@ -4,9 +4,8 @@ import './chinese.css';
 import './phonics.css';
 import './ui-theme.css';
 import './audio-review.css';
-import { audioReviewCatalog, createAudioReviewExport, reviewBatches, reviewStatuses } from './audio-review-data.js';
+import { audioReviewCatalog, createAudioReviewExport, pendingAudioReviewRows, reviewBatches, reviewStatuses } from './audio-review-data.js';
 import { reviewCard } from './audio-review-cards.js';
-import { publishedReviewDecision } from './audio-review-decisions.js';
 import { subjects } from './data.js';
 import { publicAsset } from './public-asset.js';
 
@@ -39,11 +38,12 @@ const filters = ['stage', 'topic', 'category'];
 const filterSelects = filters.map(filter => reviewRoot.querySelector(`#audit-${filter}`));
 const bulkStatuses = reviewStatuses.filter(([id]) => id !== 'unreviewed').map(([id, name]) => ({ id, name }));
 
-async function loadManifest(path) {
+async function loadReviewResource(path, key = 'files') {
   const response = await fetch(publicAsset(path));
   if (!response.ok) throw new Error(path);
   const manifest = await response.json();
-  if (!manifest?.files || typeof manifest.files !== 'object' || Array.isArray(manifest.files)) throw new Error(path);
+  const records = manifest?.[key];
+  if (!records || typeof records !== 'object' || Array.isArray(records)) throw new Error(path);
   return manifest;
 }
 
@@ -52,22 +52,20 @@ async function loadCatalog() {
     '/audio/manifest.json',
     '/audio/poetry/manifest.json',
     '/audio/phonics/manifest.json',
-    '/audio/review/huihui-borrowed/manifest.json',
-  ].map(loadManifest));
+    '/audio/huihui-borrowed/manifest.json',
+  ].map(path => loadReviewResource(path)));
   return audioReviewCatalog({ pinyin, poetry, phonics, borrowedSamples });
 }
 
-function mount(rows) {
-  const decisions = new Map();
-  for (const row of rows) {
-    const saved = publishedReviewDecision(row);
-    if (saved) {
-      decisions.set(row.id, { status: saved.status, note: saved.note || '' });
-    }
-  }
-  const catalog = rows.filter(row => decisions.get(row.id)?.status !== 'approved');
+function mount(catalog, pending) {
+  const decisions = new Map(catalog.map(({ id }) => [id, { status: pending[id].status, note: pending[id].note ?? '' }]));
   const rowsById = new Map(catalog.map(row => [row.id, row]));
-  const selected = { subject: 'chinese', batch: 'huihui', stage: '', topic: '', category: '' };
+  const pendingBatches = new Set(catalog.map(row => row.batch));
+  const batches = reviewBatches.filter(batch => pendingBatches.has(batch.id));
+  if (!batches.length) return false;
+  const pendingSubjects = new Set(batches.map(batch => batch.subject));
+  const initial = batches[0];
+  const selected = { subject: initial.subject, batch: initial.id, stage: '', topic: '', category: '' };
   let currentPage = 0;
   let pageSize = Number(sizeSelect.value);
   let displayed = [];
@@ -78,13 +76,13 @@ function mount(rows) {
   }
 
   function updateProgress() {
-    const rows = batchRows();
-    const count = rows.filter(row => {
+    const pending = batchRows();
+    download.disabled = !pending.length;
+    const count = pending.filter(row => {
       const value = decisions.get(row.id)?.status;
       return value && value !== 'unreviewed';
     }).length;
-    progress.textContent = `本批次已标记 ${count} / ${rows.length} 项`;
-    download.disabled = !rows.length;
+    progress.textContent = `本批次已标记 ${count} / ${pending.length} 项`;
   }
 
   function fillSelect(select, options, allLabel, value) {
@@ -95,9 +93,9 @@ function mount(rows) {
 
   function renderFilters() {
     subjectButtons.querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.auditSubject === selected.subject)));
-    const batches = reviewBatches.filter(batch => batch.subject === selected.subject);
-    fillSelect(batchSelect, batches, '全部批次', selected.batch);
-    guide.textContent = batches.find(batch => batch.id === selected.batch)?.guide || '';
+    const subjectBatches = batches.filter(batch => batch.subject === selected.subject);
+    fillSelect(batchSelect, subjectBatches, '全部批次', selected.batch);
+    guide.textContent = subjectBatches.find(batch => batch.id === selected.batch)?.guide || '';
     let candidates = batchRows();
     filters.forEach((filter, index) => {
       const options = [...new Map(candidates.map(row => [row[filter].id, row[filter]])).values()];
@@ -242,9 +240,9 @@ function mount(rows) {
     playback.status.textContent = message;
   }
 
-  function playClip(path, playback) {
+  function playClip(clip, playback) {
     return new Promise(resolve => {
-      const audio = new Audio(publicAsset(path));
+      const audio = new Audio(publicAsset(clip.path, clip.sha256));
       const finish = success => {
         clearTimeout(timer);
         audio.onended = audio.onerror = null;
@@ -276,7 +274,7 @@ function mount(rows) {
     stops.forEach(stop => { stop.disabled = false; });
     for (const [index, clip] of entry.clips.entries()) {
       status.textContent = entry.clips.length > 1 ? `正在播放 ${index + 1} / ${entry.clips.length}…` : '正在播放…';
-      const completed = await playClip(clip.path, playback);
+      const completed = await playClip(clip, playback);
       if (activePlayback !== playback) return;
       if (!completed) {
         stopPlayback('音频播放失败，请重试。');
@@ -319,7 +317,7 @@ function mount(rows) {
     setTimeout(() => URL.revokeObjectURL(url), 10000);
   }
 
-  subjectButtons.replaceChildren(...subjects.map(subject => {
+  subjectButtons.replaceChildren(...subjects.filter(subject => pendingSubjects.has(subject.id)).map(subject => {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'outline-button';
@@ -331,7 +329,7 @@ function mount(rows) {
     const button = event.target.closest('[data-audit-subject]');
     if (!button || selected.subject === button.dataset.auditSubject) return;
     selected.subject = button.dataset.auditSubject;
-    selected.batch = reviewBatches.find(batch => batch.subject === selected.subject)?.id || '';
+    selected.batch = batches.find(batch => batch.subject === selected.subject).id;
     filters.forEach(filter => { selected[filter] = ''; });
     changeScope();
   });
@@ -386,13 +384,16 @@ function mount(rows) {
   }
   download.addEventListener('click', exportReview);
   changeScope();
+  return true;
 }
 
 const loadStatus = reviewRoot.querySelector('#audit-load');
 try {
-  mount(await loadCatalog());
-  loadStatus.hidden = true;
-  panel.hidden = false;
+  const { items: pending } = await loadReviewResource('/audio/review/pending.json', 'items');
+  const hasPending = Object.keys(pending).length > 0 && mount(pendingAudioReviewRows(await loadCatalog(), pending), pending);
+  loadStatus.textContent = hasPending ? '' : '没有待审核的试听内容。';
+  loadStatus.hidden = hasPending;
+  panel.hidden = !hasPending;
 } catch (error) {
   loadStatus.textContent = '试听清单载入失败，请刷新后重试。';
   console.error(error);

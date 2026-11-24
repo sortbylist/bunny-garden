@@ -17,5 +17,45 @@
     "license": "CC BY-NC-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
     "description": "The standalone ong demonstration, excerpted from 16.15–17.03 seconds of l197-pronunciation-02.mp3 and converted to mono WAV."
+  },
+  "question:confusing:yin1": {
+    "file": "audio-cmn/yin1.mp3",
+    "url": "https://raw.githubusercontent.com/hugolpz/audio-cmn/master/64k/hsk/cmn-%E9%9F%B3.mp3",
+    "project": "audio-cmn",
+    "speaker": "Yue Tan",
+    "text": "音",
+    "sha256": "56d28d097a62634b7792378b88c12db8ac69aa16eccf5375ed67bbba6c9e6b5d"
+  },
+  "question:confusing:jin1": {
+    "file": "audio-cmn/jin1.mp3",
+    "url": "https://raw.githubusercontent.com/hugolpz/audio-cmn/master/64k/hsk/cmn-%E9%87%91.mp3",
+    "project": "audio-cmn",
+    "speaker": "Yue Tan",
+    "text": "金",
+    "sha256": "52724234a80baa89f658be1b340acf8aabbcfc3c718d9709771190e6fe9afe5d"
+  },
+  "syllable:pa1": {
+    "file": "audio-cmn/pa1.mp3",
+    "url": "https://raw.githubusercontent.com/hugolpz/audio-cmn/master/64k/hsk/cmn-%E8%B6%B4.mp3",
+    "project": "audio-cmn",
+    "speaker": "Yue Tan",
+    "text": "趴",
+    "sha256": "43febc10726f9bc1295dafb0c5ddbe7c27fbb2880b0859c2bd01a809c233560f"
+  },
+  "syllable:qia1": {
+    "file": "audio-cmn/qia1.mp3",
+    "url": "https://raw.githubusercontent.com/hugolpz/audio-cmn/master/64k/hsk/cmn-%E6%8E%90.mp3",
+    "project": "audio-cmn",
+    "speaker": "Yue Tan",
+    "text": "掐",
+    "sha256": "c81560c0863206cb1794b7aa8ac48360c74b4ea4a5df2b0909e6ce522735875c"
+  },
+  "syllable:xia1": {
+    "file": "audio-cmn/xia1.mp3",
+    "url": "https://raw.githubusercontent.com/hugolpz/audio-cmn/master/64k/hsk/cmn-%E8%99%BE.mp3",
+    "project": "audio-cmn",
+    "speaker": "Yue Tan",
+    "text": "虾",
+    "sha256": "795d4c32e08f9b7faf90041dc0fc71853f10b0a7f4c8e3971caf6e4e691ee484"
   }
 }

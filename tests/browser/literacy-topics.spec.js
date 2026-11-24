@@ -133,13 +133,14 @@ test('示范朗读支持常速慢速停止，切换内容不串音、不改变�
 });
 
 test('朗读资源失败有提示，可以重试恢复', async ({ page }) => {
-  await page.route('**/audio/poetry/goose.wav', route => route.fulfill({ status: 404, body: '' }));
+  const gooseAudio = url => url.pathname.endsWith('/audio/poetry/goose.wav');
+  await page.route(gooseAudio, route => route.fulfill({ status: 404, body: '' }));
   await page.goto('/');
   await selectTopic(page, '古诗与传统文化');
   await page.getByRole('button', { name: '听示范朗读', exact: true }).click();
   await expect(page.locator('.ct-poem-audio-status')).toContainText('朗读播放失败');
   await expect(page.getByRole('button', { name: '停止朗读', exact: true })).toBeDisabled();
-  await page.unroute('**/audio/poetry/goose.wav');
+  await page.unroute(gooseAudio);
   await page.getByRole('button', { name: '听示范朗读', exact: true }).click();
   await expect(page.locator('.ct-poem-audio-status')).toContainText('正在朗读');
   await page.getByRole('button', { name: '停止朗读', exact: true }).click();

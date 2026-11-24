@@ -1,11 +1,10 @@
 import { basics, confusionSets, featureGroups, groups, marked, neutralToneExamples, subjects, toneExamples, vocabulary, words } from './data.js';
 import { questionPool } from './engine.js';
-import { borrowsSyllable, pinyinAudioPaths, pinyinBlendAudio, pinyinCardAudio, splitFinals } from './pinyin-audio-data.js';
+import { borrowsSyllable, pinyinAudioPaths, pinyinBlendAudio, pinyinCardAudio, pinyinQuestionAudio, splitFinals } from './pinyin-audio-data.js';
 import { poems, poetryTopic } from './poetry-data.js';
 import { phonicsLessons, phonicsStories } from './phonics-data.js';
 import { availablePhonicsAudio } from './phonics-engine.js';
 import { englishTopics } from './english-topics.js';
-import { publishedReviewDecision } from './audio-review-decisions.js';
 
 export const reviewBatches = [
   { id: 'huihui', subject: 'chinese', name: '慧慧整词录音', guide: '试听学习页使用的整词录音。可对比原逐字播放，检查清晰度、连读变调、轻重和节奏。' },
@@ -69,7 +68,7 @@ function pinyinRows(manifest, borrowedSamples) {
   const wordRows = vocabulary.map(item => {
     const key = `word:${item.text}`;
     const wholeWord = Boolean(manifest.files[key]);
-    const synthetic = wholeWord && manifest.overrides?.[key]?.synthetic;
+    const synthetic = item.sounds.length > 1 && wholeWord && manifest.overrides?.[key]?.synthetic;
     return makeRow(wordsCategory, {
       ...(synthetic && { key: `huihui-${item.id}` }),
       contentId: item.id, batch: synthetic ? 'huihui' : 'pinyin', kind: 'pinyin-card',
@@ -84,18 +83,22 @@ function pinyinRows(manifest, borrowedSamples) {
   const borrowedSampleRows = basics.filter(borrowsSyllable).map(item => {
     const sampleId = sharedBorrowedSamples[item.id] || item.id;
     const sample = borrowedSamples.files[sampleId];
-    const path = `/audio/review/huihui-borrowed/${sampleId}.wav`;
+    const path = `/audio/huihui-borrowed/${sampleId}.wav`;
     const sound = marked(item.sound);
     const sourceText = sample?.phonemes ? `${sample.text}（指定读音 ${sound}）` : sample?.text;
     const clip = clipRecord(sample?.path === path && path, `${borrowedSamples.provider} · ${borrowedSamples.voice}（合成）`, { ...sample, text: sourceText });
+    const audio = item.id === 'front-ün' ? [
+      withAudio('main', '听现有录音', pinyinCardAudio(item)),
+      playback('reference', '听原慧慧样本', [clip], true),
+    ] : [
+      playback('main', '听慧慧样本', [clip]),
+      withAudio('reference', '听现有录音', pinyinCardAudio(item), true),
+    ];
     return makeRow(groups.find(group => group.id === item.group), {
       key: `huihui-loan-${item.id}`, contentId: item.id, batch: 'huihui-borrowed', kind: 'pinyin-card',
       title: item.text, expected: `${item.text}（对照音节 ${sound}）`, item,
       guide: item.group === 'initial' ? '比较呼读音的起音和清晰度。' : '听韵母部分是否清楚、适合模仿。',
-      audio: [
-        playback('main', '听慧慧样本', [clip]),
-        withAudio('reference', '听现有录音', pinyinCardAudio(item), true),
-      ],
+      audio,
     });
   });
   const tones = toneExamples.flatMap(group => group.items.map(item => makeRow(tonesCategory, {
@@ -114,7 +117,7 @@ function pinyinRows(manifest, borrowedSamples) {
     title: question.display || question.prompt, expected: question.answer, audio, ...extra,
   });
   const quizRows = (mode, category, options, group) => questionPool(mode, options).map(question => quizRow(
-    category, question, [withAudio('main', '听题目音频', question.audio)], group ? { key: `${group.id}-${question.id}`, context: group.name } : {},
+    category, question, [withAudio('main', '听题目音频', pinyinQuestionAudio(question))], group ? { key: `${group.id}-${question.id}`, context: group.name } : {},
   ));
   const blends = questionPool('blend').map(question => {
     const split = Object.hasOwn(splitFinals, question.parts[1]);
@@ -129,11 +132,8 @@ function pinyinRows(manifest, borrowedSamples) {
     ...Object.entries(confusionSets).flatMap(([id, group]) => quizRows('confusing', confusionCategory, { confusion: id }, { id, name: group.name })),
     ...quizRows('rules', rulesCategory),
   ];
-  const coveredPaths = new Set(rows.flatMap(row => {
-    const approved = publishedReviewDecision(row)?.status === 'approved';
-    return row.audio.filter(action => !approved || !action.reference)
-      .flatMap(action => action.clips.map(clip => clip.path));
-  }));
+  const coveredPaths = new Set(rows.flatMap(row => row.audio.filter(action => !action.reference)
+    .flatMap(action => action.clips.map(clip => clip.path))));
   const fallbackSyllables = Object.entries(manifest.files).filter(([key, path]) => key.startsWith('syllable:') && !coveredPaths.has(path));
   return [...rows, ...fallbackSyllables.map(([key]) => {
     const sound = key.slice('syllable:'.length);
@@ -217,6 +217,20 @@ export function audioReviewCatalog({ pinyin, poetry, phonics, borrowedSamples })
     ...phonicsRows(phonics),
     ...campusRows(),
   ];
+}
+
+export function pendingAudioReviewRows(catalog, pending) {
+  const pendingIds = new Set();
+  for (const [id, decision] of Object.entries(pending)) {
+    if (!['unreviewed', 'needs-change', 'recheck'].includes(decision?.status)
+      || (decision.note !== undefined && typeof decision.note !== 'string')) {
+      throw new Error(`无效的待审核状态：${id}`);
+    }
+    pendingIds.add(id);
+  }
+  const rows = catalog.filter(row => pendingIds.delete(row.id));
+  if (pendingIds.size) throw new Error(`找不到待审核条目：${[...pendingIds].join('、')}`);
+  return rows;
 }
 
 export const reviewStatuses = [

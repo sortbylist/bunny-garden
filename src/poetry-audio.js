@@ -34,7 +34,7 @@ export function createPoetryAudio(onStatus) {
       onStatus('error', '这首诗的朗读暂时无法播放，请稍后重试。');
       return false;
     }
-    const audio = new Audio(publicAsset(entry.path));
+    const audio = new Audio(publicAsset(entry.path, entry.sha256));
     active = audio;
     audio.playbackRate = slow ? 0.8 : 1;
     audio.preservesPitch = true;

@@ -37,7 +37,7 @@ import { backupFilename, createBackup, parseBackup, restoreBackup, maxBackupByte
 import { loadState, saveState } from './storage.js';
 import { pinyinPracticeCategory } from './learning-data.js';
 import { publicAsset } from './public-asset.js';
-import { pinyinBlendAudio, pinyinCardAudio } from './pinyin-audio-data.js';
+import { pinyinBlendAudio, pinyinCardAudio, pinyinOptionAudio, pinyinQuestionAudio } from './pinyin-audio-data.js';
 import { pinyinCardContent } from './pinyin-card.js';
 
 const bunnyImage = publicAsset('/bunny.svg');
@@ -588,9 +588,9 @@ function handleLibraryCardAction(target) {
     return;
   }
   if (action === 'play-current') { void playAudio(pinyinCardAudio(item.word), state.settings.slow); return; }
-  if (action === 'play-question') { void playAudio(item.question.audio, state.settings.slow); return; }
+  if (action === 'play-question') { void playAudio(pinyinQuestionAudio(item.question), state.settings.slow); return; }
   if (action === 'play-parts') { playQuestionParts(item.question); return; }
-  if (action === 'sound') { void playAudio({ sound: target.dataset.sound }, state.settings.slow); return; }
+  if (action === 'sound') { void playAudio({ sound: target.dataset.sound, recording: target.dataset.recording }, state.settings.slow); return; }
   if (action === 'word-sound') {
     const word = vocabulary.find(entry => entry.text === target.dataset.word);
     void playAudio({ word: target.dataset.word, sounds: word?.sounds }, state.settings.slow);
@@ -688,7 +688,7 @@ function quizCard(round, preview = null) {
     <div class="answer-grid ${question.kind === 'audio' ? 'audio-answers' : ''}" role="group" aria-label="答案选项">${question.options.map((option, index) => {
       const text = typeof option === 'string' ? option : option.value;
       const status = answered && text === question.answer ? 'correct-answer' : round.selected === text && wrong ? 'wrong-answer' : '';
-      return typeof option === 'string' ? `<button class="answer-option${learningTokenClass(text)} ${status}" data-action="answer" data-value="${escape(text)}" ${disabled ? 'disabled' : ''}><span class="option-letter">${'ABCD'[index]}</span><span>${escape(text)}</span>${status === 'correct-answer' ? icon('check') : ''}</button>` : `<div class="audio-option ${status}">${button('sound', `试听 ${'ABCD'[index]}`, 'sound', 'audio-choice-play', `data-sound="${escape(option.sound)}"`)}${button('answer', `选 ${'ABCD'[index]}`, '', 'audio-choice-pick', `data-value="${escape(text)}" ${disabled ? 'disabled' : ''}`)}</div>`;
+      return typeof option === 'string' ? `<button class="answer-option${learningTokenClass(text)} ${status}" data-action="answer" data-value="${escape(text)}" ${disabled ? 'disabled' : ''}><span class="option-letter">${'ABCD'[index]}</span><span>${escape(text)}</span>${status === 'correct-answer' ? icon('check') : ''}</button>` : `<div class="audio-option ${status}">${button('sound', `试听 ${'ABCD'[index]}`, 'sound', 'audio-choice-play', `data-sound="${escape(option.sound)}" data-recording="${escape(pinyinOptionAudio(option).recording || '')}"`)}${button('answer', `选 ${'ABCD'[index]}`, '', 'audio-choice-pick', `data-value="${escape(text)}" ${disabled ? 'disabled' : ''}`)}</div>`;
     }).join('')}</div>
     <div class="answer-feedback ${answered ? round.selected === null ? 'warning' : 'success' : wrong ? 'retry warning' : ''}" role="status">${answered ? `${icon(round.selected === null ? 'leaf' : 'check')}<div><strong>${round.selected === null ? '先认识答案，下次再试试' : '答对啦，你做得很棒！'}</strong><p>${escape(question.explanation)}</p></div>` : wrong ? `${icon('refresh')}<div><strong>差一点点，再试一次吧！</strong><p>可以再听一听，或者点“看看答案”。首次作答已经记下啦。</p></div>` : `${icon('leaf')}<span>想一想，再选出你的答案。</span>`}</div>
     ${answered && question.audio?.word && !hasAudio({ word: question.audio.word }) && question.audio.sounds?.length > 1 ? '<p class="small-note">这个词一个字一个字读，跟着一起拼一拼。</p>' : ''}
@@ -1039,17 +1039,10 @@ function celebrateReward(result) {
 function showAbout() {
   openDialog('关于小兔学习乐园', `
     <p class="dialog-intro">专为小学生准备的一方学习小天地。没有广告，不需要注册，按照自己的节奏慢慢学。</p>
-    <h3>关于拼音和读音</h3>
-    <p>内容包含 23 个声母、24 个韵母和 16 个整体认读音节，采用小学常见分类。</p>
-    <p>拼音真人录音主要来自 <a href="https://github.com/hugolpz/audio-cmn" target="_blank" rel="noopener">audio-cmn</a>。
-      音节由 <a href="https://github.com/hugolpz/audio-cmn#voices" target="_blank" rel="noopener">Chen Wang</a> 录制，
-      词语由 <a href="https://commons.wikimedia.org/wiki/File:Zh-m%C3%A1.ogg#Summary" target="_blank" rel="noopener">Yue Tan</a> 录制。
-      <a href="https://github.com/hugolpz" target="_blank" rel="noopener">Hugo Lopez</a> 负责整理，
-      <a href="https://github.com/hugolpz/audio-cmn#credits" target="_blank" rel="noopener">Nicolas Vion</a> 提供录音软件和技术支持。
-      录音采用上游声明的 <a href="https://creativecommons.org/cc-licenses/" target="_blank" rel="noopener">CC BY-SA</a> 许可。</p>
-    <p>白云等 13 个双字词使用 Windows 的 Microsoft Huihui Desktop 语音合成整词。</p>
-    <p><a href="${publicAsset('/audio/ong-openlearn.wav')}" target="_blank" rel="noopener">ong 韵母音频</a>节选自英国开放大学 OpenLearn 课程 <a href="https://www.open.edu/openlearn/mod/oucontent/view.php?id=106435&amp;section=1.1" target="_blank" rel="noopener">Getting started with Chinese 1</a>，采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a> 许可。部分韵母借助完整音节示范，学习卡片上会提示。录音尚待普通话教师逐项试听审核。</p>
-    <p>英语教学音频使用 <a href="https://github.com/mrcraked/WordAudio" target="_blank" rel="noopener">WordAudio</a> 和 <a href="https://gtts.readthedocs.io/en/stable/" target="_blank" rel="noopener">gTTS</a> 生成。</p>
+    <h3>拼音与教学音频</h3>
+    <p>拼音包含 23 个声母、24 个韵母和 16 个整体认读音节，采用小学常见分类。</p>
+    <p>拼音录音主要来自 <a href="https://github.com/hugolpz/audio-cmn" target="_blank" rel="noopener">audio-cmn</a>，少量来自 <a href="https://commons.wikimedia.org/wiki/File:Zh-m%C3%A1.ogg" target="_blank" rel="noopener">Wikimedia Commons</a> 和<a href="https://www.open.edu/openlearn/mod/oucontent/view.php?id=106435&amp;section=1.1" target="_blank" rel="noopener">英国开放大学 OpenLearn</a>。</p>
+    <p>古诗朗读和部分拼音读音由<a href="https://support.microsoft.com/zh-cn/accessibility/windows/narrator/appendix-a-supported-languages-and-voices" target="_blank" rel="noopener">微软慧慧</a>语音合成，英语音频使用 <a href="https://github.com/mrcraked/WordAudio" target="_blank" rel="noopener">WordAudio</a> 和 <a href="https://gtts.readthedocs.io/en/stable/" target="_blank" rel="noopener">gTTS</a> 生成。</p>
     <p><a href="${publicAsset('/audio/ATTRIBUTION.md')}" target="_blank" rel="noopener">查看音频来源与署名说明</a></p>
     <h3>使用小提醒</h3>
     <p>首次听音需要点击喇叭。跟着录音自己读一读即可，本应用不会录音，也不会自动评价你的发音。</p>
@@ -1358,7 +1351,7 @@ function handleAction(event) {
   if (action === 'restart-now') { restart(); return; }
   if (action === 'reset-confirm') { showResetConfirmation(); return; }
   if (action === 'reset-all') { halt(); celebrations.reset(); state = defaultState(); phonics.reset(state.phonics); state.features.english = 'phonics'; initializeRewards(state); storageReadFailed = false; closeDialog(); render(); toast('记录已清空，可以重新出发啦。'); return; }
-  if (action === 'sound') { continuousToken++; playAudio({ sound: target.dataset.sound }, state.settings.slow); return; }
+  if (action === 'sound') { continuousToken++; playAudio({ sound: target.dataset.sound, recording: target.dataset.recording }, state.settings.slow); return; }
   if (action === 'word-sound') { continuousToken++; const item = vocabulary.find(entry => entry.text === target.dataset.word); playAudio({ word: target.dataset.word, sounds: item?.sounds }, state.settings.slow); return; }
   if (studyModes.includes(state.mode)) {
     const value = session();
@@ -1412,7 +1405,7 @@ function handleAction(event) {
     if (!question) return;
     if (action === 'answer') { submitAnswer(target.dataset.value); return; }
     if (action === 'skip') { submitAnswer(null); return; }
-    if (action === 'play-question') { continuousToken++; playAudio(question.audio, state.settings.slow); return; }
+    if (action === 'play-question') { continuousToken++; playAudio(pinyinQuestionAudio(question), state.settings.slow); return; }
     if (action === 'play-parts') { playQuestionParts(question); return; }
     if (action === 'next-question' && round.revealed) {
       halt();

@@ -2,21 +2,19 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { audioReviewCatalog, createAudioReviewExport, reviewBatches } from '../src/audio-review-data.js';
-import { publishedReviewDecision, publishedReviewDecisions } from '../src/audio-review-decisions.js';
+import { audioReviewCatalog, createAudioReviewExport, pendingAudioReviewRows, reviewBatches } from '../src/audio-review-data.js';
 import { basics, confusionSets, groups, neutralToneExamples, toneExamples, vocabulary } from '../src/data.js';
 import { questionPool } from '../src/engine.js';
 import { englishAudioClips } from '../src/english-topics.js';
-import { borrowsSyllable, pinyinAudioPaths, pinyinBlendAudio, pinyinCardAudio } from '../src/pinyin-audio-data.js';
+import { borrowsSyllable, pinyinAudioPaths, pinyinBlendAudio, pinyinCardAudio, pinyinOptionAudio, pinyinQuestionAudio } from '../src/pinyin-audio-data.js';
 
 const audioRoot = new URL('../public/audio/', import.meta.url);
 const loadManifest = async name => JSON.parse(await readFile(new URL(name, audioRoot), 'utf8'));
-const [pinyin, poetry, phonics, huihuiWords, borrowedSamples] = await Promise.all([
+const [pinyin, poetry, phonics, huihuiWords, borrowedSamples, pending] = await Promise.all([
   'manifest.json', 'poetry/manifest.json', 'phonics/manifest.json',
-  'review/huihui/manifest.json', 'review/huihui-borrowed/manifest.json',
+  'huihui/manifest.json', 'huihui-borrowed/manifest.json', 'review/pending.json',
 ].map(loadManifest));
 const catalog = audioReviewCatalog({ pinyin, poetry, phonics, borrowedSamples });
-const pending = catalog.filter(row => publishedReviewDecision(row)?.status !== 'approved');
 const clipPaths = rows => rows.flatMap(row => row.audio.flatMap(action => action.clips.map(clip => clip.path)));
 
 test('试听清单覆盖已发布音频，独立样本与教学场景使用稳定标识', async () => {
@@ -46,7 +44,7 @@ test('试听清单覆盖已发布音频，独立样本与教学场景使用稳�
   ]);
 });
 
-test('慧慧补全整词且沿用已确认录音', () => {
+test('慧慧补全整词，学习页和试听使用同一录音', () => {
   const words = Object.values(huihuiWords.files);
   const wordRows = catalog.filter(row => row.batch === 'huihui');
   assert.equal(words.length, 13);
@@ -64,15 +62,27 @@ test('慧慧补全整词且沿用已确认录音', () => {
     assert.equal(row.audio[1].reference, true);
     assert.deepEqual(row.audio[1].clips.map(clip => clip.path), row.item.sounds.map(sound => pinyin.files[`syllable:${sound}`]));
   }
-  const approved = wordRows.filter(row => publishedReviewDecisions[row.id]?.status === 'approved');
-  assert.deepEqual(approved.map(row => row.title).sort(), ['白云', '小草', '画画'].sort());
-  for (const row of approved) {
-    assert.equal(publishedReviewDecisions[row.id].sha256, row.audio[0].clips[0].sha256);
-  }
-  assert.equal(pending.filter(row => row.batch === 'huihui').length, 10);
 });
 
-test('全部借音卡独立审核，慧慧候选与现用录音逐张对照', () => {
+test('待审清单按条目 ID 加入试听，移除后对应教学场景停止待审', () => {
+  pendingAudioReviewRows(catalog, pending.items);
+  const word = 'phonics/lesson-1/word-map';
+  const syllable = 'pinyin/confusing/retroflex-confusing:cha1';
+  const queue = {
+    [word]: { status: 'unreviewed' },
+    [syllable]: { status: 'recheck', note: '再次确认声调。' },
+  };
+  const getPending = () => pendingAudioReviewRows(catalog, queue).map(row => row.id);
+  assert.deepEqual(getPending(), [syllable, word]);
+  delete queue[syllable];
+  assert.deepEqual(getPending(), [word]);
+  delete queue[word];
+  assert.deepEqual(getPending(), []);
+  assert.throws(() => pendingAudioReviewRows(catalog, { [word]: { status: 'approved' } }), /无效的待审核状态/);
+  assert.throws(() => pendingAudioReviewRows(catalog, { missing: { status: 'unreviewed' } }), /找不到待审核条目：missing/);
+});
+
+test('借音卡有独立的试听场景，ün 优先播放现用录音', () => {
   const sampleRows = catalog.filter(row => row.batch === 'huihui-borrowed');
   assert.equal(sampleRows.length, 34);
   assert.equal(sampleRows.filter(row => row.category.id === 'initial').length, 23);
@@ -82,12 +92,13 @@ test('全部借音卡独立审核，慧慧候选与现用录音逐张对照', ()
   assert.equal(new Set(samples.map(sample => sample.sha256)).size, 32);
   const cardsBySample = new Map();
   for (const row of sampleRows) {
-    const [candidate, reference] = row.audio;
+    const [main, reference] = row.audio;
+    const [candidate, current] = row.contentId === 'front-ün' ? [reference, main] : [main, reference];
     const { path, sha256 } = candidate.clips[0];
     assert.equal(sha256, samples.find(sample => sample.path === path)?.sha256);
-    assert.equal(candidate.reference, false);
+    assert.equal(main.reference, false);
     assert.equal(reference.reference, true);
-    assert.deepEqual(reference.clips.map(clip => clip.path), pinyinAudioPaths(pinyin.files, pinyinCardAudio(row.item)));
+    assert.deepEqual(current.clips.map(clip => clip.path), pinyinAudioPaths(pinyin.files, pinyinCardAudio(row.item)));
     const titles = cardsBySample.get(path) ?? [];
     titles.push(row.title);
     cardsBySample.set(path, titles);
@@ -95,12 +106,55 @@ test('全部借音卡独立审核，慧慧候选与现用录音逐张对照', ()
   assert.equal(cardsBySample.size, samples.length);
   assert.deepEqual([...cardsBySample.values()].filter(titles => titles.length > 1), [['i', 'y'], ['u', 'w']]);
   assert.ok(samples.every(sample => !Object.values(pinyin.files).includes(sample.path)));
+
+  const row = sampleRows.find(row => row.id === 'pinyin/front/huihui-loan-front-ün');
+  assert.equal(row.expected, 'ün（对照音节 yūn）');
+  assert.equal(row.audio[0].clips[0].path, '/audio/yun1.mp3');
+  assert.equal(row.audio[0].clips[0].source, 'audio-cmn · Chen Wang');
 });
 
-test('语文待审清单覆盖学习页音频及备用音节，已通过的整词除外', () => {
-  const chinese = pending.filter(row => row.subject.id === 'chinese');
+test('古诗试听使用当前录音及资源指纹', () => {
+  const poems = catalog.filter(row => row.batch === 'poetry');
+  assert.equal(poems.length, 20);
+  for (const poem of poems) {
+    const { sha256 } = poetry.files[poem.contentId];
+    assert.ok(sha256, poem.id);
+    assert.equal(poem.audio[0].clips[0].sha256, sha256);
+  }
+  const farmers = poems.find(row => row.contentId === 'farmers');
+  assert.ok(farmers.poem.lines.some(([, pinyin]) => pinyin.startsWith('shuí zhī')));
+});
+
+test('拼音试听使用当前录音及资源指纹，保留按场景替换的读音', async () => {
+  const paths = new Set(clipPaths(catalog));
+  for (const { file, sha256 } of Object.values(pinyin.overrides)) {
+    const path = `/audio/${file}`;
+    assert.ok(paths.has(path), path);
+    if (sha256) {
+      const bytes = await readFile(new URL(file, audioRoot));
+      assert.equal(createHash('sha256').update(bytes).digest('hex'), sha256);
+    }
+  }
+
+  const pathsFor = id => clipPaths(catalog.filter(row => row.id === id));
+  assert.deepEqual(pathsFor('pinyin/whole/whole-chi'), ['/audio/huihui-pinyin/chi1.wav']);
+  assert.ok(pathsFor('pinyin/blend/blend-15').includes('/audio/chi1.mp3'));
+  assert.deepEqual(pathsFor('pinyin/words/char-竹'), ['/audio/huihui-pinyin/zhu2.wav']);
+  assert.deepEqual(pathsFor('pinyin/blend/blend-14').slice(-1), ['/audio/zhu2.mp3']);
+  assert.deepEqual(pathsFor('pinyin/words/char-沙'), ['/audio/sha1.mp3']);
+  assert.deepEqual(pathsFor('pinyin/confusing/retroflex-confusing:cha1'), ['/audio/huihui-pinyin/cha1.wav']);
+  assert.deepEqual(pathsFor('pinyin/confusing/retroflex-confusing:sha1'), ['/audio/huihui-pinyin/sha1.wav']);
+  const xia = pathsFor('pinyin/confusing/jqx-confusing:xia1');
+  assert.deepEqual(xia, ['/audio/audio-cmn/xia1.mp3']);
+  assert.deepEqual(pathsFor('pinyin/words/char-虾'), xia);
+  const savedQuestion = { id: 'listen:whole-chi', itemId: 'whole-chi', audio: { sound: 'chi1' } };
+  assert.deepEqual(pinyinAudioPaths(pinyin.files, pinyinQuestionAudio(savedQuestion)), pathsFor('pinyin/whole/whole-chi'));
+  assert.deepEqual(pinyinAudioPaths(pinyin.files, pinyinOptionAudio({ value: 'chi', sound: 'chi1' })), pathsFor('pinyin/whole/whole-chi'));
+});
+
+test('语文试听清单覆盖正式学习页音频和备用音节', () => {
+  const chinese = catalog.filter(row => row.subject.id === 'chinese');
   const paths = new Set(clipPaths(chinese));
-  const approvedPaths = ['白云', '小草', '画画'].map(word => pinyin.files[`word:${word}`]);
   const blends = questionPool('blend');
   const questions = [
     ...groups.flatMap(group => ['listen', 'audio', 'section-practice'].flatMap(mode => questionPool(mode, { group: group.id }))),
@@ -113,35 +167,43 @@ test('语文待审清单覆盖学习页音频及备用音节，已通过的整�
     ...toneExamples.flatMap(group => group.items.map(item => ({ sound: item.sound }))),
     ...neutralToneExamples.map(item => ({ word: item.text })),
     ...blends.map(question => pinyinBlendAudio(question.parts)),
-    ...questions.flatMap(question => [question.audio, ...question.options.filter(option => typeof option === 'object')]),
+    ...questions.flatMap(question => [
+      pinyinQuestionAudio(question), ...question.options.filter(option => typeof option === 'object').map(pinyinOptionAudio),
+    ]),
   ];
   const livePaths = new Set(requests.flatMap(request => pinyinAudioPaths(pinyin.files, request)));
   assert.equal(livePaths.has(undefined), false);
-  assert.deepEqual([...livePaths].filter(path => !paths.has(path)).sort(), approvedPaths.sort());
-  assert.deepEqual(Object.values(pinyin.files).filter(path => !paths.has(path)).sort(), approvedPaths);
-  assert.ok(Object.values(poetry.files).every(item => paths.has(item.path)));
+  assert.deepEqual([...livePaths].filter(path => !paths.has(path)), []);
+  assert.deepEqual(Object.values(pinyin.files).filter(path => !paths.has(path)), []);
   assert.deepEqual(clipPaths(chinese.filter(row => row.title === 'huà · 备用音节')), ['/audio/hua4.mp3']);
   assert.deepEqual(clipPaths(chinese.filter(row => row.title === 'má · 麻')), ['/audio/ma2-yue-tan.ogg']);
   assert.deepEqual(clipPaths(chinese.filter(row => row.title === 'ong')), ['/audio/ong-openlearn.wav']);
   assert.ok(!reviewBatches.some(batch => batch.id === 'huihui-pronunciation'));
 });
 
-test('审核导出包含未审项目、意见和有序播放文件', () => {
-  const rows = catalog.filter(row => row.batch === 'huihui' && !publishedReviewDecisions[row.id]);
-  const decisions = new Map([[rows[0].id, { status: 'needs-change', note: '  第二个音节太轻。\n' }]]);
-  const scope = { subject: rows[0].subject, batch: { id: 'huihui', name: '慧慧整词录音' } };
+test('审核导出包含本轮通过决定、修改意见和播放文件', () => {
+  const rows = catalog.filter(row => [
+    'pinyin/confusing/retroflex-confusing:cha1',
+    'pinyin/confusing/retroflex-confusing:sha1',
+  ].includes(row.id));
+  const reviewed = rows.at(-1);
+  const decisions = new Map([
+    [rows[0].id, { status: 'approved' }],
+    [reviewed.id, { status: 'needs-change', note: '  声调需要再确认。\n' }],
+  ]);
+  const scope = { subject: reviewed.subject, batch: { id: 'pinyin', name: '其余拼音录音' } };
   const report = createAudioReviewExport(rows, decisions, scope, new Date('2026-11-22T09:00:00Z'));
   assert.equal(report.format, 'bunny-garden-audio-review');
   assert.equal(report.version, 2);
-  assert.equal(report.total, 10);
-  assert.equal(report.reviewed, 1);
+  assert.equal(report.total, 2);
+  assert.equal(report.reviewed, 2);
   assert.deepEqual(report.scope, scope);
-  assert.equal(report.items[0].status, 'needs-change');
-  assert.ok(report.items.slice(1).every(item => !Object.hasOwn(item, 'status')));
-  assert.equal(report.notes[report.items[0].noteIndex], '第二个音节太轻。');
-  assert.equal(report.items[0].contentId, 'word-写字');
-  assert.equal(report.items[0].audio[1].reference, true);
-  assert.deepEqual(report.items[0].audio[1].clipIndexes.map(index => report.clips[index].path), ['/audio/xie3.mp3', '/audio/zi4.mp3']);
+  assert.equal(report.items[0].status, 'approved');
+  const item = report.items.at(-1);
+  assert.equal(item.status, 'needs-change');
+  assert.equal(report.notes[item.noteIndex], '声调需要再确认。');
+  assert.equal(item.contentId, reviewed.contentId);
+  assert.deepEqual(item.audio[0].clipIndexes.map(index => report.clips[index].path), ['/audio/huihui-pinyin/sha1.wav']);
 });
 
 test('审核导出合并重复清单数据并保留所有批次的课程位置和音频信息', () => {
